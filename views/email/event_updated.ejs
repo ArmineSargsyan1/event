@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Updated</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            margin: auto;
+        }
+        h2 {
+            color: #333333;
+        }
+        p {
+            color: #555555;
+            line-height: 1.6;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #000000;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999999;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Hello <%= name %>,</h2>
+
+    <p>
+        The event <span class="highlight"><%= name %></span> has been updated.
+    </p>
+
+    <p>
+        Updated event date: <span class="highlight"><%= date %></span>
+    </p>
+
+    <p>
+        Please check the latest details in your account.
+    </p>
+
+    <div class="footer">
+        This is an automated message from Events App.
+    </div>
+</div>
+</body>
+</html>

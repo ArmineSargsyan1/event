@@ -1,0 +1,57 @@
+body {
+    font-family: sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+form {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Style for the labels, ensuring they take up full width for better alignment */
+label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Style for all input fields */
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    width: 100%; /* Makes inputs fill the label width */
+    padding: 10px;
+    margin-top: 5px; /* Adds space between label text and input box */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Ensures padding doesn't increase total width */
+    font-size: 16px;
+}
+
+/* Style for the submit button */
+input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff; /* Blue background */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}

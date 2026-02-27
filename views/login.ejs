@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel='stylesheet' href='/stylesheets/login.css' />
+    <title>Login</title>
+</head>
+<body>
+
+<form id="login_form" name="login_form">
+    <h2>Login to Account</h2>
+    <label>Email
+        <input type="text" name="email" placeholder="Email Address" value="testtest.com">
+        <br>
+        <span id="error_email" style="color: red"></span>
+    </label>
+
+    <label>Password
+        <input type="password" name="password" placeholder="Password" value="123456789">
+        <br>
+        <span id="error_password" style="color: red"></span>
+    </label>
+
+    <input type="submit" value="LOGIN">
+    <a href="/users/views/registration">REGISTER</a>
+</form>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="/javascripts/login.js"></script>
+</body>
+</html>
