@@ -110,7 +110,13 @@ export const createBookingSession =
     }
   };
 
+
+
+
+
 export const stripeBookingWebhook = async (req, res) => {
+  console.log("BODY IS BUFFER:", Buffer.isBuffer(req.body),666);
+
   const sig = req.headers["stripe-signature"];
 
   let event;
@@ -123,116 +129,17 @@ export const stripeBookingWebhook = async (req, res) => {
     );
   } catch (err) {
     console.log("❌ Webhook signature error:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+
+    return res.status(400).send(
+      `Webhook Error: ${err.message}`
+    );
   }
 
-  console.log("WEBHOOK HIT:", event.type);
+  console.log("✅ WEBHOOK HIT:", event.type);
 
   res.json({ received: true });
 };
 
-
-// export const stripeBookingWebhook = async (req, res) => {
-//   const sig = req.headers["stripe-signature"];
-//
-//   console.log("WEBHOOK HIT:", event.type);
-//
-//   let event;
-//
-//   try {
-//     // 🔥 VERIFY STRIPE SIGNATURE (IMPORTANT)
-//     event = stripe.webhooks.constructEvent(
-//       req.body,
-//       sig,
-//       process.env.STRIPE_WEBHOOK_SECRET
-//     );
-//   } catch (err) {
-//     console.log("Webhook signature failed:", err.message);
-//     return res.status(400).send(`Webhook Error: ${err.message}`);
-//   }
-//
-//   try {
-//     if (event.type === "checkout.session.completed") {
-//       const session = event.data.object;
-//
-//       const bookingId = session.metadata?.booking_id;
-//
-//       const booking = await Booking.findByPk(bookingId);
-//
-//       if (!booking) {
-//         return res.json({ received: true });
-//       }
-//
-//       // 🔒 idempotency check
-//       if (booking.payment_status === "paid") {
-//         return res.json({ received: true });
-//       }
-//
-//       booking.status = "confirmed";
-//       booking.payment_status = "paid";
-//       booking.paid_at = new Date();
-//
-//       await booking.save();
-//     }
-//
-//     return res.json({ received: true });
-//
-//   } catch (error) {
-//     console.log(error);
-//
-//     return res.status(500).json({
-//       message: "Webhook failed",
-//     });
-//   }
-// };
-
-
-// export const stripeBookingWebhook = async (req, res) => {
-//
-//   const event = req.body;
-//
-//   try {
-//
-//     if (
-//       event.type ===
-//       "checkout.session.completed"
-//     ) {
-//
-//       const session = event.data.object;
-//
-//       const bookingId = session.metadata.booking_id;
-//
-//       const booking =
-//         await Booking.findByPk(
-//           bookingId
-//         );
-//
-//       if (booking) {
-//
-//         booking.status = "confirmed";
-//
-//         booking.payment_status = "paid";
-//
-//         booking.paid_at = new Date();
-//
-//         await booking.save();
-//       }
-//     }
-//
-//     res.json({
-//       received: true,
-//     });
-//
-//   } catch (error) {
-//
-//     console.log(error);
-//
-//     res.status(500).json({
-//       message:
-//         "Webhook failed",
-//     });
-//   }
-// };
 
 
 
