@@ -48,7 +48,7 @@ const scoreHotelByType = (hotel, type) => {
 
 const getAvgRating = (hotel) => {
   if (!hotel.review_count || hotel.review_count === 0) {
-    return null; // ❗ ոչ թե 0
+    return null;
   }
 
   return hotel.rating_sum / hotel.review_count;
@@ -57,18 +57,18 @@ const getAvgRating = (hotel) => {
 // const getAvgRating = (hotel) => {
 //   return hotel.review_count > 0
 //     ? hotel.rating_sum / hotel.review_count
-//     : 0; // 🔥 կարևոր՝ ոչ թե hotel.rating
+//     : 0;
 // };
 
 
 
 export const getHotels = async (req, res) => {
-
+  console.log(123)
   try {
 
     const {
       page = 1,
-      limit = 15,
+      limit = 10,
       search,
       city,
       property_class,
@@ -82,7 +82,6 @@ export const getHotels = async (req, res) => {
       sort,
     } = req.query;
 
-    console.log(guestRating,888)
     const userId = 1;
     // const userId = req.user?.id;
 
@@ -946,6 +945,7 @@ const calcRoomOptionPrice = (option, nights) => {
 
 
 export const getHotelById = async (req, res) => {
+  console.log(8888888)
   try {
     const { id } = req.params;
 
@@ -1112,19 +1112,15 @@ export const getHotelById = async (req, res) => {
 
       avgScore,
 
-      cleanliness:
-      featureCounts.cleanliness,
+      cleanliness: featureCounts.cleanliness,
 
       staff: featureCounts.staff,
 
-      facilities:
-      featureCounts.facilities,
+      facilities: featureCounts.facilities,
 
-      location:
-      featureCounts.location,
+      location: featureCounts.location,
 
-      value_for_money:
-      featureCounts.value_for_money,
+      value_for_money: featureCounts.value_for_money,
     };
     // ======================
     // MOST LIKED FEATURES
@@ -1350,178 +1346,6 @@ export const getHotelById = async (req, res) => {
   }
 };
 
-// export const getHotelById = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { checkIn, checkOut, guests = 1 } = req.query;
-//
-//     const nights =
-//       checkIn && checkOut
-//         ? dayjs(checkOut).diff(dayjs(checkIn), "day")
-//         : 1;
-//
-//     // ======================
-//     // HOTEL
-//
-//
-//     const hotel = await Hotels.findByPk(id, {
-//       include: [
-//         {
-//           model: HotelPhotos,
-//           as: "images",
-//         },
-//         {
-//           model: Amenity,
-//           through: { attributes: [] },
-//         },
-//         {
-//           model: Reviews,
-//           order: [["review_date", "DESC"]],
-//         },
-//
-//         // {
-//         //   model: Reviews,
-//         //   attributes: [
-//         //     "score",
-//         //     "cleanliness",
-//         //     "staff",
-//         //     "facilities",
-//         //     "location",
-//         //     "value_for_money",
-//         //   ]
-//         // }
-//
-//       ],
-//     });
-//
-//     if (!hotel) {
-//       return res.status(404).json({ message: "Not found" });
-//     }
-//
-//     // ======================
-//     // REVIEW STATS (SAFE)
-//     // ======================
-//     // const reviews = hotel.Reviews || [];
-//
-//     // const avg = (field) => {
-//     //   const vals = reviews
-//     //     .map((r) => Number(r[field]))
-//     //     .filter((v) => !isNaN(v));
-//     //
-//     //   if (!vals.length) return null;
-//     //
-//     //   return Number(
-//     //     (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
-//     //   );
-//     // };
-//     //
-//     // const reviewStats = {
-//     //   total: reviews.length,
-//     //   avgScore: avg("score"),
-//     //   cleanliness: avg("cleanliness"),
-//     //   staff: avg("staff"),
-//     //   facilities: avg("facilities"),
-//     //   location: avg("location"),
-//     //   value_for_money: avg("value_for_money"),
-//     // };
-//
-//     // ======================
-//     // ROOMS
-//     // ======================
-//     const rooms = await Room.findAll({
-//       where: {
-//         hotel_id: id,
-//         status: "active",
-//         ...(guests && {
-//           max_guests: { [Op.gte]: Number(guests) },
-//         }),
-//       },
-//       include: [
-//         { model: Photo, as: "images" },
-//         { model: Amenity, as: "amenities", through: { attributes: [] } },
-//         { model: RoomOption, as: "options" },
-//         { model: RoomExtra, as: "extras" },
-//       ],
-//     });
-//
-//     // ======================
-//     // FORMAT ROOMS
-//     // ======================
-//     const formattedRooms = [];
-//
-//     for (const room of rooms) {
-//       const r = room.toJSON();
-//
-//       // 🔥 availability check (optional if dates provided)
-//       let available = true;
-//
-//       if (checkIn && checkOut) {
-//         available = await isRoomAvailable(
-//           r.id,
-//           checkIn,
-//           checkOut
-//         );
-//       }
-//
-//       if (!available) continue;
-//
-//       const options = (r.options || []).map((opt) =>
-//         calcRoomOptionPrice(opt, nights)
-//       );
-//
-//       formattedRooms.push({
-//         id: r.id,
-//         name: r.name,
-//         size: r.size,
-//         bed_type: r.bed_type,
-//         max_guests: r.max_guests,
-//
-//         images: r.images,
-//         amenities: r.amenities,
-//         extras: r.extras,
-//
-//         options,
-//       });
-//     }
-//
-//     // ======================
-//     // RESPONSE
-//     // ======================
-//     res.json({
-//       success: true,
-//       data: {
-//         id: hotel.id,
-//         name: hotel.name,
-//         description: hotel.description,
-//         address: hotel.address,
-//         city: hotel.city,
-//         country: hotel.country,
-//
-//         rating: hotel.rating,
-//         review_count: hotel.review_count,
-//
-//         images: hotel.images,
-//         amenities: hotel.Amenities,
-//
-//         // reviewStats,
-//
-//         nights,
-//         rooms: formattedRooms,
-//       },
-//
-//     });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({
-//       message: "Failed",
-//     });
-//   }
-// };
-
-
-
-
-
 
 export const getTopHotels = async (req, res) => {
   try {
@@ -1550,254 +1374,3 @@ export const getTopHotels = async (req, res) => {
 
 
 
-
-// // // import Room from "../models/Room.js";
-// // // import Hotel from "../models/Hotels.js";
-// // //
-// // // export const getHotels = async (req, res) => {
-// // //   try {
-// // //     const hotels = await Hotel.findAll();
-// // //     res.json(hotels);
-// // //   } catch (err) { res.status(500).json({ error: err.message }); }
-// // // };
-// // //
-// // // export const getHotel = async (req, res) => {
-// // //   try {
-// // //     const hotel = await Hotel.findByPk(req.params.id, { include: [{ model: Room, as: "rooms" }] });
-// // //     if (!hotel) return res.status(404).json({ message: "Hotel not found" });
-// // //     res.json(hotel);
-// // //   } catch (err) { res.status(500).json({ error: err.message }); }
-// // // };
-// // //
-// // // export const createHotel = async (req, res) => {
-// // //   try {
-// // //     const hotel = await Hotel.create(req.body);
-// // //     res.status(201).json(hotel);
-// // //   } catch (err) { res.status(500).json({ error: err.message }); }
-// // // };
-// // //
-// // // export const updateHotel = async (req, res) => {
-// // //   try {
-// // //     const hotel = await Hotel.findByPk(req.params.id);
-// // //     if (!hotel) return res.status(404).json({ message: "Hotel not found" });
-// // //     await hotel.update(req.body);
-// // //     res.json(hotel);
-// // //   } catch (err) { res.status(500).json({ error: err.message }); }
-// // // };
-// // //
-// // // export const deleteHotel = async (req, res) => {
-// // //   try {
-// // //     const hotel = await Hotel.findByPk(req.params.id);
-// // //     if (!hotel) return res.status(404).json({ message: "Hotel not found" });
-// // //     await hotel.destroy();
-// // //     res.json({ message: "Hotel deleted" });
-// // //   } catch (err) { res.status(500).json({ error: err.message }); }
-// // // };
-// //
-// //
-// //
-// // import axios from "axios";
-// //
-// // const searchHotels = async (city) => {
-// //   // const res = await axios.get("https://hotels-com-provider.p.rapidapi.com/v2/regions", {
-// //   //   params: { query: city, locale: "en_US", domain: "US" },
-// //   //   headers: {
-// //   //     "Content-Type": "application/json",
-// //   //     "x-rapidapi-host": "hotels-com-provider.p.rapidapi.com",
-// //   //     "x-rapidapi-key": process.env.RAPIDAPI_KEY
-// //   //   }
-// //   // });
-// //
-// //   const res = await axios.get("https://hotels-com-provider.p.rapidapi.com/v2/regions", {
-// //     params: {
-// //       query: city,
-// //       locale: "es_AR",
-// //       domain: "AR"
-// //     },
-// //     headers: {
-// //       "Content-Type": "application/json",
-// //       "x-rapidapi-host": "hotels-com-provider.p.rapidapi.com",
-// //       "x-rapidapi-key": process.env.RAPIDAPI_KEY
-// //     }
-// //   });
-// //   console.log(res.data,1111)
-// //   return res.data;
-// // };
-// // export const getHotelsData = async (req, res) => {
-// //   const { city } = req.query;
-// //   if (!city) return res.status(400).json({ error: "City is required" });
-// //
-// //   try {
-// //     const cityName = city.split(',')[0]; // truncate
-// //     const data = await searchHotels(cityName); // RapidAPI response
-// //
-// //     // Filter only hotels
-// //     // const hotelsOnly = data.data.filter(item => item['@type'] === 'gaiaHotelResult');
-// //
-// //     const hotelsData = data.data.map(h => ({
-// //       id: h.hotelId,
-// //       name: h.regionNames?.fullName || "Unknown",
-// //       latitude: h.coordinates?.lat || 48.8566,
-// //       longitude: h.coordinates?.lon || 2.3522,
-// //       address: h.hotelAddress?.streetAddress || ""
-// //     }));
-// //
-// //     res.json({ hotels: hotelsData });
-// //   } catch (err) {
-// //     console.error(err);
-// //     res.status(500).json({ error: err.message });
-// //   }
-// // };
-// //
-// //
-// //
-// //
-// // import Hotels from '../models/Hotels.js';
-// // import Room from '../models/Room.js';
-// // import Amenity from '../models/Amenity.js';
-// // import RoomExtra from '../models/RoomExtra.js';
-// // import RoomOption from '../models/RoomOption.js';
-// // import sequelize from '../clients/db.sequelize.mysql.js';
-// //
-// // export async function createHotelWithRooms(req, res) {
-// //   const t = await sequelize.transaction();
-// //   try {
-// //     const { hotelData, rooms } = req.body;
-// //     // hotelData օրինակ՝ { name, description, city, country, lat, lon, ... }
-// //
-// //     // 1. Ստեղծում ենք հյուրանոցը
-// //     const hotel = await Hotels.create(hotelData, { transaction: t });
-// //
-// //     // 2. Ստեղծում ենք սենյակները մեկ-մեկ
-// //     for (const roomData of rooms) {
-// //       const { name, size, bedType, maxGuests, price, freeWifi, amenityIds, extras, options } = roomData;
-// //
-// //       // Ստեղծում սենյակ
-// //       const room = await Room.create(
-// //         { name, size, bedType, maxGuests, price, freeWifi, hotelId: hotel.id },
-// //         { transaction: t }
-// //       );
-// //
-// //       // Միացնել Amenities
-// //       if (amenityIds && amenityIds.length) {
-// //         await room.addAmenities(amenityIds, { transaction: t });
-// //       }
-// //
-// //       // Ստեղծել RoomExtras
-// //       if (extras && extras.length) {
-// //         for (const extra of extras) {
-// //           await RoomExtra.create({ ...extra, roomId: room.id }, { transaction: t });
-// //         }
-// //       }
-// //
-// //       // Ստեղծել RoomOptions
-// //       if (options && options.length) {
-// //         for (const option of options) {
-// //           await RoomOption.create({ ...option, roomId: room.id }, { transaction: t });
-// //         }
-// //       }
-// //     }
-// //
-// //     await t.commit();
-// //
-// //     // Վերադարձնում ենք հյուրանոցը՝ իր սենյակներով և հարմարություններով
-// //     const createdHotel = await Hotels.findByPk(hotel.id, {
-// //       include: {
-// //         model: Room,
-// //         include: [Amenity, RoomExtra, RoomOption]
-// //       }
-// //     });
-// //
-// //     res.status(201).json(createdHotel);
-// //
-// //   } catch (err) {
-// //     await t.rollback();
-// //     console.error(err);
-// //     res.status(500).json({ message: 'Failed to create hotel with rooms' });
-// //   }
-// // }
-//
-//
-//
-//
-//
-// import sequelize from "../clients/db.sequelize.mysql.js";
-// import Hotels from "../models/Hotels.js";
-// import Room from "../models/Room.js";
-// import Amenity from "../models/Amenity.js";
-// import RoomExtra from "../models/RoomExtra.js";
-// import RoomOption from "../models/RoomOption.js";
-// import Review from "../models/Reviews.js";
-// import LocationPoint from "../models/LocationPoint.js";
-//
-// export async function createFullHotel(req, res) {
-//   const t = await sequelize.transaction();
-//
-//   try {
-//     const data = req.body;
-//
-//     // 🔹 HOTEL
-//     const hotel = await Hotels.create(data.hotel, { transaction: t });
-//
-//     // 🔹 ROOM
-//     const room = await Room.create({
-//       ...data.room,
-//       hotel_id: hotel.id
-//     }, { transaction: t });
-//
-//     // 🔹 AMENITIES
-//     const createdAmenities = [];
-//
-//     for (const a of data.amenities || []) {
-//       const [amenity] = await Amenity.findOrCreate({
-//         where: { name: a.name },
-//         defaults: a,
-//         transaction: t
-//       });
-//       createdAmenities.push(amenity);
-//     }
-//
-//     await room.addAmenities(createdAmenities, { transaction: t });
-//
-//     // 🔹 EXTRAS (փոխեցինք bulkCreate → create)
-//     for (const e of data.extras || []) {
-//       await RoomExtra.create(
-//         { ...e, room_id: room.id },
-//         { transaction: t }
-//       );
-//     }
-//
-//     // 🔹 OPTIONS
-//     for (const o of data.options || []) {
-//       await RoomOption.create(
-//         { ...o, room_id: room.id },
-//         { transaction: t }
-//       );
-//     }
-//
-//     // 🔹 REVIEWS
-//     for (const r of data.reviews || []) {
-//       await Review.create(
-//         { ...r, hotel_id: hotel.id },
-//         { transaction: t }
-//       );
-//     }
-//
-//     // 🔹 LOCATION
-//     for (const l of data.locations || []) {
-//       await LocationPoint.create(
-//         { ...l, hotelId: hotel.id },
-//         { transaction: t }
-//       );
-//     }
-//
-//     await t.commit();
-//
-//     res.json({ message: "SUCCESS" });
-//
-//   } catch (err) {
-//     await t.rollback();
-//     console.error(err);
-//     res.status(500).json({ error: "ERROR" });
-//   }
-// }

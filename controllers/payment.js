@@ -113,10 +113,7 @@ export const createBookingSession =
 
 
 
-
 export const stripeBookingWebhook = async (req, res) => {
-  console.log("BODY IS BUFFER:", Buffer.isBuffer(req.body),666);
-
   const sig = req.headers["stripe-signature"];
 
   let event;
@@ -128,17 +125,73 @@ export const stripeBookingWebhook = async (req, res) => {
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.log("❌ Webhook signature error:", err.message);
+    console.log(
+      "❌ Webhook signature error:",
+      err.message
+    );
 
     return res.status(400).send(
       `Webhook Error: ${err.message}`
     );
   }
 
-  console.log("✅ WEBHOOK HIT:", event.type);
+  // =========================
+  // CHECKOUT SUCCESS
+  // =========================
+  if (
+    event.type ===
+    "checkout.session.completed"
+  ) {
+    const session =
+      event.data.object;
+
+    const bookingId =
+      session.metadata.booking_id;
+
+    const booking =
+      await Booking.findByPk(
+        bookingId
+      );
+
+    if (booking) {
+      booking.payment_status =
+        "paid";
+
+      await booking.save();
+
+      console.log(
+        "✅ Booking marked as PAID"
+      );
+    }
+  }
 
   res.json({ received: true });
 };
+// export const stripeBookingWebhook = async (req, res) => {
+//   console.log("BODY IS BUFFER:", Buffer.isBuffer(req.body),666);
+//
+//   const sig = req.headers["stripe-signature"];
+//
+//   let event;
+//
+//   try {
+//     event = stripe.webhooks.constructEvent(
+//       req.body,
+//       sig,
+//       process.env.STRIPE_WEBHOOK_SECRET
+//     );
+//   } catch (err) {
+//     console.log("❌ Webhook signature error:", err.message);
+//
+//     return res.status(400).send(
+//       `Webhook Error: ${err.message}`
+//     );
+//   }
+//
+//   console.log("✅ WEBHOOK HIT:", event.type);
+//
+//   res.json({ received: true });
+// };
 
 
 

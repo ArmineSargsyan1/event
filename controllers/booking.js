@@ -134,6 +134,7 @@ export const getBooking = async (req, res) => {
 
 
 export const createBooking = async (req, res) => {
+  console.log(req.body,88888888888)
   const { room_id,
     rate_plan_id,
     check_in,

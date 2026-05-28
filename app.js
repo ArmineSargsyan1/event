@@ -38,12 +38,6 @@ app.post(
   paymentController.stripeBookingWebhook
 );
 
-// app.post(
-//   "/payments/webhook",
-//   express.raw({ type: "application/json" }),
-//   paymentController.stripeBookingWebhook
-// );
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -103,9 +97,9 @@ app.get('/api/hotels', async (req, res) => {
 
 
 
-app.use((req, res, next) => {
-  next(createError(404));
-});
+// app.use((req, res, next) => {
+//   next(createError(404));
+// });
 
 
 export default app;

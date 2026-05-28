@@ -31,8 +31,9 @@ const uploadHotelPhoto = createCloudinaryUpload('hotels');
 ========================= */
 
 // list + filters + pagination
-router.get("/hotels", getHotels);
-router.get("/hotelss", getAdminHotels);
+// router.get("/hotels", getHotels);
+router.get("/hotelss",
+  getAdminHotels);
 router.get("/hotels/top", getAdminTopHotels);
 
 router.get("/hotels/stats", Controller.getAdminHotelStats);

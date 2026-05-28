@@ -1,5 +1,7 @@
 import express from "express";
 import * as Controller from "../controllers/hotel.js";
+import validation from "../middlewares/validation.js";
+import schema from "../schemas/hotel.schema.js";
 
 
 import auth from "../middlewares/authMiddlewere.js";
@@ -8,13 +10,17 @@ import auth from "../middlewares/authMiddlewere.js";
 const router = express.Router();
 
 /* ---------------- LIST + FILTER + SEARCH + PAGINATION ---------------- */
-router.get("/", Controller.getHotels);
+router.get("/",
+  validation(schema.getHotels),
+  Controller.getHotels);
 
 /* ---------------- TOP HOTELS ---------------- */
 router.get("/top", Controller.getTopHotels);
 
 /* ---------------- SINGLE HOTEL ---------------- */
-router.get("/:id", Controller.getHotelById);
+router.get("/:id",
+  validation(schema.getSingleHotel),
+  Controller.getHotelById);
 
 export default router;
 
