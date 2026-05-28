@@ -1,0 +1,724 @@
+//details
+{hotelPolicies: Array(2), hotelImages: Array(72), reviews: {…}, amenities: Array(41), location: {…}, …}
+amenities
+:
+Array(41)
+0
+:
+"Free buffet breakfast on weekday mornings 7:30 AM–10:30 AM"
+1
+:
+"Restaurant"
+2
+:
+"Bar/lounge"
+3
+:
+"Coffee shop"
+4
+:
+"24-hour room service"
+5
+:
+"Children stay free (see details)"
+6
+:
+"24-hour business center"
+7
+:
+"Meeting room"
+8
+:
+"24-hour front desk"
+9
+:
+"Tour/ticket assistance"
+10
+:
+"Dry cleaning/laundry services"
+11
+:
+"Hair salon"
+12
+:
+"Luggage storage"
+13
+:
+"Multilingual staff"
+14
+:
+"Porter/bellhop"
+15
+:
+"1 building/tower"
+16
+:
+"Built in 2014"
+17
+:
+"Safe-deposit box at front desk"
+18
+:
+"Rooftop terrace"
+19
+:
+"Television in common areas"
+20
+:
+"Fitness center"
+21
+:
+"Banquet hall"
+22
+:
+"Elevator"
+23
+:
+"Wheelchair-accessible path of travel"
+24
+:
+"LCD television"
+25
+:
+"Digital TV channels"
+26
+:
+"Air conditioning"
+27
+:
+"Minibar"
+28
+:
+"Coffee/tea maker"
+29
+:
+"Slippers"
+30
+:
+"Iron/ironing board (on request)"
+31
+:
+"Soundproofed rooms"
+32
+:
+"Turndown service"
+33
+:
+"Free toiletries"
+34
+:
+"Hair dryer"
+35
+:
+"Towels"
+36
+:
+"Desk"
+37
+:
+"Free WiFi and wired internet (surcharge)"
+38
+:
+"Free bottled water"
+39
+:
+"Daily housekeeping"
+40
+:
+"In-room safe"
+length
+:
+41
+[[Prototype]]
+:
+Array(0)
+coordinates
+:
+latitude
+:
+40.179681
+longitude
+:
+44.510617
+[[Prototype]]
+:
+Object
+hotelImages
+:
+Array(72)
+0
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781105422', url: 'https://images.trvl-media.com/lodging/10000000/949…78/10790ac0.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+1
+:
+{accessibilityText: 'Suite | Minibar, in-room safe, desk, soundproofing, image', id: '50373749', url: 'https://images.trvl-media.com/lodging/10000000/949…78/d321bb16.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Minibar, in-room safe, desk, soundproofing'}
+2
+:
+{accessibilityText: 'Front of property, image', id: '24214836', url: 'https://images.trvl-media.com/lodging/10000000/949…78/af76ca2d.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Front of property'}
+3
+:
+{accessibilityText: 'LCD TV, image', id: '50373189', url: 'https://images.trvl-media.com/lodging/10000000/949…78/a7ddc804.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'LCD TV'}
+4
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781106597', url: 'https://images.trvl-media.com/lodging/10000000/949…78/b976ef03.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+5
+:
+{accessibilityText: 'Check-in/check-out kiosk, image', id: '19731577', url: 'https://images.trvl-media.com/lodging/10000000/949…78/aa9e3040.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Check-in/check-out kiosk'}
+6
+:
+{accessibilityText: 'Interior, image', id: '19732236', url: 'https://images.trvl-media.com/lodging/10000000/949…78/c78c87d3.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Interior'}
+7
+:
+{accessibilityText: 'Manicures and pedicures, image', id: '24214792', url: 'https://images.trvl-media.com/lodging/10000000/949…78/1c500cb4.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Manicures and pedicures'}
+8
+:
+{accessibilityText: 'Meeting facility, image', id: '13094508', url: 'https://images.trvl-media.com/lodging/10000000/949…78/1c0cd883.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Meeting facility'}
+9
+:
+{accessibilityText: 'Manicures and pedicures, image', id: '24214669', url: 'https://images.trvl-media.com/lodging/10000000/949…78/29ba0bde.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Manicures and pedicures'}
+10
+:
+{accessibilityText: 'Manicures and pedicures, image', id: '24214670', url: 'https://images.trvl-media.com/lodging/10000000/949…78/ca6f4fba.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Manicures and pedicures'}
+11
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203360', url: 'https://images.trvl-media.com/lodging/10000000/949…78/9dfdaf2e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+12
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212447', url: 'https://images.trvl-media.com/lodging/10000000/949…78/53ce4aef.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+13
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212388', url: 'https://images.trvl-media.com/lodging/10000000/949…78/c5fc72e4.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+14
+:
+{accessibilityText: 'Fusion cuisine, image', id: '91118460', url: 'https://images.trvl-media.com/lodging/10000000/949…78/2e1bf5ae.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+15
+:
+{accessibilityText: 'Fusion cuisine, image', id: '556769609', url: 'https://images.trvl-media.com/lodging/10000000/949…78/fe03ede3.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+16
+:
+{accessibilityText: 'Suite | Living area | LCD TV, image', id: '50373755', url: 'https://images.trvl-media.com/lodging/10000000/949…78/a75cf8bf.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Living area | LCD TV'}
+17
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207021', url: 'https://images.trvl-media.com/lodging/10000000/949…78/0a54e029.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+18
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207162', url: 'https://images.trvl-media.com/lodging/10000000/949…78/4f5aff95.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+19
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203403', url: 'https://images.trvl-media.com/lodging/10000000/949…78/b96140cb.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+20
+:
+{accessibilityText: 'Meeting facility, image', id: '13094506', url: 'https://images.trvl-media.com/lodging/10000000/949…78/9b369364.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Meeting facility'}
+21
+:
+{accessibilityText: 'Fitness studio, image', id: '24193242', url: 'https://images.trvl-media.com/lodging/10000000/949…78/437c0e2a.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fitness studio'}
+22
+:
+{accessibilityText: 'Suite (Ararat) | Bathroom | Free toiletries, hair dryer, slippers, towels, image', id: '91118819', url: 'https://images.trvl-media.com/lodging/10000000/949…78/2d5b2616.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite (Ararat) | Bathroom | Free toiletries, hair dryer, slippers, towels'}
+23
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781106427', url: 'https://images.trvl-media.com/lodging/10000000/949…78/12923a0a.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+24
+:
+{accessibilityText: 'Interior entrance, image', id: '556768174', url: 'https://images.trvl-media.com/lodging/10000000/949…78/088ce369.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Interior entrance'}
+25
+:
+{accessibilityText: 'Suite | Living area | LCD TV, image', id: '50373748', url: 'https://images.trvl-media.com/lodging/10000000/949…78/8baffb96.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Living area | LCD TV'}
+26
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203375', url: 'https://images.trvl-media.com/lodging/10000000/949…78/88089974.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+27
+:
+{accessibilityText: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing, image', id: '819212838', url: 'https://images.trvl-media.com/lodging/10000000/949…78/d8967d4c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing'}
+28
+:
+{accessibilityText: 'Suite | Bathroom | Free toiletries, hair dryer, slippers, towels, image', id: '49532359', url: 'https://images.trvl-media.com/lodging/10000000/949…78/91bd53b0.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Bathroom | Free toiletries, hair dryer, slippers, towels'}
+29
+:
+{accessibilityText: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing, image', id: '819212736', url: 'https://images.trvl-media.com/lodging/10000000/949…78/c0dbe7ee.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing'}
+30
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207078', url: 'https://images.trvl-media.com/lodging/10000000/949…78/c518e156.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+31
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207024', url: 'https://images.trvl-media.com/lodging/10000000/949…78/61f082e5.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+32
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207147', url: 'https://images.trvl-media.com/lodging/10000000/949…78/eecd505e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+33
+:
+{accessibilityText: 'Manicures and pedicures, image', id: '24214668', url: 'https://images.trvl-media.com/lodging/10000000/949…78/2cb93b7c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Manicures and pedicures'}
+34
+:
+{accessibilityText: 'Check-in/check-out kiosk, image', id: '19731578', url: 'https://images.trvl-media.com/lodging/10000000/949…78/2a00cae6.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Check-in/check-out kiosk'}
+35
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781105275', url: 'https://images.trvl-media.com/lodging/10000000/949…78/8dfb4292.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+36
+:
+{accessibilityText: 'Free buffet breakfast on weekdays, image', id: '918468468', url: 'https://images.trvl-media.com/lodging/10000000/949…78/3c091c9e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Free buffet breakfast on weekdays'}
+37
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781105347', url: 'https://images.trvl-media.com/lodging/10000000/949…78/97093853.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+38
+:
+{accessibilityText: 'Fusion cuisine, image', id: '556771021', url: 'https://images.trvl-media.com/lodging/10000000/949…78/e3378291.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+39
+:
+{accessibilityText: 'Terrace/patio, image', id: '91178633', url: 'https://images.trvl-media.com/lodging/10000000/949…78/913061a7.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Terrace/patio'}
+40
+:
+{accessibilityText: 'Terrace/patio, image', id: '91178567', url: 'https://images.trvl-media.com/lodging/10000000/949…78/dbf2836b.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Terrace/patio'}
+41
+:
+{accessibilityText: 'Suite | Bathroom | Free toiletries, hair dryer, slippers, towels, image', id: '49532353', url: 'https://images.trvl-media.com/lodging/10000000/949…78/90efa2c8.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Bathroom | Free toiletries, hair dryer, slippers, towels'}
+42
+:
+{accessibilityText: 'Free toiletries, hair dryer, slippers, towels, image', id: '918469176', url: 'https://images.trvl-media.com/lodging/10000000/949…78/72780339.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Free toiletries, hair dryer, slippers, towels'}
+43
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212326', url: 'https://images.trvl-media.com/lodging/10000000/949…78/b3e847ed.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+44
+:
+{accessibilityText: 'Family Quadruple Room, Balcony | Bathroom | Free toiletries, hair dryer, slippers, towels, image', id: '49532962', url: 'https://images.trvl-media.com/lodging/10000000/949…78/5510672c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Family Quadruple Room, Balcony | Bathroom | Free toiletries, hair dryer, slippers, towels'}
+45
+:
+{accessibilityText: 'Suite (Ararat) | Living area | LCD TV, image', id: '50373222', url: 'https://images.trvl-media.com/lodging/10000000/949…78/255e04bb.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite (Ararat) | Living area | LCD TV'}
+46
+:
+{accessibilityText: 'Suite | Living area | LCD TV, image', id: '50373747', url: 'https://images.trvl-media.com/lodging/10000000/949…78/0ba4c91e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Living area | LCD TV'}
+47
+:
+{accessibilityText: 'Minibar, in-room safe, desk, soundproofing, image', id: '50024239', url: 'https://images.trvl-media.com/lodging/10000000/949…78/65ab0f1c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Minibar, in-room safe, desk, soundproofing'}
+48
+:
+{accessibilityText: 'Suite | Minibar, in-room safe, desk, soundproofing, image', id: '50373750', url: 'https://images.trvl-media.com/lodging/10000000/949…78/d16a58cd.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Suite | Minibar, in-room safe, desk, soundproofing'}
+49
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '91117851', url: 'https://images.trvl-media.com/lodging/10000000/949…78/a179729c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+50
+:
+{accessibilityText: 'Family Quadruple Room, Balcony | Minibar, in-room safe, desk, soundproofing, image', id: '49532898', url: 'https://images.trvl-media.com/lodging/10000000/949…78/21fa3a33.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Family Quadruple Room, Balcony | Minibar, in-room safe, desk, soundproofing'}
+51
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212423', url: 'https://images.trvl-media.com/lodging/10000000/949…78/430ed4d3.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+52
+:
+{accessibilityText: 'Minibar, in-room safe, desk, soundproofing, image', id: '1190778387', url: 'https://images.trvl-media.com/lodging/10000000/949…78/7bdaf159.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Minibar, in-room safe, desk, soundproofing'}
+53
+:
+{accessibilityText: 'Family Quadruple Room, Balcony | Minibar, in-room safe, desk, soundproofing, image', id: '1190778515', url: 'https://images.trvl-media.com/lodging/10000000/949…78/1854de3b.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Family Quadruple Room, Balcony | Minibar, in-room safe, desk, soundproofing'}
+54
+:
+{accessibilityText: 'Terrace/patio, image', id: '91118205', url: 'https://images.trvl-media.com/lodging/10000000/949…78/6b6bb72f.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Terrace/patio'}
+55
+:
+{accessibilityText: 'Fusion cuisine, image', id: '556770700', url: 'https://images.trvl-media.com/lodging/10000000/949…78/2db7d9b7.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+56
+:
+{accessibilityText: 'Terrace/patio, image', id: '91178712', url: 'https://images.trvl-media.com/lodging/10000000/949…78/8ce6734b.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Terrace/patio'}
+57
+:
+{accessibilityText: 'Fusion cuisine, image', id: '556770483', url: 'https://images.trvl-media.com/lodging/10000000/949…78/84966c6a.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+58
+:
+{accessibilityText: 'Fusion cuisine, image', id: '556770328', url: 'https://images.trvl-media.com/lodging/10000000/949…78/031e89bb.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+59
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207138', url: 'https://images.trvl-media.com/lodging/10000000/949…78/b0a41e80.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+60
+:
+{accessibilityText: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing, image', id: '819212713', url: 'https://images.trvl-media.com/lodging/10000000/949…78/5e3a77ba.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing'}
+61
+:
+{accessibilityText: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing, image', id: '819212730', url: 'https://images.trvl-media.com/lodging/10000000/949…78/a9fb622e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing'}
+62
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203315', url: 'https://images.trvl-media.com/lodging/10000000/949…78/55607935.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+63
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212306', url: 'https://images.trvl-media.com/lodging/10000000/949…78/f08cacd0.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+64
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203341', url: 'https://images.trvl-media.com/lodging/10000000/949…78/93d4244d.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+65
+:
+{accessibilityText: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing, image', id: '819207212', url: 'https://images.trvl-media.com/lodging/10000000/949…78/4eb3d2ff.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Minibar, in-room safe, desk, soundproofing'}
+66
+:
+{accessibilityText: 'Deluxe Twin Room | Bathroom | Free toiletries, hair dryer, slippers, towels, image', id: '918468126', url: 'https://images.trvl-media.com/lodging/10000000/949…78/02d1ad8e.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Twin Room | Bathroom | Free toiletries, hair dryer, slippers, towels'}
+67
+:
+{accessibilityText: 'Fusion cuisine, image', id: '781105643', url: 'https://images.trvl-media.com/lodging/10000000/949…78/c45f7760.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Fusion cuisine'}
+68
+:
+{accessibilityText: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing, image', id: '819212771', url: 'https://images.trvl-media.com/lodging/10000000/949…78/608eed23.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Kingsize | Minibar, in-room safe, desk, soundproofing'}
+69
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212296', url: 'https://images.trvl-media.com/lodging/10000000/949…78/cdda563c.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+70
+:
+{accessibilityText: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing, image', id: '819203332', url: 'https://images.trvl-media.com/lodging/10000000/949…78/e8caf140.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Deluxe Double Room | Minibar, in-room safe, desk, soundproofing'}
+71
+:
+{accessibilityText: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing, image', id: '819212343', url: 'https://images.trvl-media.com/lodging/10000000/949…78/e07d93f0.jpg?impolicy=resizecrop&rw=500&ra=fit', description: 'Standard Grand Twin-size | Minibar, in-room safe, desk, soundproofing'}
+length
+:
+72
+[[Prototype]]
+:
+Array(0)
+hotelPolicies
+:
+Array(2)
+0
+:
+{title: 'Optional extras', text: 'Wired internet access is available in guestrooms f…ged for an extra charge (subject to availability)'}
+1
+:
+{title: 'Children & extra beds', text: 'Rollaway beds are available for AMD 8000.0 per day'}
+length
+:
+2
+[[Prototype]]
+:
+Array(0)
+location
+:
+addressLine
+:
+"4/6 Amiryan (Bld 1), Yerevan, 0010"
+city
+:
+"Yerevan"
+countryCode
+:
+"ARM"
+firstAddressLine
+:
+"4/6 Amiryan (Bld 1)"
+secondAddressLine
+:
+""
+[[Prototype]]
+:
+Object
+name
+:
+"Paris Hotel Yerevan"
+nearbyPOIs
+:
+Array(4)
+0
+:
+{text: 'National Gallery of Armenia', moreInfo: '5 min walk'}
+1
+:
+{text: 'Republic Square', moreInfo: '5 min walk'}
+2
+:
+{text: 'Yerevan Opera Theatre', moreInfo: '11 min walk'}
+3
+:
+{text: 'Yerevan (EVN-Zvartnots Intl.)', moreInfo: '21 min drive'}
+length
+:
+4
+[[Prototype]]
+:
+Array(0)
+policies
+:
+checkin
+:
+(3) ['This property offers transfers from the airport (s…e contact information on the booking confirmation', 'Front desk staff will greet guests on arrival at the property', 'Information provided by the property may be translated using automated translation tools']
+childAndBed
+:
+[" One child (6 years old and younger) stays free wh…arent or guardian's room, using existing bedding "]
+needToKnow
+:
+(5) ['This property has outdoor spaces, such as balconie…irm they can accommodate you in a suitable room. ', 'If you require a visa to enter the country, your p…ts are solely between the property and yourself. ', "Guests can rest easy knowing there's a carbon mono…tem, a first aid kit, and window guards on site. ", 'This property accepts credit cards. Cash is not accepted.', 'Credit cards accepted: Visa, Mastercard, American Express']
+pets
+:
+['No pets or service animals allowed']
+shouldMention
+:
+Array(2)
+0
+:
+"If you require a visa to enter the country, your property may be able to help with the supporting documents needed to obtain one. To learn more, you can reach out to the property via the contact details included on your booking confirmation. The property may charge for this assistance, even if you end up cancelling your reservation. All arrangements are solely between the property and yourself."
+1
+:
+"No pets and no service animals are allowed at this property"
+length
+:
+2
+[[Prototype]]
+:
+Array(0)
+[[Prototype]]
+:
+Object
+propertyRating
+:
+accessibility
+:
+"4.0 star property"
+rating
+:
+4
+[[Prototype]]
+:
+Object
+reviews
+:
+guestRating
+:
+"9.4/10 Exceptional"
+reviewCount
+:
+"See all 375 reviews"
+
+
+
+
+
+////info
+
+flatFacts
+:
+Array(21)
+0
+:
+{title: 'Hotel size', value: '65 rooms'}
+1
+:
+{title: 'Hotel size', value: 'Arranged over 12 floors'}
+2
+:
+{title: 'Arriving/Leaving', value: 'Check-in start time: 3:00 PM; Check-in end time: anytime'}
+3
+:
+{title: 'Arriving/Leaving', value: 'Early check-in subject to availability'}
+4
+:
+{title: 'Arriving/Leaving', value: 'Minimum check-in age: 18 '}
+5
+:
+{title: 'Arriving/Leaving', value: 'Check-out time is noon'}
+6
+:
+{title: 'Restrictions related to your trip', value: 'Check COVID-19 restrictions.'}
+7
+:
+{title: 'Special check-in instructions', value: 'This property offers transfers from the airport (s…e contact information on the booking confirmation'}
+8
+:
+{title: 'Special check-in instructions', value: 'Front desk staff will greet guests on arrival at the property'}
+9
+:
+{title: 'Special check-in instructions', value: 'Information provided by the property may be translated using automated translation tools'}
+10
+:
+{title: 'Required at check-in', value: 'Credit card, debit card, or cash deposit required for incidental charges'}
+11
+:
+{title: 'Required at check-in', value: 'Government-issued photo ID may be required'}
+12
+:
+{title: 'Required at check-in', value: 'Minimum check-in age is 18 '}
+13
+:
+{title: 'Required at check-in', value: 'If you require a visa to enter the country, your p…th the supporting documents needed to obtain one*'}
+14
+:
+{title: 'Children', value: " One child (6 years old and younger) stays free wh…arent or guardian's room, using existing bedding "}
+15
+:
+{title: 'Pets', value: 'No pets or service animals allowed'}
+16
+:
+{title: 'Internet', value: 'Free WiFi and wired internet access in public areas'}
+17
+:
+{title: 'Internet', value: 'Free WiFi in rooms'}
+18
+:
+{title: 'Parking', value: 'No onsite parking'}
+19
+:
+{title: 'Transfers', value: 'Airport shuttle on request (available 24 hours)* '}
+20
+:
+{title: 'Other information', value: 'Designated smoking areas'}
+length
+:
+21
+[[Prototype]]
+:
+Array(0)
+policies
+:
+Array(4)
+0
+:
+"Wired internet access is available in guestrooms for an extra charge"
+1
+:
+"Airport shuttle service is offered for an extra charge of AMD 8000 per vehicle (one way)"
+2
+:
+"Early check-in can be arranged for an extra charge (subject to availability)"
+3
+:
+"Rollaway beds are available for AMD 8000.0 per day"
+length
+:
+4
+[[Prototype]]
+:
+Array(0)
+specialFeatures
+:
+"Montmartre Restaurant - This restaurant specializes in Fusion cuisine. Guests can enjoy drinks at the bar. Reservations are required. "
+
+
+
+//offers
+
+{data: Array(3), status: 200, statusText: 'OK', headers: AxiosHeaders, config: {…}, …}
+config
+:
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+data
+:
+Array(3)
+0
+:
+cancellationOptions
+:
+Array(3)
+0
+:
+price
+:
+"+ $0"
+selected
+:
+true
+title
+:
+"Non-Refundable"
+[[Prototype]]
+:
+Object
+1
+:
+{title: 'Fully refundable before May 25', price: '+ $16', selected: false}
+2
+:
+{title: 'Fully refundable before May 25', price: '+ $48', selected: false}
+length
+:
+3
+[[Prototype]]
+:
+Array(0)
+extras
+:
+Array(4)
+0
+:
+id
+:
+"399607301"
+price
+:
+"+ $0"
+selected
+:
+true
+title
+:
+"No extras"
+[[Prototype]]
+:
+Object
+1
+:
+{id: '200825996', title: 'Breakfast buffet', price: '+ $32', selected: false}
+2
+:
+{id: '399606043', title: 'No extras', price: '+ $0', selected: true}
+3
+:
+{id: '413514', title: 'Breakfast buffet', price: '+ $0', selected: true}
+length
+:
+4
+[[Prototype]]
+:
+Array(0)
+features
+:
+Array(5)
+0
+:
+"216 sq ft"
+1
+:
+"1 bedroom"
+2
+:
+"Sleeps 3"
+3
+:
+"1 King Bed OR 2 Twin Beds"
+4
+:
+"Free WiFi"
+length
+:
+5
+[[Prototype]]
+:
+Array(0)
+id
+:
+"176868"
+images
+:
+(10) ['https://images.trvl-media.com/lodging/2000000/1110…0c.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…25.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…10.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…30.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…b0.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…92.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…01.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…6d.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…1f.jpg?impolicy=fcrop&w=1200&h=800&quality=medium', 'https://images.trvl-media.com/lodging/2000000/1110…ef.jpg?impolicy=fcrop&w=1200&h=800&quality=medium']
+name
+:
+"Double or Twin Room"
+price
+:
+"$154"
+[[Prototype]]
+:
+Object
+1
+:
+{id: '176884', name: 'Triple Room', images: Array(6), features: Array(5), cancellationOptions: Array(3), …}
+2
+:
+{id: '176881', name: 'Suite', images: Array(9), features: Array(6), cancellationOptions: Array(3), …}
+length
+:
+3
+[[Prototype]]
+:
+Array(0)
+headers
+:
+AxiosHeaders {content-length: '5282', content-type: 'application/json; charset=utf-8'}
+request
+:
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
+status
+:
+200
+statusText
+:
+"OK"
