@@ -28,7 +28,6 @@ export { default as Photos } from './Photo.js';
 
 export { default as Regions } from './Regions.js';
 export { default as Neighborhoods} from './Neighborhoods.js';
-export { default as AirPorts } from './AirPorts.js';
 export { default as Poi} from './Poi.js';
 
 
