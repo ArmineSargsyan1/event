@@ -22,10 +22,6 @@ import * as Models from "./models/index.js";
 Models.Favorites,
        Models.Booking,
 
-      // Models.Regions,
-      // Models.Neighborhoods,
-      // Models.AirPorts,
-      // Models.Poi,
     ];
 
 

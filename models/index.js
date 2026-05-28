@@ -1,9 +1,3 @@
-import User from './User.js';
-import Event from './Event.js';
-import Room from './Room.js';
-import Hotel from './Hotels.js';
-import Booking from './Booking.js';
-
 export {default as User} from "./User.js";
 export { default as Event } from './Event.js';
 export { default as UserEvents } from './UserEvents.js';
@@ -26,18 +20,10 @@ export { default as RoomAmenities } from './RoomAmenities.js';
 export { default as Photos } from './Photo.js';
 
 
-export { default as Regions } from './Regions.js';
-export { default as Neighborhoods} from './Neighborhoods.js';
-export { default as Poi} from './Poi.js';
 
 
 
-// User.belongsToMany(Event, { through: 'UserEvents', as: 'registeredEvents' });
-// Event.belongsToMany(User, { through: 'UserEvents', as: 'participants' });
-//
-//
-// Room.hasMany(Booking, { foreignKey: 'roomId' });
-// Hotel.hasMany(Room, { foreignKey: 'hotelId' });
+
 
 
 

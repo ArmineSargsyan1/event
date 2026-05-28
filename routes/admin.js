@@ -1,5 +1,4 @@
 import express from "express";
-import fetchRegionsBatch  from "../services/citiesDataSync.js";
 import {createReview} from "../controllers/reviews.js";
 import createCloudinaryUpload from "../middlewares/upload.js";
 import * as Controller from "../controllers/admin.js";
@@ -23,24 +22,6 @@ import {getAdminHotels, getAdminTopHotels} from "../controllers/admin.js";
 const router = express.Router();
 
 const uploadHotelPhoto = createCloudinaryUpload('hotels');
-
-// POST կամ GET, կախված թե ինչպես կցանկանաս
-router.post("/regions", async (req, res) => {
-  const { cities } = req.body;
-
-  console.log(cities,777777)
-  if (!cities || !cities.length) {
-    return res.status(400).json({ error: "cities array is required" });
-  }
-
-  try {
-   const a =  await fetchRegionsBatch(cities);
-    console.log(a,222)
-    res.json({ message: "Regions synced successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 
 
