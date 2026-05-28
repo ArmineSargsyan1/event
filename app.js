@@ -13,7 +13,7 @@ import Photo from "./models/Photo.js";
 import * as cheerio from "cheerio";
 import puppeteer from "puppeteer";
 import createCloudinaryUpload from './middlewares/upload.js';
-// import * as paymentController from "./controllers/payment.js";
+import * as paymentController from "./controllers/payment.js";
 
 
 const uploadRoomImages = createCloudinaryUpload('rooms');
@@ -28,15 +28,15 @@ app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
 
-// app.use(
-//   "/payments/webhook",
-//   express.raw({ type: "application/json" })
-// );
-//
-// app.post(
-//   "/payments/webhook",
-//   paymentController.stripeBookingWebhook
-// );
+app.use(
+  "/payments/webhook",
+  express.raw({ type: "application/json" })
+);
+
+app.post(
+  "/payments/webhook",
+  paymentController.stripeBookingWebhook
+);
 
 // app.post(
 //   "/payments/webhook",
