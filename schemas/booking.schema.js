@@ -1,21 +1,20 @@
-import Joi from 'joi';
+import Joi from "joi";
 
 export default {
-  createEvent: {
+  createBooking: {
     body: Joi.object({
       room_id: Joi.number()
         .integer()
         .positive()
         .required(),
 
-      rate_plan_id: Joi.number()
+      option_id: Joi.number()
         .integer()
         .positive()
         .required(),
 
       check_in: Joi.date()
         .iso()
-        .greater("now")
         .required(),
 
       check_out: Joi.date()
@@ -28,14 +27,15 @@ export default {
         .min(1)
         .max(20)
         .required(),
-
     }),
   },
 
-    // params: {
-    //   id: Joi.number().integer().positive().required()
-    // }
-  }
-
-
-
+  params: {
+    id: Joi.object({
+      id: Joi.number()
+        .integer()
+        .positive()
+        .required(),
+    }),
+  },
+};
