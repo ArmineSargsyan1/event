@@ -89,15 +89,13 @@ export default {
       ).optional(),
 
       // BOOKING
-      checkIn: Joi.alternatives().try(
-        Joi.date().iso(),
-        Joi.string().allow("")
-      ).optional(),
+      checkIn: Joi.date()
+        .iso()
+        .optional(),
 
-      checkOut: Joi.alternatives().try(
-        Joi.date().iso(),
-        Joi.string().allow("")
-      ).optional(),
+      checkOut: Joi.date()
+        .iso()
+        .optional(),
 
       // checkIn: Joi.date()
       //   .iso()
