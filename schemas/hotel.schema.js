@@ -89,15 +89,25 @@ export default {
       ).optional(),
 
       // BOOKING
-      checkIn: Joi.date()
-        .iso()
-        .allow("")
-        .optional(),
+      checkIn: Joi.alternatives().try(
+        Joi.date().iso(),
+        Joi.string().allow("")
+      ).optional(),
 
-      checkOut: Joi.date()
-        .iso()
-        .allow("")
-        .optional(),
+      checkOut: Joi.alternatives().try(
+        Joi.date().iso(),
+        Joi.string().allow("")
+      ).optional(),
+
+      // checkIn: Joi.date()
+      //   .iso()
+      //   .allow("")
+      //   .optional(),
+      //
+      // checkOut: Joi.date()
+      //   .iso()
+      //   .allow("")
+      //   .optional(),
 
       guests: Joi.number()
         .integer()
