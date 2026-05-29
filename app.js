@@ -97,9 +97,9 @@ app.get('/api/hotels', async (req, res) => {
 
 
 
-// app.use((req, res, next) => {
-//   next(createError(404));
-// });
+app.use((req, res, next) => {
+  next(createError(404));
+});
 
 
 export default app;
