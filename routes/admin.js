@@ -9,7 +9,6 @@ import {
   seedAmenities,
   updateAmenity
 } from "../controllers/Admin.controller.js";
-import {getHotels} from "../controllers/hotel.js";
 
 import auth from "../middlewares/authMiddlewere.js";
 import upload from "../middlewares/upload.js";
