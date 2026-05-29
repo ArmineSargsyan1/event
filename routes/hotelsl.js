@@ -11,7 +11,7 @@ const router = express.Router();
 
 /* ---------------- LIST + FILTER + SEARCH + PAGINATION ---------------- */
 router.get("/",
-  validation(schema.getHotels),
+  // validation(schema.getHotels),
   Controller.getHotels);
 
 /* ---------------- TOP HOTELS ---------------- */
