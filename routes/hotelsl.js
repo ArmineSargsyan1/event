@@ -5,6 +5,7 @@ import schema from "../schemas/hotel.schema.js";
 
 
 import auth from "../middlewares/authMiddlewere.js";
+import {log} from "debug";
 
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.get("/top", Controller.getTopHotels);
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get("/:id",
+  log(111),
   validation(schema.getSingleHotel),
   Controller.getHotelById);
 
