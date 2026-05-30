@@ -64,7 +64,7 @@ const getAvgRating = (hotel) => {
 const mapHotel = (hotel, userId = null) => {
   const plain = hotel.toJSON();
 
-  const reviewCount = plain.review_count || 0;
+  const reviewCount = Number(plain.review_count || 0);
 
   const avgRating =
     reviewCount > 0
@@ -569,23 +569,77 @@ export const getTopRatedHotels = async (req, res) => {
 
 
 export const getPopularHotels = async (req, res) => {
-  const hotels = await Hotels.findAll({
-    order: [["views", "DESC"]],
-    limit: 10,
-    include: [
-      {
-        model: HotelPhotos,
-        as: "images",
+  const userId = req.user?.id || 1;
+  try {
+    const hotels = await Hotels.findAll({
+      order: [["views", "DESC"]],
+      limit: 10,
+
+      include: [
+        {
+          model: HotelPhotos,
+          as: "images",
+          attributes: ["id", "path", "is_main", "sort_order"],
+        },
+        {
+          model: Amenity,
+          through: { attributes: [] },
+        },
+        {
+          model: Reviews,
+          as: "Reviews",
+          attributes: [],
+          required: false,
+        },
+        {
+          model: User,
+          as: "usersWhoFavorited",
+          attributes: ["id"],
+          through: { attributes: [] },
+        },
+      ],
+
+      attributes: {
+        include: [
+          [
+            Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
+            "review_count",
+          ],
+        ],
       },
-    ],
-  });
 
-  res.json({
-    success: true,
-    data: hotels,
-  });
+      group: [
+        "Hotels.id",
+        "images.id",
+        "Amenities.id",
+        "usersWhoFavorited.id",
+      ],
+
+      subQuery: false,
+    });
+
+    const data = hotels.map((h) => {
+      const base = mapHotel(h, userId);
+
+      return {
+        ...base,
+        popular: h.popular
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+    });
+
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
-
 
 export const getSponsoredHotels = async (req, res, next) => {
   try {
@@ -670,6 +724,108 @@ export const getSponsoredHotels = async (req, res, next) => {
   }
 };
 
+
+
+///redis
+// export const getSponsoredHotels = async (req, res, next) => {
+//   try {
+//     const userId = req.user?.id || 1;
+//
+//     const cacheKey = "sponsored_hotels";
+//
+//     // 🔥 1. CHECK CACHE
+//     const cached = await redis.get(cacheKey);
+//
+//     if (cached) {
+//       return res.json({
+//         success: true,
+//         source: "cache",
+//         data: JSON.parse(cached),
+//       });
+//     }
+//
+//     // 🔥 2. DB QUERY
+//     const hotels = await Hotels.findAll({
+//       where: {
+//         featured: true,
+//         featured_until: {
+//           [Op.or]: [
+//             null,
+//             { [Op.gt]: new Date() },
+//           ],
+//         },
+//       },
+//
+//       limit: 10,
+//
+//       include: [
+//         {
+//           model: HotelPhotos,
+//           as: "images",
+//           attributes: ["id", "path", "is_main", "sort_order"],
+//         },
+//         {
+//           model: Amenity,
+//           through: { attributes: [] },
+//         },
+//         {
+//           model: Reviews,
+//           as: "Reviews",
+//           attributes: [],
+//           required: false,
+//         },
+//         {
+//           model: User,
+//           as: "usersWhoFavorited",
+//           attributes: ["id"],
+//           through: { attributes: [] },
+//           where: userId ? { id: userId } : undefined,
+//           required: false,
+//         },
+//       ],
+//
+//       attributes: {
+//         include: [
+//           [
+//             Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
+//             "review_count",
+//           ],
+//         ],
+//       },
+//
+//       group: [
+//         "Hotels.id",
+//         "images.id",
+//         "Amenities.id",
+//       ],
+//
+//       subQuery: false,
+//     });
+//
+//     const data = hotels.map((h) => ({
+//       ...mapHotel(h, userId),
+//       featured: h.featured,
+//       featured_until: h.featured_until,
+//     }));
+//
+//     // 🔥 3. SAVE CACHE (10 min)
+//     await redis.set(
+//       cacheKey,
+//       JSON.stringify(data),
+//       "EX",
+//       600
+//     );
+//
+//     res.json({
+//       success: true,
+//       source: "db",
+//       data,
+//     });
+//
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 export const getHotelById = async (req, res, next) => {
   try {
