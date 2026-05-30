@@ -649,9 +649,21 @@ export const getSponsoredHotels = async (req, res, next) => {
       subQuery: false,
     });
 
+    const data = hotels.map((h) => {
+      const base = mapHotel(h, userId);
+
+      return {
+        ...base,
+
+        featured: h.featured,
+        featured_until: h.featured_until,
+      };
+    });
+
+
     res.json({
       success: true,
-      data: hotels.map((h) => mapHotel(h, userId)),
+      data,
     });
   } catch (err) {
     next(err);
