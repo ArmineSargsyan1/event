@@ -126,6 +126,18 @@ Hotels.init(
       allowNull: false,
       defaultValue: 0,
     },
+
+    featured: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+
+    featured_until: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+
   },
 
 

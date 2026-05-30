@@ -5,18 +5,33 @@ import schema from "../schemas/hotel.schema.js";
 
 
 import auth from "../middlewares/authMiddlewere.js";
-import {log} from "debug";
+
 
 
 const router = express.Router();
 
-/* ---------------- LIST + FILTER + SEARCH + PAGINATION ---------------- */
 router.get("/",
   validation(schema.getHotels),
   Controller.getHotels);
 
-/* ---------------- TOP HOTELS ---------------- */
-router.get("/top", Controller.getTopHotels);
+
+
+
+router.get(
+  "/sponsored",
+  Controller.getSponsoredHotels
+);
+
+router.get(
+  "/popular",
+  Controller.getPopularHotels
+);
+
+router.get(
+  "/top-rated",
+  Controller.getTopRatedHotels
+);
+
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get( "/:hotelId",
