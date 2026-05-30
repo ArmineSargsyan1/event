@@ -543,7 +543,7 @@ export const getHotelById = async (req, res, next) => {
     // ======================
     // HOTEL
     // ======================
-    const hotel = await Hotels.findByPk(id, {
+    const hotel = await Hotels.findByPk(hotelId, {
       include: [
         {
           model: HotelPhotos,
