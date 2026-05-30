@@ -513,6 +513,7 @@ const calcRoomOptionPrice = (option, nights) => {
 
 
 
+
 export const getHotelById = async (req, res, next) => {
   console.log(req.params, 8888888)
   try {
@@ -543,27 +544,15 @@ export const getHotelById = async (req, res, next) => {
     // ======================
     // HOTEL
     // ======================
+
+
     const hotel = await Hotels.findByPk(hotelId, {
       include: [
-        {
-          model: HotelPhotos,
-          as: "images",
-        },
-
-        {
-          model: Amenity,
-          as: "Amenities",
-          through: { attributes: [] },
-        },
-
+        { model: HotelPhotos, as: "images" },
+        { model: Amenity, as: "Amenities", through: { attributes: [] } },
         {
           model: Reviews,
-          include: [
-            {
-              model: ReviewLiked,
-              as: "liked_features",
-            },
-          ],
+          include: [{ model: ReviewLiked, as: "liked_features" }],
           order: [["review_date", "DESC"]],
         },
       ],
@@ -620,7 +609,9 @@ export const getHotelById = async (req, res, next) => {
     //   ),
     // };
 
-
+    // SAFE INCREMENT
+    // ======================
+    await hotel.increment("views");
     // ======================
 // REVIEWS
 // ======================
