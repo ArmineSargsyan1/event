@@ -20,7 +20,6 @@ router.get("/top", Controller.getTopHotels);
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get("/:id",
-  log(111),
   validation(schema.getSingleHotel),
   Controller.getHotelById);
 
