@@ -20,7 +20,7 @@ router.get("/top", Controller.getTopHotels);
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get("/:id",
-  validation(schema.getSingleHotel),
+  // validation(schema.getSingleHotel),
   Controller.getHotelById);
 
 export default router;
