@@ -100,6 +100,7 @@ export default (targets) => {
       );
     }
 
+
     res.status(422).json({
       status: "error",
       message: "Validation error",

@@ -62,8 +62,7 @@ const getAvgRating = (hotel) => {
 
 
 
-export const getHotels = async (req, res) => {
-  console.log(123)
+export const getHotels = async (req, res, next) => {
   try {
 
     const {
@@ -165,7 +164,6 @@ export const getHotels = async (req, res) => {
       ...(minPrice || maxPrice) && {
 
         price_from: {
-
           ...(minPrice && {
             [Op.gte]: Number(minPrice),
           }),
@@ -208,7 +206,7 @@ export const getHotels = async (req, res) => {
             },
           },
 
-          // ⭐ Reviews
+          //  Reviews
           {
             model: Reviews,
             as: "Reviews",
@@ -216,7 +214,7 @@ export const getHotels = async (req, res) => {
             required: false,
           },
 
-          // ⭐ Favorites
+          //  Favorites
           {
             model: User,
             as: "usersWhoFavorited",
@@ -240,7 +238,7 @@ export const getHotels = async (req, res) => {
 
           include: [
 
-            // ⭐ Review count
+            //  Review count
             [
               Sequelize.fn(
                 "COUNT",
@@ -274,8 +272,7 @@ export const getHotels = async (req, res) => {
     let enriched =
       rows.map((hotel) => {
 
-        const plain =
-          hotel.toJSON();
+        const plain = hotel.toJSON();
 
         const avgRating =
           plain.review_count > 0
@@ -400,50 +397,25 @@ export const getHotels = async (req, res) => {
     // ======================
     const cleanHotels =
       paginated.map((hotel) => ({
-
         id: hotel.id,
-
         name: hotel.name,
-
         city: hotel.city,
         country: hotel.country,
-
-        description:
-        hotel.description,
-
-        price:
-        hotel.price_from,
-
-        rating:
-          hotel.avgRating !== null
+        description: hotel.description,
+        price: hotel.price_from,
+        rating: hotel.avgRating !== null
             ? Number(
               hotel.avgRating.toFixed(1)
             )
             : null,
-
-        stars:
-        hotel.starsComputed,
-
-        reviewCount:
-          Number(
-            hotel.review_count
-          ),
-
-        images:
-        hotel.images,
-
-        amenities:
-        hotel.Amenities,
-
-        property_class:
-        hotel.property_class,
-
-        currency:
-        hotel.currency,
-
+        stars: hotel.starsComputed,
+        reviewCount: Number(hotel.review_count),
+        images: hotel.images,
+        amenities: hotel.Amenities,
+        property_class: hotel.property_class,
+        currency: hotel.currency,
         lat: hotel.lat,
         lon: hotel.lon,
-
         favorite:
           hotel
             .usersWhoFavorited
@@ -494,426 +466,23 @@ export const getHotels = async (req, res) => {
     // ======================
     // RESPONSE
     // ======================
-    res.json({
 
-      success: true,
-
+    res.status(200).json({
+      status: "success",
       data: cleanHotels,
-
       facets,
-
       pagination: {
-
-        total:
-        enriched.length,
-
+        total: enriched.length,
         page: pageNum,
-
-        pages: Math.ceil(
-          enriched.length /
-          limitNum
-        ),
-
+        pages: Math.ceil(enriched.length / limitNum),
       },
-
     });
-
-  } catch (e) {
-
-    console.error(e);
-
-    res.status(500).json({
-
-      success: false,
-      message: "Failed",
-
-    });
+  } catch (error) {
+    next(error);
   }
 };
 
 
-// export const getHotels = async (req, res) => {
-//   try {
-//     const {
-//       page = 1,
-//       limit = 15,
-//       search,
-//       city,
-//       property_class,
-//       amenities,
-//       type,
-//       stars,
-//       guestRating,
-//       minRating,
-//       minPrice,
-//       maxPrice,
-//       sort,
-//     } = req.query;
-//
-//     console.log(type)
-//
-//     const userId = 1
-//
-//     // const userId = req.user?.id;
-//
-//     const pageNum = Number(page);
-//     const limitNum = Number(limit);
-//     const offset = (pageNum - 1) * limitNum;
-//
-//     // ======================
-//     // AMENITIES FILTER
-//     // ======================
-//     const parsedAmenities =
-//       amenities?.length > 0
-//         ? String(amenities).split(",").map(Number)
-//         : [];
-//
-//     let hotelIds = null;
-//
-//     if (parsedAmenities.length > 0) {
-//       const rows = await HotelAmenities.findAll({
-//         attributes: ["hotel_id"],
-//         where: {
-//           amenity_id: { [Op.in]: parsedAmenities },
-//         },
-//         group: ["hotel_id"],
-//         having: Sequelize.literal(
-//           `COUNT(DISTINCT amenity_id) = ${parsedAmenities.length}`
-//         ),
-//       });
-//
-//       hotelIds = rows.map((r) => r.hotel_id);
-//     }
-//
-//     // ======================
-//     // WHERE
-//     // ======================
-//     // const where = {
-//     //   ...(hotelIds && { id: { [Op.in]: hotelIds } }),
-//     //
-//     //   ...(search && {
-//     //     name: { [Op.like]: `%${search}%` },
-//     //   }),
-//     //
-//     //   ...(city && { city }),
-//     //
-//     //   ...(property_class &&
-//     //     allowedPropertyClasses.includes(property_class) && {
-//     //       property_class,
-//     //     }),
-//     //
-//     //   ...(minRating && {
-//     //     rating: { [Op.gte]: Number(minRating) },
-//     //   }),
-//     //
-//     // };
-//
-//     const where = {
-//
-//       ...(hotelIds && {
-//         id: { [Op.in]: hotelIds },
-//       }),
-//
-//       ...(search && {
-//         name: {
-//           [Op.like]: `%${search}%`,
-//         },
-//       }),
-//
-//       ...(city && { city }),
-//
-//       ...(property_class &&
-//         allowedPropertyClasses.includes(
-//           property_class
-//         ) && {
-//           property_class,
-//         }),
-//
-//       ...(type && {
-//         hotel_category: type,
-//       }),
-//
-//       ...(minRating && {
-//         rating: {
-//           [Op.gte]: Number(minRating),
-//         },
-//       }),
-//
-//       ...(minPrice || maxPrice) && {
-//
-//         price_from: {
-//
-//           ...(minPrice && {
-//             [Op.gte]: Number(minPrice),
-//           }),
-//
-//           ...(maxPrice && {
-//             [Op.lte]: Number(maxPrice),
-//           }),
-//
-//         },
-//
-//       },
-//
-//     };
-//
-//     // const { rows } = await Hotels.findAndCountAll({
-//     //   where,
-//     //   include: [
-//     //     { model: HotelPhotos, as: "images" },
-//     //     { model: Amenity, through: { attributes: [] } },
-//     //
-//     //
-//     //     {
-//     //       model: User,
-//     //       as: "usersWhoFavorited",
-//     //
-//     //       attributes: ["id"],
-//     //
-//     //       through: {
-//     //         attributes: [],
-//     //       },
-//     //
-//     //       where: userId
-//     //         ? { id: userId }
-//     //         : undefined,
-//     //
-//     //       required: false,
-//     //     },
-//     //
-//     //   ],
-//     //   distinct: true,
-//     //   order: [["rating", "DESC"]],
-//     // });
-//
-//     const { rows } = await Hotels.findAndCountAll({
-//       where,
-//
-//       include: [
-//
-//         {
-//           model: HotelPhotos,
-//           as: "images",
-//         },
-//
-//         {
-//           model: Amenity,
-//           through: { attributes: [] },
-//         },
-//
-//         // ⭐ reviews count
-//         {
-//           model: Reviews,
-//           as: "Reviews",
-//           attributes: [],
-//           required: false,
-//         },
-//
-//         {
-//           model: User,
-//           as: "usersWhoFavorited",
-//
-//           attributes: ["id"],
-//
-//           through: {
-//             attributes: [],
-//           },
-//
-//           where: userId
-//             ? { id: userId }
-//             : undefined,
-//
-//           required: false,
-//         },
-//
-//       ],
-//
-//       attributes: {
-//
-//         include: [
-//
-//           [
-//             Sequelize.fn(
-//               "COUNT",
-//               Sequelize.col("Reviews.id")
-//             ),
-//             "review_count",
-//           ],
-//
-//         ],
-//
-//       },
-//
-//       group: [
-//         "Hotels.id",
-//         "images.id",
-//         "Amenities.id",
-//         "usersWhoFavorited.id",
-//       ],
-//
-//       subQuery: false,
-//
-//       distinct: true,
-//
-//       order: [["rating", "DESC"]],
-//     });
-//     // ======================
-//     // HELPERS
-//     // ======================
-//     const getAvgRating = (hotel) => {
-//       if (!hotel.review_count || hotel.review_count === 0) return null;
-//       return hotel.rating_sum / hotel.review_count;
-//     };
-//
-//     // ======================
-//     // ENRICH
-//     // ======================
-//     let enriched = rows.map((hotel) => {
-//       const plain = hotel.toJSON();
-//       const avgRating = getAvgRating(plain);
-//
-//       return {
-//         ...plain,
-//         avgRating,
-//         typeScore: scoreHotelByType(plain, type),
-//
-//         // 🔥 FIX (null safe)
-//         starsComputed: FileHelper.getHotelStars({
-//           ...plain,
-//           rating: avgRating ?? 0,
-//         }),
-//       };
-//     });
-//
-//     // ======================
-//     // ⭐ GUEST RATING FILTER
-//     // ======================
-//     if (guestRating) {
-//       const min = Number(guestRating);
-//
-//       enriched = enriched.filter((h) => {
-//         return h.avgRating !== null && h.avgRating >= min;
-//       });
-//     }
-//
-//
-//     // ======================
-//     // ⭐ STARS FILTER
-//     // ======================
-//     if (stars) {
-//       const starNum = Number(stars);
-//
-//       enriched = enriched.filter((h) => {
-//         return Math.floor(h.starsComputed) === starNum;
-//       });
-//     }
-//
-//     // ======================
-//     // SORT
-//     // ======================
-//     enriched.sort((a, b) => {
-//
-//       if (sort === "low") {
-//         return a.price_from - b.price_from;
-//       }
-//
-//       if (sort === "high") {
-//         return b.price_from - a.price_from;
-//       }
-//
-//       if (type) {
-//         const diff = b.typeScore - a.typeScore;
-//         if (diff !== 0) return diff;
-//       }
-//
-//       return (b.avgRating || 0) - (a.avgRating || 0);
-//     });
-//
-//     // ======================
-//     // PAGINATION
-//     // ======================
-//     const paginated = enriched.slice(offset, offset + limitNum);
-//
-//     const cleanHotels = paginated.map((hotel) => ({
-//       id: hotel.id,
-//       name: hotel.name,
-//       city: hotel.city,
-//       country: hotel.country,
-//       description: hotel.description,
-//       price: hotel.price_from,
-//
-//       rating:
-//         hotel.avgRating !== null
-//           ? Number(hotel.avgRating.toFixed(1))
-//           ,
-//
-//       stars: hotel.starsComputed,
-//
-//       reviewCount: Number(
-//         hotel.review_count
-//       ),
-//       images: hotel.images,
-//       amenities: hotel.Amenities,
-//
-//       property_class: hotel.property_class,
-//       currency: hotel.currency,
-//
-//       lat: hotel.lat,
-//       lon: hotel.lon,
-//
-//       favorite: hotel.usersWhoFavorited?.length > 0,
-//
-//     }));
-//
-//         const facets = await Amenity.findAll({
-//       attributes: [
-//         "id",
-//         "name",
-//         "category",
-//         [
-//           Sequelize.fn("COUNT", Sequelize.col("Hotels.id")),
-//           "count",
-//         ],
-//       ],
-//       include: [
-//         {
-//           model: Hotels,
-//           attributes: [],
-//           through: { attributes: [] },
-//         },
-//       ],
-//       group: ["Amenity.id"],
-//     });
-//
-//     // const ratingFacets = await getRatingFacets();
-//
-//     res.json({
-//       success: true,
-//       data: cleanHotels,
-//       facets,
-//       pagination: {
-//         total: enriched.length,
-//         page: pageNum,
-//         pages: Math.ceil(enriched.length / limitNum),
-//       },
-//     });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed",
-//     });
-//   }
-// };
-
-
-
-
-
-
-
-
-//single hotel
 const isRoomAvailable = async (roomId, checkIn, checkOut) => {
   const conflict = await Booking.findOne({
     where: {
@@ -944,8 +513,8 @@ const calcRoomOptionPrice = (option, nights) => {
 
 
 
-export const getHotelById = async (req, res) => {
-  console.log(8888888)
+export const getHotelById = async (req, res, next) => {
+  console.log(req.params, 8888888)
   try {
     const { id } = req.params;
 
@@ -1334,15 +903,7 @@ export const getHotelById = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error(
-      "GET HOTEL BY ID ERROR:",
-      e
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch hotel",
-    });
+    next(e)
   }
 };
 

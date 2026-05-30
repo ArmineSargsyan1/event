@@ -144,21 +144,18 @@ export default class FileHelper {
 
     if (guests > 2) {
 
-      extraGuestFee =
-        (guests - 2) * 20 * nights;
+      extraGuestFee = (guests - 2) * 20 * nights;
     }
 
     // =========================
     // SUBTOTAL
     // =========================
-    const subtotal =
-      nightlyPrice * nights;
+    const subtotal = nightlyPrice * nights;
 
     // =========================
     // TOTAL
     // =========================
-    const total =
-      subtotal + extraGuestFee;
+    const total = subtotal + extraGuestFee;
 
     // =========================
     // RETURN
