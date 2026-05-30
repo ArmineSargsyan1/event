@@ -516,7 +516,7 @@ const calcRoomOptionPrice = (option, nights) => {
 export const getHotelById = async (req, res, next) => {
   console.log(req.params, 8888888)
   try {
-    const { id } = req.params;
+    const { hotelId} = req.params;
 
     const hotelViews =
       await Hotels.findByPk(
@@ -717,7 +717,7 @@ export const getHotelById = async (req, res, next) => {
     // ======================
     const rooms = await Room.findAll({
       where: {
-        hotel_id: id,
+        hotel_id: hotelId,
 
         status: "active",
 
