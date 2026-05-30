@@ -513,39 +513,15 @@ const calcRoomOptionPrice = (option, nights) => {
 
 
 
-
 export const getHotelById = async (req, res, next) => {
-  console.log(req.params, 8888888)
   try {
-    const { hotelId} = req.params;
+    const hotelId = Number(req.params.hotelId);
 
-    const hotelViews =
-      await Hotels.findByPk(
-        req.params.id
-      );
-
-    const {
-      checkIn,
-      checkOut,
-      guests = 1,
-    } = req.query;
-
-
-
-    await hotelViews.increment("views");
-    // ======================
-    // NIGHTS
-    // ======================
-    const nights =
-      checkIn && checkOut
-        ? dayjs(checkOut).diff(dayjs(checkIn), "day")
-        : 1;
+    const { checkIn, checkOut, guests = 1 } = req.query;
 
     // ======================
-    // HOTEL
+    // GET HOTEL (single query)
     // ======================
-
-
     const hotel = await Hotels.findByPk(hotelId, {
       include: [
         { model: HotelPhotos, as: "images" },
@@ -553,7 +529,6 @@ export const getHotelById = async (req, res, next) => {
         {
           model: Reviews,
           include: [{ model: ReviewLiked, as: "liked_features" }],
-          order: [["review_date", "DESC"]],
         },
       ],
     });
@@ -569,73 +544,39 @@ export const getHotelById = async (req, res, next) => {
     }
 
     // ======================
-    // REVIEWS
-    // ======================
-    // const reviews = hotel.Reviews || [];
-    //
-    // const avg = (field) => {
-    //   const vals = reviews
-    //     .map((r) => Number(r[field]))
-    //     .filter((v) => !isNaN(v));
-    //
-    //   if (!vals.length) return 0;
-    //
-    //   return Number(
-    //     (
-    //       vals.reduce((a, b) => a + b, 0) /
-    //       vals.length
-    //     ).toFixed(1)
-    //   );
-    // };
-    //
-    // // ======================
-    // // REVIEW STATS
-    // // ======================
-    // const reviewStats = {
-    //   total: reviews.length,
-    //
-    //   avgScore: avg("score"),
-    //
-    //   cleanliness: avg("cleanliness"),
-    //
-    //   staff: avg("staff"),
-    //
-    //   facilities: avg("facilities"),
-    //
-    //   location: avg("location"),
-    //
-    //   value_for_money: avg(
-    //     "value_for_money"
-    //   ),
-    // };
-
     // SAFE INCREMENT
     // ======================
-    await hotel.increment("views");
+    await Hotels.increment(
+      { views: 1 },
+      { where: { id: hotelId } }
+    );
+
     // ======================
-// REVIEWS
-// ======================
+    // NIGHTS
+    // ======================
+    const nights =
+      checkIn && checkOut
+        ? dayjs(checkOut).diff(dayjs(checkIn), "day")
+        : 1;
+
+    // ======================
+    // REVIEWS
+    // ======================
     const reviews = hotel.Reviews || [];
 
-// ======================
-// AVG SCORE
-// ======================
     const avgScore =
-      reviews.length > 0
+      reviews.length
         ? Number(
           (
-            reviews.reduce(
-              (sum, r) =>
-                sum + Number(r.score || 0),
-              0
-            ) / reviews.length
+            reviews.reduce((s, r) => s + Number(r.score || 0), 0) /
+            reviews.length
           ).toFixed(1)
         )
         : 0;
 
-// ======================
-// FEATURE COUNTS
-// ======================
+    // ======================
+    // FEATURE COUNTS
+    // ======================
     const featureCounts = {
       cleanliness: 0,
       staff: 0,
@@ -644,259 +585,428 @@ export const getHotelById = async (req, res, next) => {
       value_for_money: 0,
     };
 
-// ======================
-// COUNT LIKED FEATURES
-// ======================
     reviews.forEach((review) => {
-      (review.liked_features || []).forEach(
-        (item) => {
-          if (
-            item.feature === "value"
-          ) {
-            featureCounts.value_for_money++;
-          } else if (
-            featureCounts[item.feature] !==
-            undefined
-          ) {
-            featureCounts[item.feature]++;
-          }
+      (review.liked_features || []).forEach((item) => {
+        if (featureCounts[item.feature] !== undefined) {
+          featureCounts[item.feature]++;
         }
-      );
-    });
-
-// ======================
-// REVIEW STATS
-// ======================
-    const reviewStats = {
-      total: reviews.length,
-
-      avgScore,
-
-      cleanliness: featureCounts.cleanliness,
-
-      staff: featureCounts.staff,
-
-      facilities: featureCounts.facilities,
-
-      location: featureCounts.location,
-
-      value_for_money: featureCounts.value_for_money,
-    };
-    // ======================
-    // MOST LIKED FEATURES
-    // ======================
-    const likedMap = {};
-
-    reviews.forEach((review) => {
-      (review.liked_features || []).forEach(
-        (item) => {
-          likedMap[item.feature] =
-            (likedMap[item.feature] || 0) + 1;
-        }
-      );
-    });
-
-    const topLiked = Object.entries(likedMap)
-      .sort((a, b) => b[1] - a[1])
-      .map(([feature, count]) => ({
-        feature,
-        count,
-      }));
-
-    // ======================
-    // ROOMS
-    // ======================
-    const rooms = await Room.findAll({
-      where: {
-        hotel_id: hotelId,
-
-        status: "active",
-
-        ...(guests && {
-          max_guests: {
-            [Op.gte]: Number(guests),
-          },
-        }),
-      },
-
-      include: [
-        {
-          model: Photo,
-          as: "images",
-        },
-
-        {
-          model: Amenity,
-          as: "amenities",
-          through: { attributes: [] },
-        },
-
-        {
-          model: RoomOption,
-          as: "options",
-          where: {
-            status: "active",
-          },
-          required: false,
-        },
-
-        {
-          model: RoomExtra,
-          as: "extras",
-        },
-      ],
-    });
-
-    // ======================
-    // FORMAT ROOMS
-    // ======================
-    const formattedRooms = [];
-
-    for (const room of rooms) {
-      const r = room.toJSON();
-
-      // ======================
-      // AVAILABILITY
-      // ======================
-      let available = true;
-
-      if (checkIn && checkOut) {
-        available = await isRoomAvailable(
-          r.id,
-          checkIn,
-          checkOut
-        );
-      }
-
-      if (!available) continue;
-
-      // ======================
-      // OPTIONS
-      // ======================
-      const options = (r.options || []).map(
-        (opt) =>
-          calcRoomOptionPrice(opt, nights)
-      );
-
-      // ======================
-      // LOWEST PRICE
-      // ======================
-      const lowestPrice =
-        options.length > 0
-          ? Math.min(
-            ...options.map(
-              (o) => o.total_price
-            )
-          )
-          : 0;
-
-      // ======================
-      // GROUP AMENITIES
-      // ======================
-      const groupedAmenities = {};
-
-      (r.amenities || []).forEach((a) => {
-        const key = a.category || "Other";
-
-        if (!groupedAmenities[key]) {
-          groupedAmenities[key] = [];
-        }
-
-        groupedAmenities[key].push({
-          id: a.id,
-          name: a.name,
-          key: a.key,
-        });
       });
-
-      // ======================
-      // FORMAT EXTRAS
-      // ======================
-      const extras = (r.extras || []).map(
-        (e) => ({
-          id: e.id,
-          name: e.name,
-          type: e.type,
-          price: e.price,
-        })
-      );
-
-      formattedRooms.push({
-        id: r.id,
-
-        name: r.name,
-
-        size: r.size,
-
-        bed_type: r.bed_type,
-
-        max_guests: r.max_guests,
-
-        lowest_price: lowestPrice,
-
-        images: r.images || [],
-
-        amenities: r.amenities || [],
-
-        groupedAmenities,
-
-        extras,
-
-        options,
-      });
-    }
+    });
 
     // ======================
-    // RESPONSE
+    // RESPONSE (CLEAN)
     // ======================
     return res.json({
       success: true,
-
       data: {
         id: hotel.id,
-
         name: hotel.name,
-
-        description: hotel.description,
-
-        address: hotel.address,
-
         city: hotel.city,
-
         country: hotel.country,
-
         stars: hotel.stars,
-
-        property_class:
-        hotel.property_class,
-
-        currency: hotel.currency,
-
-        rating: hotel.rating,
-
-        review_count:
-        hotel.review_count,
+        views: hotel.views + 1, // optimistic UI
 
         images: hotel.images || [],
+        amenities: hotel.Amenities || [],
 
-        amenities:
-          hotel.Amenities || [],
-
-        reviewStats,
-
-        topLiked,
-
-        reviews,
+        reviewStats: {
+          total: reviews.length,
+          avgScore,
+          ...featureCounts,
+        },
 
         nights,
-
-        rooms: formattedRooms,
       },
     });
   } catch (e) {
-    next(e)
+    next(e);
   }
 };
+
+
+// export const getHotelById = async (req, res, next) => {
+//   console.log(req.params, 8888888)
+//   try {
+//     // const { hotelId} = req.params;
+//     const hotelId = Number(req.params.hotelId);
+//     const hotelViews =
+//       await Hotels.findByPk(
+//         req.params.id
+//       );
+//
+//     const {
+//       checkIn,
+//       checkOut,
+//       guests = 1,
+//     } = req.query;
+//
+//
+//
+//     await hotelViews.increment("views");
+//     // ======================
+//     // NIGHTS
+//     // ======================
+//     const nights =
+//       checkIn && checkOut
+//         ? dayjs(checkOut).diff(dayjs(checkIn), "day")
+//         : 1;
+//
+//     // ======================
+//     // HOTEL
+//     // ======================
+//
+//
+//     const hotel = await Hotels.findByPk(hotelId, {
+//       include: [
+//         { model: HotelPhotos, as: "images" },
+//         { model: Amenity, as: "Amenities", through: { attributes: [] } },
+//         {
+//           model: Reviews,
+//           include: [{ model: ReviewLiked, as: "liked_features" }],
+//           order: [["review_date", "DESC"]],
+//         },
+//       ],
+//     });
+//
+//     // ======================
+//     // NOT FOUND
+//     // ======================
+//     if (!hotel) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Hotel not found",
+//       });
+//     }
+//
+//     // ======================
+//     // REVIEWS
+//     // ======================
+//     // const reviews = hotel.Reviews || [];
+//     //
+//     // const avg = (field) => {
+//     //   const vals = reviews
+//     //     .map((r) => Number(r[field]))
+//     //     .filter((v) => !isNaN(v));
+//     //
+//     //   if (!vals.length) return 0;
+//     //
+//     //   return Number(
+//     //     (
+//     //       vals.reduce((a, b) => a + b, 0) /
+//     //       vals.length
+//     //     ).toFixed(1)
+//     //   );
+//     // };
+//     //
+//     // // ======================
+//     // // REVIEW STATS
+//     // // ======================
+//     // const reviewStats = {
+//     //   total: reviews.length,
+//     //
+//     //   avgScore: avg("score"),
+//     //
+//     //   cleanliness: avg("cleanliness"),
+//     //
+//     //   staff: avg("staff"),
+//     //
+//     //   facilities: avg("facilities"),
+//     //
+//     //   location: avg("location"),
+//     //
+//     //   value_for_money: avg(
+//     //     "value_for_money"
+//     //   ),
+//     // };
+//
+//     // SAFE INCREMENT
+//     // ======================
+//     await hotel.increment("views");
+//     // ======================
+// // REVIEWS
+// // ======================
+//     const reviews = hotel.Reviews || [];
+//
+// // ======================
+// // AVG SCORE
+// // ======================
+//     const avgScore =
+//       reviews.length > 0
+//         ? Number(
+//           (
+//             reviews.reduce(
+//               (sum, r) =>
+//                 sum + Number(r.score || 0),
+//               0
+//             ) / reviews.length
+//           ).toFixed(1)
+//         )
+//         : 0;
+//
+// // ======================
+// // FEATURE COUNTS
+// // ======================
+//     const featureCounts = {
+//       cleanliness: 0,
+//       staff: 0,
+//       facilities: 0,
+//       location: 0,
+//       value_for_money: 0,
+//     };
+//
+// // ======================
+// // COUNT LIKED FEATURES
+// // ======================
+//     reviews.forEach((review) => {
+//       (review.liked_features || []).forEach(
+//         (item) => {
+//           if (
+//             item.feature === "value"
+//           ) {
+//             featureCounts.value_for_money++;
+//           } else if (
+//             featureCounts[item.feature] !==
+//             undefined
+//           ) {
+//             featureCounts[item.feature]++;
+//           }
+//         }
+//       );
+//     });
+//
+// // ======================
+// // REVIEW STATS
+// // ======================
+//     const reviewStats = {
+//       total: reviews.length,
+//
+//       avgScore,
+//
+//       cleanliness: featureCounts.cleanliness,
+//
+//       staff: featureCounts.staff,
+//
+//       facilities: featureCounts.facilities,
+//
+//       location: featureCounts.location,
+//
+//       value_for_money: featureCounts.value_for_money,
+//     };
+//     // ======================
+//     // MOST LIKED FEATURES
+//     // ======================
+//     const likedMap = {};
+//
+//     reviews.forEach((review) => {
+//       (review.liked_features || []).forEach(
+//         (item) => {
+//           likedMap[item.feature] =
+//             (likedMap[item.feature] || 0) + 1;
+//         }
+//       );
+//     });
+//
+//     const topLiked = Object.entries(likedMap)
+//       .sort((a, b) => b[1] - a[1])
+//       .map(([feature, count]) => ({
+//         feature,
+//         count,
+//       }));
+//
+//     // ======================
+//     // ROOMS
+//     // ======================
+//     const rooms = await Room.findAll({
+//       where: {
+//         hotel_id: hotelId,
+//
+//         status: "active",
+//
+//         ...(guests && {
+//           max_guests: {
+//             [Op.gte]: Number(guests),
+//           },
+//         }),
+//       },
+//
+//       include: [
+//         {
+//           model: Photo,
+//           as: "images",
+//         },
+//
+//         {
+//           model: Amenity,
+//           as: "amenities",
+//           through: { attributes: [] },
+//         },
+//
+//         {
+//           model: RoomOption,
+//           as: "options",
+//           where: {
+//             status: "active",
+//           },
+//           required: false,
+//         },
+//
+//         {
+//           model: RoomExtra,
+//           as: "extras",
+//         },
+//       ],
+//     });
+//
+//     // ======================
+//     // FORMAT ROOMS
+//     // ======================
+//     const formattedRooms = [];
+//
+//     for (const room of rooms) {
+//       const r = room.toJSON();
+//
+//       // ======================
+//       // AVAILABILITY
+//       // ======================
+//       let available = true;
+//
+//       if (checkIn && checkOut) {
+//         available = await isRoomAvailable(
+//           r.id,
+//           checkIn,
+//           checkOut
+//         );
+//       }
+//
+//       if (!available) continue;
+//
+//       // ======================
+//       // OPTIONS
+//       // ======================
+//       const options = (r.options || []).map(
+//         (opt) =>
+//           calcRoomOptionPrice(opt, nights)
+//       );
+//
+//       // ======================
+//       // LOWEST PRICE
+//       // ======================
+//       const lowestPrice =
+//         options.length > 0
+//           ? Math.min(
+//             ...options.map(
+//               (o) => o.total_price
+//             )
+//           )
+//           : 0;
+//
+//       // ======================
+//       // GROUP AMENITIES
+//       // ======================
+//       const groupedAmenities = {};
+//
+//       (r.amenities || []).forEach((a) => {
+//         const key = a.category || "Other";
+//
+//         if (!groupedAmenities[key]) {
+//           groupedAmenities[key] = [];
+//         }
+//
+//         groupedAmenities[key].push({
+//           id: a.id,
+//           name: a.name,
+//           key: a.key,
+//         });
+//       });
+//
+//       // ======================
+//       // FORMAT EXTRAS
+//       // ======================
+//       const extras = (r.extras || []).map(
+//         (e) => ({
+//           id: e.id,
+//           name: e.name,
+//           type: e.type,
+//           price: e.price,
+//         })
+//       );
+//
+//       formattedRooms.push({
+//         id: r.id,
+//
+//         name: r.name,
+//
+//         size: r.size,
+//
+//         bed_type: r.bed_type,
+//
+//         max_guests: r.max_guests,
+//
+//         lowest_price: lowestPrice,
+//
+//         images: r.images || [],
+//
+//         amenities: r.amenities || [],
+//
+//         groupedAmenities,
+//
+//         extras,
+//
+//         options,
+//       });
+//     }
+//
+//     // ======================
+//     // RESPONSE
+//     // ======================
+//     return res.json({
+//       success: true,
+//
+//       data: {
+//         id: hotel.id,
+//
+//         name: hotel.name,
+//
+//         description: hotel.description,
+//
+//         address: hotel.address,
+//
+//         city: hotel.city,
+//
+//         country: hotel.country,
+//
+//         stars: hotel.stars,
+//
+//         property_class:
+//         hotel.property_class,
+//
+//         currency: hotel.currency,
+//
+//         rating: hotel.rating,
+//
+//         review_count:
+//         hotel.review_count,
+//
+//         images: hotel.images || [],
+//
+//         amenities:
+//           hotel.Amenities || [],
+//
+//         reviewStats,
+//
+//         topLiked,
+//
+//         reviews,
+//
+//         nights,
+//
+//         rooms: formattedRooms,
+//       },
+//     });
+//   } catch (e) {
+//     next(e)
+//   }
+// };
 
 
 export const getTopHotels = async (req, res) => {
