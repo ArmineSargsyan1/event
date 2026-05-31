@@ -60,16 +60,14 @@ const getAvgRating = (hotel) => {
 // };
 
 
-
 const mapHotel = (hotel, userId = null) => {
   const plain = hotel.toJSON();
 
   const reviewCount = Number(plain.review_count || 0);
 
-  const avgRating =
-    reviewCount > 0
-      ? plain.rating_sum / reviewCount
-      : null;
+  const avgRating = plain.avg_rating !== undefined && plain.avg_rating !== null
+    ? Number(Number(plain.avg_rating).toFixed(1))
+    : null;
 
   return {
     id: plain.id,
@@ -79,24 +77,56 @@ const mapHotel = (hotel, userId = null) => {
     description: plain.description,
     price: plain.price_from,
 
-    rating:
-      avgRating !== null
-        ? Number(avgRating.toFixed(1))
-        : null,
+    rating: avgRating,
 
     stars: plain.starsComputed,
 
-    reviewCount: Number(reviewCount),
+    reviewCount,
 
     images: plain.images,
 
     amenities: plain.Amenities,
 
-    favorite:
-      plain.usersWhoFavorited?.length > 0,
+    favorite: plain.usersWhoFavorited?.length > 0,
   };
 };
 
+// const mapHotel = (hotel, userId = null) => {
+//   const plain = hotel.toJSON();
+//
+//   const reviewCount = Number(plain.review_count || 0);
+//
+//   const avgRating =
+//     reviewCount > 0
+//       ? plain.rating_sum / reviewCount
+//       : null;
+//
+//   return {
+//     id: plain.id,
+//     name: plain.name,
+//     city: plain.city,
+//     country: plain.country,
+//     description: plain.description,
+//     price: plain.price_from,
+//
+//     rating:
+//       avgRating !== null
+//         ? Number(avgRating.toFixed(1))
+//         : null,
+//
+//     stars: plain.starsComputed,
+//
+//     reviewCount: Number(reviewCount),
+//
+//     images: plain.images,
+//
+//     amenities: plain.Amenities,
+//
+//     favorite:
+//       plain.usersWhoFavorited?.length > 0,
+//   };
+// };
+//
 
 
 export const getHotels = async (req, res, next) => {
@@ -550,21 +580,63 @@ const calcRoomOptionPrice = (option, nights) => {
 
 
 export const getTopRatedHotels = async (req, res) => {
-  const hotels = await Hotels.findAll({
-    order: [["rating", "DESC"]],
-    limit: 10,
-    include: [
-      {
-        model: HotelPhotos,
-        as: "images",
-      },
-    ],
-  });
+  try {
+    const hotels = await Hotels.findAll({
+      limit: 10,
 
-  res.json({
-    success: true,
-    data: hotels,
-  });
+      include: [
+        {
+          model: HotelPhotos,
+          as: "images",
+          attributes: ["id", "path", "is_main", "sort_order"],
+        },
+        {
+          model: Reviews,
+          as: "Reviews",
+          attributes: [],
+          required: false,
+        },
+      ],
+
+      attributes: {
+        include: [
+          [
+            Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
+            "review_count",
+          ],
+
+          [
+            Sequelize.literal(`
+              CASE 
+                WHEN COUNT(Reviews.id) > 0 
+                THEN Hotels.rating_sum / COUNT(Reviews.id)
+                ELSE 0
+              END
+            `),
+            "avg_rating",
+          ],
+        ],
+      },
+
+      group: ["Hotels.id", "images.id"],
+
+      order: [[Sequelize.literal("avg_rating"), "DESC"]],
+      subQuery: false,
+    });
+
+    const data = hotels.map((h) => mapHotel(h));
+
+    res.json({
+      success: true,
+      data,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
 
 

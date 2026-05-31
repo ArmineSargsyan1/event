@@ -510,6 +510,56 @@ export const getHotelReviews =
   };
 
 
+
+export const getTestimonials = async (req, res) => {
+  try {
+    const reviews = await Reviews.findAll({
+      where: {
+        verified: true,
+        score: {
+          [Op.gte]: 8,
+        },
+        comment: {
+          [Op.ne]: null,
+        },
+      },
+
+      include: [
+        {
+          model: Hotels,
+          attributes: ["id", "name"],
+        },
+      ],
+
+      attributes: [
+        "id",
+        "reviewer_name",
+        "score",
+        "comment",
+        "review_date",
+      ],
+
+      order: [
+        ["score", "DESC"],
+        ["review_date", "DESC"],
+      ],
+
+      limit: 6,
+    });
+
+    res.json({
+      success: true,
+      data: reviews,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 export const getRatingBreakdown = async (req, res) => {
   try {
     const { hotel_id } = req.query;

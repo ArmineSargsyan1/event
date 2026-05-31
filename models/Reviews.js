@@ -450,7 +450,7 @@ const recalcHotelRating = async (hotelId, transaction = null) => {
 
   const rating =
     review_count > 0
-      ? Number((rating_sum / review_count).toFixed(1)) // ⭐ 8.7
+      ? Number((rating_sum / review_count).toFixed(1))
       : 0;
 
   await Hotels.update(

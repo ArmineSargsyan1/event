@@ -13,6 +13,10 @@ router.get(
   ReviewsController.getHotelReviews
 );
 
+router.get(
+  "/testimonials",
+  ReviewsController.getTestimonials
+);
 
 router.get("/breakdown", ReviewsController.getRatingBreakdown);
 
