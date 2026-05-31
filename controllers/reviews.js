@@ -74,6 +74,7 @@ import ReviewLiked from "../models/ReviewLiked.js";
 import { Op, fn, col } from "sequelize";
 import User from "../models/User.js";
 import ReviewReplies from "../models/ReviewReplies.js";
+import Hotels from "../models/Hotels.js";
 
 export const createReview = async (req, res) => {
   console.log(req.body,999)
