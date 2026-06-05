@@ -673,20 +673,18 @@ export const getPopularHotels = async (req, res) => {
     const hotels = await Hotels.findAll({
       order: [["views", "DESC"]],
       limit: 10,
-
-      subQuery: false,
+      subQuery: true,
+      distinct: true,
 
       include: [
         {
           model: HotelPhotos,
           as: "images",
           attributes: ["id", "path", "is_main", "sort_order"],
-          separate: true,
         },
         {
           model: Amenity,
           through: { attributes: [] },
-          separate: true,
         },
         {
           model: User,
@@ -694,8 +692,9 @@ export const getPopularHotels = async (req, res) => {
           attributes: ["id"],
           through: { attributes: [] },
         },
+  
       ],
-
+      
     });
 
     const data = hotels.map((h) => {
@@ -707,8 +706,7 @@ export const getPopularHotels = async (req, res) => {
       };
     });
 
-    console.log("=== limit ===");
-    console.log("db limit:", data.length);
+    console.log( data.length);
 
     res.json({
       success: true,
@@ -722,6 +720,7 @@ export const getPopularHotels = async (req, res) => {
     });
   }
 };
+
 
 export const getSponsoredHotels = async (req, res, next) => {
   try {
