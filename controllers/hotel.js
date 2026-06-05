@@ -698,7 +698,7 @@ export const getPopularHotels = async (req, res) => {
         popular: h.popular
       };
     });
-
+console.log(data)
     res.json({
       success: true,
       data,
