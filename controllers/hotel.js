@@ -65,9 +65,10 @@ const mapHotel = (hotel, userId = null) => {
 
   const reviewCount = Number(plain.review_count || 0);
 
-  const avgRating = plain.avg_rating !== undefined && plain.avg_rating !== null
-    ? Number(Number(plain.avg_rating).toFixed(1))
-    : null;
+
+  const hotelRating = plain.rating !== undefined && plain.rating !== null
+    ? Number(Number(plain.rating).toFixed(1))
+    : 2.9;
 
   return {
     id: plain.id,
@@ -76,20 +77,46 @@ const mapHotel = (hotel, userId = null) => {
     country: plain.country,
     description: plain.description,
     price: plain.price_from,
-
-    rating: avgRating,
-
+    rating: hotelRating,
     stars: plain.starsComputed,
-
     reviewCount,
-
     images: plain.images,
-
     amenities: plain.Amenities,
-
     favorite: plain.usersWhoFavorited?.length > 0,
+    views: Number(plain.views || 0), 
   };
 };
+
+// const mapHotel = (hotel, userId = null) => {
+//   const plain = hotel.toJSON();
+
+//   const reviewCount = Number(plain.review_count || 0);
+
+//   const avgRating = plain.avg_rating !== undefined && plain.avg_rating !== null
+//     ? Number(Number(plain.avg_rating).toFixed(1))
+//     : null;
+
+//   return {
+//     id: plain.id,
+//     name: plain.name,
+//     city: plain.city,
+//     country: plain.country,
+//     description: plain.description,
+//     price: plain.price_from,
+
+//     rating: avgRating,
+
+//     stars: plain.starsComputed,
+
+//     reviewCount,
+
+//     images: plain.images,
+
+//     amenities: plain.Amenities,
+
+//     favorite: plain.usersWhoFavorited?.length > 0,
+//   };
+// };
 
 // const mapHotel = (hotel, userId = null) => {
 //   const plain = hotel.toJSON();
