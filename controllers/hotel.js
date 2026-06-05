@@ -673,6 +673,9 @@ export const getPopularHotels = async (req, res) => {
     const hotels = await Hotels.findAll({
       order: [["views", "DESC"]],
       limit: 10,
+      
+      subQuery: true,
+      distinct: true,
 
       include: [
         {
@@ -685,36 +688,14 @@ export const getPopularHotels = async (req, res) => {
           through: { attributes: [] },
         },
         {
-          model: Reviews,
-          as: "Reviews",
-          attributes: [],
-          required: false,
-        },
-        {
           model: User,
           as: "usersWhoFavorited",
           attributes: ["id"],
           through: { attributes: [] },
         },
+
       ],
-
-      attributes: {
-        include: [
-          [
-            Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
-            "review_count",
-          ],
-        ],
-      },
-
-      group: [
-        "Hotels.id",
-        "images.id",
-        "Amenities.id",
-        "usersWhoFavorited.id",
-      ],
-
-      subQuery: false,
+      
     });
 
     const data = hotels.map((h) => {
@@ -725,12 +706,13 @@ export const getPopularHotels = async (req, res) => {
         popular: h.popular
       };
     });
-console.log(data)
+
+    console.log("fhf:", data.length);
+
     res.json({
       success: true,
       data,
     });
-
 
   } catch (err) {
     res.status(500).json({
