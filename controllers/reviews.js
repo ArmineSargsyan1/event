@@ -1,74 +1,3 @@
-// import Reviews from "../models/Reviews.js";
-// import ReviewLiked from "../models/ReviewLiked.js";
-//
-// export const createReview = async (req, res) => {
-//   try {
-//     const {
-//       reviewer_name,
-//       score,
-//       comment,
-//       traveller_type,
-//       stay_duration,
-//       stay_date,
-//       liked_features,
-//       hotel_id,
-//     } = req.body;
-//
-//     // const existing = await Reviews.findOne({
-//     //   where: {
-//     //     // hotel_id,
-//     //     // user_id,
-//     //   }
-//     // });
-//     //
-//     // if (existing) {
-//     //   return res.status(409).json({ message: "Already reviewed" });
-//     // }
-//
-//     const review = await Reviews.create(
-//       {
-//         reviewer_name,
-//         score,
-//         comment,
-//         traveller_type,
-//         stay_duration,
-//         stay_date,
-//
-//         // ❌ do NOT trust client:
-//         verified: false,
-//         hotel_id,
-//
-//         liked_features: Array.isArray(liked_features)
-//           ? liked_features.map((f) => ({ feature: f }))
-//           : [],
-//       },
-//       {
-//         include: [
-//           {
-//             model: ReviewLiked,
-//             as: "liked_features",
-//           },
-//         ],
-//       }
-//     );
-//
-//     return res.status(201).json({
-//       success: true,
-//       data: review,
-//     });
-//   } catch (error) {
-//     console.error("Create review error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
-
-
-
-
-
 import Reviews from "../models/Reviews.js";
 import ReviewLiked from "../models/ReviewLiked.js";
 import { Op, fn, col } from "sequelize";
@@ -112,7 +41,6 @@ export const createReview = async (req, res) => {
         stay_duration,
         stay_date,
 
-        // ❌ do NOT trust client:
         verified: false,
         hotel_id,
 

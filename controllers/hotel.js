@@ -13,6 +13,8 @@ import dayjs from "dayjs";
 import Booking from "../models/Booking.js";
 import ReviewLiked from "../models/ReviewLiked.js";
 import User from "../models/User.js";
+import Favorite from "../models/Favorites.js";
+import Favorites from "../models/Favorites.js";
 
 const allowedPropertyClasses = [
   "hotel",
@@ -77,7 +79,7 @@ const mapHotel = (hotel, userId = null) => {
     description: plain.description,
     price: plain.price_from,
 
-    rating: avgRating,
+    rating: plain.rating,
 
     stars: plain.starsComputed,
 
@@ -90,43 +92,6 @@ const mapHotel = (hotel, userId = null) => {
     favorite: plain.usersWhoFavorited?.length > 0,
   };
 };
-
-// const mapHotel = (hotel, userId = null) => {
-//   const plain = hotel.toJSON();
-//
-//   const reviewCount = Number(plain.review_count || 0);
-//
-//   const avgRating =
-//     reviewCount > 0
-//       ? plain.rating_sum / reviewCount
-//       : null;
-//
-//   return {
-//     id: plain.id,
-//     name: plain.name,
-//     city: plain.city,
-//     country: plain.country,
-//     description: plain.description,
-//     price: plain.price_from,
-//
-//     rating:
-//       avgRating !== null
-//         ? Number(avgRating.toFixed(1))
-//         : null,
-//
-//     stars: plain.starsComputed,
-//
-//     reviewCount: Number(reviewCount),
-//
-//     images: plain.images,
-//
-//     amenities: plain.Amenities,
-//
-//     favorite:
-//       plain.usersWhoFavorited?.length > 0,
-//   };
-// };
-//
 
 
 export const getHotels = async (req, res, next) => {
@@ -581,6 +546,8 @@ const calcRoomOptionPrice = (option, nights) => {
 
 export const getTopRatedHotels = async (req, res) => {
   try {
+    const userId = 1;
+
     const hotels = await Hotels.findAll({
       limit: 10,
 
@@ -590,41 +557,29 @@ export const getTopRatedHotels = async (req, res) => {
           as: "images",
           attributes: ["id", "path", "is_main", "sort_order"],
         },
+
         {
-          model: Reviews,
-          as: "Reviews",
-          attributes: [],
+          model: Favorite,
+          as: "favorites",
+          where: { user_id: userId },
+          attributes: ["id"],
           required: false,
-        },
+        }
       ],
 
-      attributes: {
-        include: [
-          [
-            Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
-            "review_count",
-          ],
-
-          [
-            Sequelize.literal(`
-              CASE 
-                WHEN COUNT(Reviews.id) > 0 
-                THEN Hotels.rating_sum / COUNT(Reviews.id)
-                ELSE 0
-              END
-            `),
-            "avg_rating",
-          ],
-        ],
-      },
-
-      group: ["Hotels.id", "images.id"],
-
-      order: [[Sequelize.literal("avg_rating"), "DESC"]],
-      subQuery: false,
+      order: [["rating", "DESC"]],
     });
 
-    const data = hotels.map((h) => mapHotel(h));
+    const data = hotels.map((h) => {
+      const hotelData = mapHotel(h);
+
+      const isFavorite = h.favorites && h.favorites.length > 0;
+
+      return {
+        ...hotelData,
+        favorite: !!isFavorite,
+      };
+    });
 
     res.json({
       success: true,
@@ -640,12 +595,79 @@ export const getTopRatedHotels = async (req, res) => {
 };
 
 
+
+
+// export const getTopRatedHotels = async (req, res) => {
+//   try {
+//     const hotels = await Hotels.findAll({
+//       limit: 10,
+//
+//       include: [
+//         {
+//           model: HotelPhotos,
+//           as: "images",
+//           attributes: ["id", "path", "is_main", "sort_order"],
+//         },
+//         {
+//           model: Reviews,
+//           as: "Reviews",
+//           attributes: [],
+//           required: false,
+//         },
+//       ],
+//
+//       attributes: {
+//         include: [
+//           [
+//             Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
+//             "review_count",
+//           ],
+//
+//           [
+//             Sequelize.literal(`
+//               CASE
+//                 WHEN COUNT(Reviews.id) > 0
+//                 THEN Hotels.rating_sum / COUNT(Reviews.id)
+//                 ELSE 0
+//               END
+//             `),
+//             "avg_rating",
+//           ],
+//         ],
+//       },
+//
+//       group: ["Hotels.id", "images.id"],
+//
+//       order: [[Sequelize.literal("avg_rating"), "DESC"]],
+//       subQuery: false,
+//     });
+//
+//     const data = hotels.map((h) => mapHotel(h));
+//
+//     res.json({
+//       success: true,
+//       data,
+//     });
+//
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
+
+
+
+
 export const getPopularHotels = async (req, res) => {
   const userId = req.user?.id || 1;
   try {
     const hotels = await Hotels.findAll({
       order: [["views", "DESC"]],
       limit: 10,
+      subQuery: true,
+      distinct: true,
 
       include: [
         {
@@ -658,36 +680,14 @@ export const getPopularHotels = async (req, res) => {
           through: { attributes: [] },
         },
         {
-          model: Reviews,
-          as: "Reviews",
-          attributes: [],
-          required: false,
-        },
-        {
           model: User,
           as: "usersWhoFavorited",
           attributes: ["id"],
           through: { attributes: [] },
         },
+
       ],
 
-      attributes: {
-        include: [
-          [
-            Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
-            "review_count",
-          ],
-        ],
-      },
-
-      group: [
-        "Hotels.id",
-        "images.id",
-        "Amenities.id",
-        "usersWhoFavorited.id",
-      ],
-
-      subQuery: false,
     });
 
     const data = hotels.map((h) => {
@@ -704,7 +704,6 @@ export const getPopularHotels = async (req, res) => {
       data,
     });
 
-
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -712,6 +711,81 @@ export const getPopularHotels = async (req, res) => {
     });
   }
 };
+
+
+
+// export const getPopularHotels = async (req, res) => {
+//   const userId = req.user?.id || 1;
+//   try {
+//     const hotels = await Hotels.findAll({
+//       order: [["views", "DESC"]],
+//       limit: 10,
+//
+//       include: [
+//         {
+//           model: HotelPhotos,
+//           as: "images",
+//           attributes: ["id", "path", "is_main", "sort_order"],
+//         },
+//         {
+//           model: Amenity,
+//           through: { attributes: [] },
+//         },
+//         {
+//           model: Reviews,
+//           as: "Reviews",
+//           attributes: [],
+//           required: false,
+//         },
+//         {
+//           model: User,
+//           as: "usersWhoFavorited",
+//           attributes: ["id"],
+//           through: { attributes: [] },
+//         },
+//       ],
+//
+//       attributes: {
+//         include: [
+//           [
+//             Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
+//             "review_count",
+//           ],
+//         ],
+//       },
+//
+//       group: [
+//         "Hotels.id",
+//         "images.id",
+//         "Amenities.id",
+//         "usersWhoFavorited.id",
+//       ],
+//
+//       subQuery: false,
+//     });
+//
+//     const data = hotels.map((h) => {
+//       const base = mapHotel(h, userId);
+//
+//       return {
+//         ...base,
+//         popular: h.popular
+//       };
+//     });
+//     console.log(data,88888)
+//     res.json({
+//       success: true,
+//       data,
+//     });
+//
+//
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
 
 export const getSponsoredHotels = async (req, res, next) => {
   try {

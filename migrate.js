@@ -5,6 +5,7 @@ import * as Models from "./models/index.js";
   try {
     const list = [
       Models.User,
+      Models.Newsletter,
       Models.Hotels,
       Models.HotelPhotos,
       Models.Amenity,
