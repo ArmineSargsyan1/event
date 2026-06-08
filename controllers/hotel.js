@@ -696,7 +696,7 @@ export const getTopRatedHotels = async (req, res) => {
       const hotelData = mapHotel(h);
 
       const isFavorite = h.favorites && h.favorites.length > 0;
-
+  console.log(h.favorites)
       return {
         ...hotelData,
         favorite: !!isFavorite,
