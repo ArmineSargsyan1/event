@@ -668,7 +668,7 @@ const calcRoomOptionPrice = (option, nights) => {
 
 export const getTopRatedHotels = async (req, res) => {
   try {
-    const userId = 1;
+    const userId = 1; 
 
     const hotels = await Hotels.findAll({
       limit: 10,
@@ -684,8 +684,9 @@ export const getTopRatedHotels = async (req, res) => {
           as: "usersWhoFavorited",
           where: { id: userId },
           attributes: ["id"],
-          required: false, 
-          through: { attributes: [] }
+          required: false,
+          through: { attributes: [] },
+          duplicating: false
         }
       ],
 
@@ -702,17 +703,18 @@ export const getTopRatedHotels = async (req, res) => {
 
       return {
         ...hotelData,
-        favorite: !!isFavorite,
+        favorite: !!isFavorite, 
       };
     });
 
-    res.json({
+    return res.status(200).json({
       success: true,
       data,
     });
 
   } catch (err) {
-    res.status(500).json({
+    console.error("Sequelize error details:", err); 
+    return res.status(500).json({
       success: false,
       message: err.message,
     });
