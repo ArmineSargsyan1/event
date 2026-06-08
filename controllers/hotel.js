@@ -679,24 +679,27 @@ export const getTopRatedHotels = async (req, res) => {
           as: "images",
           attributes: ["id", "path", "is_main", "sort_order"],
         },
-
         {
-          model: Favorite,
-          as: "favorites",
-          where: { user_id: userId },
+          model: User,
+          as: "usersWhoFavorited",
+          where: { id: userId },
           attributes: ["id"],
-          required: false,
+          required: false, 
+          through: { attributes: [] }
         }
       ],
 
       order: [["rating", "DESC"]],
+
+      subQuery: false,
     });
 
     const data = hotels.map((h) => {
+      const rawHotel = h.get({ plain: true });
       const hotelData = mapHotel(h);
 
-      const isFavorite = h.favorites && h.favorites.length > 0;
-  console.log(h.favorites)
+      const isFavorite = rawHotel.usersWhoFavorited && rawHotel.usersWhoFavorited.length > 0;
+
       return {
         ...hotelData,
         favorite: !!isFavorite,
@@ -715,6 +718,8 @@ export const getTopRatedHotels = async (req, res) => {
     });
   }
 };
+
+
 
 
 
