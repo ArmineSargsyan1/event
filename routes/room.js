@@ -12,7 +12,7 @@ const router = express.Router();
    CREATE ROOM
 ========================================================= */
 router.post("/",
-  upload.array("photos"), // 🔥 կարևոր
+  upload.array("photos"), 
 
   Controller.createRoom);
 
@@ -21,6 +21,7 @@ router.post("/",
 ========================================================= */
 router.get("/", Controller.getRooms);
 
+router.get("/similar", getSimilarRooms);
 
 router.get("/:id", getRoomById);
 
@@ -28,7 +29,6 @@ router.get("/:id", getRoomById);
 
 /* =========================================================
    UPDATE ROOM (PARTIAL UPDATE)
-   👉 PATCH is correct here
 ========================================================= */
 router.patch("/:id", Controller.updateRoom);
 
