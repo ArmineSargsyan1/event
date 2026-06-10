@@ -1002,70 +1002,72 @@ export const getSimilarRooms = async (req, res, next) => {
       });
     }
 
-    const where = {
-      id: { [Op.ne]: Number(roomId) },
-      status: "active",
-      deleted_at: null,
-
-      ...(hotelId && { hotel_id: Number(hotelId) })
-    };
-
-
     const rooms = await Room.findAll({
-      where,
+      where: {
+        id: { [Op.ne]: Number(roomId) },
+        status: "active",
+        deleted_at: null,
+        ...(hotelId && { hotel_id: Number(hotelId) })
+      },
       limit: 3,
+      order: [["id", "DESC"]],
+
+      subQuery: false,
+
       include: [
-        {
-          model: RoomOption,
-          as: "options",
-          where: { status: "active" },
-          required: true,
-          attributes: ["price"],
-        },
         {
           model: Hotels,
           as: "hotel",
           attributes: ["property_class", "rating"],
-          required: false,
+          required: property_class ? true : false,
           ...(property_class && {
             where: { property_class }
           })
         },
         {
-          model: Amenity,
-          as: "amenities",
-          through: { attributes: [] },
-          attributes: ["id", "key", "name"],
-          required: false,
+          model: RoomOption,
+          as: "options",
+          where: { status: "active" },
+          required: true, 
+          attributes: ["price"],
+          separate: true 
         },
-
         {
           model: Photo,
-          as: "images",
-          attributes: ["id", "path", "is_main"],
+          as: "images", 
+          attributes: ["path", "room_id"],
           required: false,
+          separate: true
+        },
+        {
+          model: Amenity,
+          as: "amenities", 
+          where: { key: ["1_bath", "2_bath", "3_bath"] },
+          attributes: ["key", "name"],
+          through: { attributes: [] },
+          required: false
         }
-      ],
-      order: [["id", "DESC"]]
+      ]
     });
 
+    if (!rooms || rooms.length === 0) {
+      return res.status(200).json({ status: "success", data: [] });
+    }
 
     const cleanRooms = rooms.map((room) => {
       const plain = room.toJSON();
       const hotelData = plain.hotel || {};
       const roomOptions = plain.options || [];
-      const roomAmenities = plain.Amenities || [];
+      const roomPhotos = plain.images || [];
+      const roomAmenities = plain.amenities || [];
 
-      const mainImage = plain.images?.find(img => img.is_main)?.path
-        || plain.images?.[0]?.path;
+      const mainImage = roomPhotos.length > 0 ? roomPhotos[0].path : "default-room.jpg";
 
       const pricesArray = roomOptions.map(opt => opt.price);
       const lowestPrice = pricesArray.length > 0 ? Math.min(...pricesArray) : 0;
 
-      const bathroomAmenity = roomAmenities.find(a =>
-        ["1_bath", "2_bath", "3_bath"].includes(a.key)
-      );
-      const bathsCount = bathroomAmenity ? bathroomAmenity.name : "1 Bath";
+      const foundBathroom = roomAmenities[0]; 
+      const bathsCount = foundBathroom ? foundBathroom.name : "1 Bath";
 
       return {
         id: plain.id,
@@ -1073,10 +1075,10 @@ export const getSimilarRooms = async (req, res, next) => {
         image: mainImage,
         property_class: hotelData.property_class,
         price: lowestPrice,
-        rating: hotelData.rating,
+        rating: hotelData.rating ? Number(hotelData.rating.toFixed(1)) : 4.0,
         beds: plain.bed_type || "1 King Bed",
         baths: bathsCount,
-        size: plain.size
+        size:  `${plain.size} sqft`
       };
     });
 
@@ -1089,6 +1091,7 @@ export const getSimilarRooms = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // export const getRooms = async (req, res) => {
 //   try {
