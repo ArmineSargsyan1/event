@@ -1033,7 +1033,7 @@ export const getSimilarRooms = async (req, res, next) => {
         },
         {
           model: Amenity,
-          as: "Amenities",
+          as: "amenities",
           through: { attributes: [] },
           attributes: ["id", "key", "name"],
           required: false,
