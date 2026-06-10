@@ -542,7 +542,7 @@ export const restoreRoom = async (req, res) => {
     const { id } = req.params;
 
     const room = await Room.findByPk(id, {
-      paranoid: false, // 🔥 պարտադիր deleted record գտնելու համար
+      paranoid: false, 
     });
 
     if (!room) {
@@ -989,6 +989,106 @@ export const getRooms = async (req, res) => {
   }
 };
 
+
+
+export const getSimilarRooms = async (req, res, next) => {
+  try {
+    const { roomId, hotelId, property_class } = req.query;
+
+    if (!roomId) {
+      return res.status(400).json({
+        status: "error",
+        message: "roomId is required"
+      });
+    }
+
+    const where = {
+      id: { [Op.ne]: Number(roomId) },
+      status: "active",
+      deleted_at: null,
+
+      ...(hotelId && { hotel_id: Number(hotelId) })
+    };
+
+
+    const rooms = await Room.findAll({
+      where,
+      limit: 3,
+      include: [
+        {
+          model: RoomOption,
+          as: "options",
+          where: { status: "active" },
+          required: true,
+          attributes: ["price"],
+        },
+        {
+          model: Hotels,
+          as: "hotel",
+          attributes: ["property_class", "rating"],
+          required: false,
+          ...(property_class && {
+            where: { property_class }
+          })
+        },
+        {
+          model: Amenity,
+          as: "Amenities",
+          through: { attributes: [] },
+          attributes: ["id", "key", "name"],
+          required: false,
+        },
+
+        {
+          model: Photo,
+          as: "images",
+          attributes: ["id", "path", "is_main"],
+          required: false,
+        }
+      ],
+      order: [["id", "DESC"]]
+    });
+
+
+    const cleanRooms = rooms.map((room) => {
+      const plain = room.toJSON();
+      const hotelData = plain.hotel || {};
+      const roomOptions = plain.options || [];
+      const roomAmenities = plain.Amenities || [];
+
+      const mainImage = plain.images?.find(img => img.is_main)?.path
+        || plain.images?.[0]?.path;
+
+      const pricesArray = roomOptions.map(opt => opt.price);
+      const lowestPrice = pricesArray.length > 0 ? Math.min(...pricesArray) : 0;
+
+      const bathroomAmenity = roomAmenities.find(a =>
+        ["1_bath", "2_bath", "3_bath"].includes(a.key)
+      );
+      const bathsCount = bathroomAmenity ? bathroomAmenity.name : "1 Bath";
+
+      return {
+        id: plain.id,
+        name: plain.name,
+        image: mainImage,
+        property_class: hotelData.property_class,
+        price: lowestPrice,
+        rating: hotelData.rating,
+        beds: plain.bed_type || "1 King Bed",
+        baths: bathsCount,
+        size: plain.size
+      };
+    });
+
+    return res.status(200).json({
+      status: "success",
+      data: cleanRooms
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
 
 // export const getRooms = async (req, res) => {
 //   try {
