@@ -134,104 +134,63 @@ export const getBooking = async (req, res) => {
 
 
 export const createBooking = async (req, res) => {
-  console.log(req.body,88888888888)
-  const { room_id,
-    rate_plan_id,
-    check_in,
-    check_out,
-    guests,} = req.body
+  console.log(req.body, 88888888888);
 
-  console.log( room_id,
-    rate_plan_id,
-    check_in,
-    check_out,
-    guests,)
-
-  const transaction =
-    await sequelize.transaction();
+  const transaction = await sequelize.transaction();
 
   try {
-
+    console.log("CREATE PAYMENT SESSION");
     const {
       room_id,
       rate_plan_id,
       check_in,
       check_out,
       guests,
+      customer_name,  // 🆕 Վերցնում ենք Sidebar-ից եկած անունը
+      customer_phone, // 🆕 Վերցնում ենք Sidebar-ից եկած հեռախոսահամարը
     } = req.body;
 
     // =========================
     // AUTH USER
     // =========================
-    // const user_id = req.user.id;
-    const user_id = 1;
+    const user_id = 1; // Հետագայում կփոխեք req.user.id-ով
 
     // =========================
-    // BOOKING EXPIRES
+    // BOOKING EXPIRES (15 րոպե ժամանակ վճարման համար)
     // =========================
-    const expires_at =
-      new Date(
-        Date.now() +
-        15 * 60 * 1000
-      );
+    const expires_at = new Date(Date.now() + 15 * 60 * 1000);
 
     // =========================
     // ROOM
     // =========================
-    const room =
-      await Room.findByPk(
-        room_id,
-        {
-          transaction,
-          lock:
-          transaction.LOCK.UPDATE,
-        }
-      );
+    const room = await Room.findByPk(room_id, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
 
     if (!room) {
-
       await transaction.rollback();
-
-      return res.status(404).json({
-        message:
-          "Room not found",
-      });
+      return res.status(404).json({ message: "Room not found" });
     }
 
     // =========================
     // GUEST CHECK
     // =========================
-    if (
-      room.max_guests &&
-      guests > room.max_guests
-    ) {
-
+    if (room.max_guests && guests > room.max_guests) {
       await transaction.rollback();
-
-      return res.status(400).json({
-        message:
-          "Too many guests",
-      });
+      return res.status(400).json({ message: "Too many guests" });
     }
 
     // =========================
     // EXPIRE OLD BOOKINGS
     // =========================
     await Booking.update(
-      {
-        status: "expired",
-      },
-
+      { status: "expired" },
       {
         where: {
-
           status: "pending",
-
-          expires_at: {
-            [Op.lt]: new Date(),
-          },
+          expires_at: { [Op.lt]: new Date() },
         },
-
         transaction,
       }
     );
@@ -239,132 +198,78 @@ export const createBooking = async (req, res) => {
     // =========================
     // CHECK CONFLICT
     // =========================
-    const conflict =
-      await Booking.findOne({
-
-        where: {
-
-          room_id,
-
-          status: {
-            [Op.in]: ["pending", "confirmed",],
-          },
-
-          check_in: {[Op.lt]: check_out,},
-
-          check_out: {[Op.gt]: check_in,
-          },
-
-          [Op.or]: [
-
-            {
-              expires_at: null,
-            },
-
-            {
-              expires_at: {
-                [Op.gt]:
-                  new Date(),
-              },
-            },
-          ],
-        },
-
-        transaction,
-
-        lock: transaction.LOCK.UPDATE,
-      });
+    const conflict = await Booking.findOne({
+      where: {
+        room_id,
+        status: { [Op.in]: ["pending", "confirmed"] },
+        check_in: { [Op.lt]: check_out },
+        check_out: { [Op.gt]: check_in },
+        [Op.or]: [
+          { expires_at: null },
+          { expires_at: { [Op.gt]: new Date() } },
+        ],
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
 
     if (conflict) {
-
       await transaction.rollback();
-
-      return res.status(409).json({
-        message:
-          "Room already booked",
-      });
+      return res.status(409).json({ message: "Room already booked" });
     }
 
     // =========================
     // RATE PLAN
     // =========================
-    const ratePlan =
-      await RoomOption.findOne({
+    console.log("RATE PLAN ID =", rate_plan_id);
+    const ratePlan = await RoomOption.findOne({
+      where: {
+        id: rate_plan_id,
+        status: "active",
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
 
-        where: {
-
-          id: rate_plan_id,
-
-          // room_id,
-
-          status: "active",
-        },
-
-        transaction,
-
-        lock:
-        transaction.LOCK.UPDATE,
-      });
+    console.log("RATE PLAN =", ratePlan);
 
     if (!ratePlan) {
-
       await transaction.rollback();
-
-      return res.status(404).json({
-        message:
-          "Rate plan not found",
-      });
+      return res.status(404).json({ message: "Rate plan not found" });
     }
 
     // =========================
     // CALCULATE PRICE
     // =========================
-    const priceData =
-      FileHelper.calculateBookingPrice(
-        ratePlan,
-        check_in,
-        check_out,
-        guests
-      );
+    const priceData = FileHelper.calculateBookingPrice(
+      ratePlan,
+      check_in,
+      check_out,
+      guests
+    );
 
     // =========================
     // CREATE BOOKING
     // =========================
-    const booking =
-      await Booking.create(
-        {
-
-          user_id,
-
-          room_id,
-
-          option_id: rate_plan_id,
-
-          check_in,
-
-          check_out,
-
-          guests,
-
-          total_price:
-          priceData.total,
-
-          status:
-            "pending",
-
-          payment_status:
-            "pending",
-
-          expires_at,
-
-          lock_token:
-            crypto.randomUUID(),
-        },
-
-        {
-          transaction,
-        }
-      );
+    const booking = await Booking.create(
+      {
+        user_id,
+        room_id,
+        option_id: rate_plan_id,
+        // ratePlanId: rate_plan_id, // 👈 🆕 Փոխվեց ratePlanId-ի՝ ըստ մեր նոր մոդելի
+        customer_name,            // 👈 🆕 Պահպանում ենք անունը
+        customer_phone,           // 👈 🆕 Պահպանում ենք հեռախոսահամարը
+        check_in,
+        check_out,
+        guests,
+        total_price: priceData.total,
+        status: "pending",
+        payment_status: "pending",
+        expires_at,
+        lock_token: crypto.randomUUID(),
+      },
+      { transaction }
+    );
 
     // =========================
     // COMMIT
@@ -375,39 +280,41 @@ export const createBooking = async (req, res) => {
     // RETURN BOOKING ID
     // =========================
     return res.status(201).json({
-
       success: true,
-
-      booking_id:
-      booking.id,
-
+      booking_id: booking.id,
       booking,
     });
 
   } catch (error) {
-
     await transaction.rollback();
-
     console.log(error);
-
     return res.status(500).json({
-
       success: false,
-
-      message:
-        "Booking creation failed",
+      message: "Booking creation failed",
     });
   }
 };
 
 
-
-
-///sa ashxatoxn er
 // export const createBooking = async (req, res) => {
-//   const t = await sequelize.transaction();
+//   console.log(req.body,88888888888)
+//   const { room_id,
+//     rate_plan_id,
+//     check_in,
+//     check_out,
+//     guests,} = req.body
+//
+//   console.log( room_id,
+//     rate_plan_id,
+//     check_in,
+//     check_out,
+//     guests,)
+//
+//   const transaction =
+//     await sequelize.transaction();
 //
 //   try {
+//
 //     const {
 //       room_id,
 //       rate_plan_id,
@@ -417,107 +324,249 @@ export const createBooking = async (req, res) => {
 //     } = req.body;
 //
 //     // =========================
-//     // 1. LOCK ROOM
+//     // AUTH USER
 //     // =========================
-//     const room = await Room.findByPk(room_id, {
-//       transaction: t,
-//       lock: t.LOCK.UPDATE,
-//     });
+//     // const user_id = req.user.id;
+//     const user_id = 1;
+//
+//     // =========================
+//     // BOOKING EXPIRES
+//     // =========================
+//     const expires_at =
+//       new Date(
+//         Date.now() +
+//         15 * 60 * 1000
+//       );
+//
+//     // =========================
+//     // ROOM
+//     // =========================
+//     const room =
+//       await Room.findByPk(
+//         room_id,
+//         {
+//           transaction,
+//           lock:
+//           transaction.LOCK.UPDATE,
+//         }
+//       );
 //
 //     if (!room) {
-//       await t.rollback();
-//       return res.status(404).json({ message: "Room not found" });
+//
+//       await transaction.rollback();
+//
+//       return res.status(404).json({
+//         message:
+//           "Room not found",
+//       });
 //     }
 //
 //     // =========================
-//     // 2. OVERLAP CHECK (FIXED)
+//     // GUEST CHECK
 //     // =========================
-//     const conflict = await Booking.findOne({
-//       where: {
-//         room_id,
-//         check_in: { [Op.lt]: check_out },
-//         check_out: { [Op.gt]: check_in },
+//     if (
+//       room.max_guests &&
+//       guests > room.max_guests
+//     ) {
+//
+//       await transaction.rollback();
+//
+//       return res.status(400).json({
+//         message:
+//           "Too many guests",
+//       });
+//     }
+//
+//     // =========================
+//     // EXPIRE OLD BOOKINGS
+//     // =========================
+//     await Booking.update(
+//       {
+//         status: "expired",
 //       },
-//       transaction: t,
-//       lock: t.LOCK.UPDATE,
-//     });
+//
+//       {
+//         where: {
+//
+//           status: "pending",
+//
+//           expires_at: {
+//             [Op.lt]: new Date(),
+//           },
+//         },
+//
+//         transaction,
+//       }
+//     );
+//
+//     // =========================
+//     // CHECK CONFLICT
+//     // =========================
+//     const conflict =
+//       await Booking.findOne({
+//
+//         where: {
+//
+//           room_id,
+//
+//           status: {
+//             [Op.in]: ["pending", "confirmed",],
+//           },
+//
+//           check_in: {[Op.lt]: check_out,},
+//
+//           check_out: {[Op.gt]: check_in,
+//           },
+//
+//           [Op.or]: [
+//
+//             {
+//               expires_at: null,
+//             },
+//
+//             {
+//               expires_at: {
+//                 [Op.gt]:
+//                   new Date(),
+//               },
+//             },
+//           ],
+//         },
+//
+//         transaction,
+//
+//         lock: transaction.LOCK.UPDATE,
+//       });
 //
 //     if (conflict) {
-//       await t.rollback();
+//
+//       await transaction.rollback();
+//
 //       return res.status(409).json({
-//         message: "Room already booked",
+//         message:
+//           "Room already booked",
 //       });
 //     }
 //
 //     // =========================
-//     // 3. RATE PLAN (SAFE)
+//     // RATE PLAN
 //     // =========================
-//     const ratePlan = await RoomOption.findOne({
-//       where: {
-//         id: rate_plan_id,
-//         room_id,
-//       },
-//       transaction: t,
-//     });
+//     const ratePlan =
+//       await RoomOption.findOne({
+//
+//         where: {
+//
+//           id: rate_plan_id,
+//
+//           // room_id,
+//
+//           status: "active",
+//         },
+//
+//         transaction,
+//
+//         lock:
+//         transaction.LOCK.UPDATE,
+//       });
 //
 //     if (!ratePlan) {
-//       await t.rollback();
+//
+//       await transaction.rollback();
+//
 //       return res.status(404).json({
-//         message: "Rate plan not found",
+//         message:
+//           "Rate plan not found",
 //       });
 //     }
 //
 //     // =========================
-//     // 4. PRICE
+//     // CALCULATE PRICE
 //     // =========================
-//     const priceData = calculateBookingPrice(
-//       ratePlan,
-//       check_in,
-//       check_out
-//     );
-//
-//     // =========================
-//     // 5. CREATE BOOKING
-//     // =========================
-//     const booking = await Booking.create(
-//       {
-//         room_id,
-//         option_id: rate_plan_id,
+//     const priceData =
+//       FileHelper.calculateBookingPrice(
+//         ratePlan,
 //         check_in,
 //         check_out,
-//         guests,
-//         total_price: priceData.total,
-//         status: "confirmed",
-//       },
-//       { transaction: t }
-//     );
-//
-//
-//
-//
-//
-//
+//         guests
+//       );
 //
 //     // =========================
-//     // 6. COMMIT
+//     // CREATE BOOKING
 //     // =========================
-//     await t.commit();
+//     const booking =
+//       await Booking.create(
+//         {
 //
-//     return res.json({
+//           user_id,
+//
+//           room_id,
+//
+//           option_id: rate_plan_id,
+//
+//           check_in,
+//
+//           check_out,
+//
+//           guests,
+//
+//           total_price:
+//           priceData.total,
+//
+//           status:
+//             "pending",
+//
+//           payment_status:
+//             "pending",
+//
+//           expires_at,
+//
+//           lock_token:
+//             crypto.randomUUID(),
+//         },
+//
+//         {
+//           transaction,
+//         }
+//       );
+//
+//     // =========================
+//     // COMMIT
+//     // =========================
+//     await transaction.commit();
+//
+//     // =========================
+//     // RETURN BOOKING ID
+//     // =========================
+//     return res.status(201).json({
+//
 //       success: true,
+//
+//       booking_id:
+//       booking.id,
+//
 //       booking,
-//       price_breakdown: priceData,
 //     });
 //
-//   } catch (e) {
-//     await t.rollback();
-//     console.log(e)
+//   } catch (error) {
+//
+//     await transaction.rollback();
+//
+//     console.log(error);
+//
 //     return res.status(500).json({
 //
-//       message: e.message,
+//       success: false,
+//
+//       message:
+//         "Booking creation failed",
 //     });
 //   }
 // };
+
+
+
+
+
 
 
 

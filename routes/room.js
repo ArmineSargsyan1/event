@@ -1,7 +1,7 @@
 import express from "express";
 import * as Controller from "../controllers/room.js";
 import createCloudinaryUpload from "../middlewares/upload.js";
-import {getRoomById} from "../controllers/room.js";
+import {getRoomById, getSimilarRooms} from "../controllers/room.js";
 
 const upload = createCloudinaryUpload('rooms');
 
@@ -12,7 +12,7 @@ const router = express.Router();
    CREATE ROOM
 ========================================================= */
 router.post("/",
-  upload.array("photos"), // 🔥 կարևոր
+  upload.array("photos"),
 
   Controller.createRoom);
 
@@ -21,6 +21,7 @@ router.post("/",
 ========================================================= */
 router.get("/", Controller.getRooms);
 
+router.get("/similar", getSimilarRooms);
 
 router.get("/:id", getRoomById);
 

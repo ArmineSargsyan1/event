@@ -1,4 +1,4 @@
-import { DataTypes, Model } from "sequelize";
+import {DataTypes, Model} from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "./Room.js";
 import RoomOption from "./RoomOption.js";
@@ -26,7 +26,6 @@ class Booking extends Model {
 
 
 Booking.init(
-
   {
     // =========================
     // ID
@@ -50,6 +49,16 @@ Booking.init(
       DataTypes.INTEGER,
 
       allowNull: false,
+    },
+
+    customer_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    customer_phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
 
     room_id: {
@@ -80,9 +89,7 @@ Booking.init(
     },
 
     check_out: {
-
-      type:
-      DataTypes.DATEONLY,
+      type: DataTypes.DATEONLY,
 
       allowNull: false,
     },
@@ -92,8 +99,7 @@ Booking.init(
     // =========================
     guests: {
 
-      type:
-      DataTypes.INTEGER,
+      type: DataTypes.INTEGER,
 
       defaultValue: 1,
     },
@@ -103,17 +109,12 @@ Booking.init(
     // =========================
     total_price: {
 
-      type:
-      DataTypes.FLOAT,
-
+      type: DataTypes.FLOAT,
       allowNull: false,
     },
 
     refund_amount: {
-
-      type:
-      DataTypes.FLOAT,
-
+      type: DataTypes.FLOAT,
       defaultValue: 0,
     },
 
@@ -123,21 +124,9 @@ Booking.init(
     status: {
 
       type:
-        DataTypes.ENUM(
-          "draft",
-          "pending",
+        DataTypes.ENUM("draft", "pending", "confirmed", "cancelled", "expired", "refunded"),
 
-          "confirmed",
-
-          "cancelled",
-
-          "expired",
-
-          "refunded"
-        ),
-
-      defaultValue:
-        "draft",
+      defaultValue: "pending",
     },
 
     // =========================
@@ -147,18 +136,9 @@ Booking.init(
 
       type:
         DataTypes.ENUM(
-
-          "pending",
-
-          "paid",
-
-          "failed",
-
-          "refunded"
+          "pending", "paid", "failed", "refunded"
         ),
-
-      defaultValue:
-        "pending",
+      defaultValue: "pending",
     },
 
     // =========================
@@ -193,7 +173,6 @@ Booking.init(
 
     // =========================
     // LOCK TOKEN
-    // Prevent race conditions
     // =========================
     lock_token: {
 
@@ -218,151 +197,13 @@ Booking.init(
   {
     sequelize,
 
-    modelName:
-      "Booking",
+    modelName: "Booking",
 
-    tableName:
-      "bookings",
+    tableName: "bookings",
 
     underscored: true,
   }
 );
 
-// Booking.init(
-//   {
-//     id: {
-//       type: DataTypes.INTEGER,
-//       autoIncrement: true,
-//       primaryKey: true,
-//     },
-//
-//     user_id: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//
-//     room_id: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//
-//     option_id: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//
-//     check_in: {
-//       type: DataTypes.DATEONLY,
-//       allowNull: false,
-//     },
-//
-//     check_out: {
-//       type: DataTypes.DATEONLY,
-//       allowNull: false,
-//     },
-//
-//     guests: {
-//       type: DataTypes.INTEGER,
-//       defaultValue: 1,
-//     },
-//
-//     total_price: {
-//       type: DataTypes.FLOAT,
-//       allowNull: false,
-//     },
-//
-//     status: {
-//       type: DataTypes.ENUM(
-//         "pending",
-//         "confirmed",
-//         "cancelled",
-//         "expired",
-//         "refunded"
-//       ),
-//
-//       defaultValue: "pending",
-//     },
-//
-//     expires_at: {
-//       type: DataTypes.DATE,
-//       allowNull: true,
-//     },
-//
-//     // 🔥 IMPORTANT — prevents race conditions
-//     lock_token: {
-//       type: DataTypes.STRING,
-//       allowNull: true,
-//     },
-//
-//     cancelled_at: {
-//       type: DataTypes.DATE,
-//       allowNull: true,
-//     },
-//
-//     refund_amount: {
-//       type: DataTypes.FLOAT,
-//       defaultValue: 0,
-//     },
-//   },
-//   {
-//     sequelize,
-//     modelName: "Booking",
-//     tableName: "bookings",
-//     underscored: true,
-//   }
-// );
-
-
-//
-// Booking.init(
-//   {
-//     id: {
-//       type: DataTypes.INTEGER,
-//       autoIncrement: true,
-//       primaryKey: true,
-//     },
-//
-//     room_id: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//
-//     rate_plan_id: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//
-//     check_in: {
-//       type: DataTypes.DATEONLY,
-//       allowNull: false,
-//     },
-//
-//     check_out: {
-//       type: DataTypes.DATEONLY,
-//       allowNull: false,
-//     },
-//
-//     guests: {
-//       type: DataTypes.INTEGER,
-//       defaultValue: 1,
-//     },
-//
-//     total_price: {
-//       type: DataTypes.FLOAT,
-//       allowNull: false,
-//     },
-//
-//     status: {
-//       type: DataTypes.ENUM("pending", "confirmed", "cancelled"),
-//       defaultValue: "pending",
-//     },
-//   },
-//   {
-//     sequelize,
-//     modelName: "Booking",
-//     tableName: "bookings",
-//     underscored: true,
-//   }
-// );
 
 export default Booking;

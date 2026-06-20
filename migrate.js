@@ -13,15 +13,16 @@ import * as Models from "./models/index.js";
       Models.Room,
       Models.RoomOption,
       Models.Accessibility,
-     Models.RoomExtra,
+      Models.RoomExtra,
       Models.RoomAmenities,
       Models.LocationPoint,
       Models.Reviews,
       Models.ReviewLiked,
       Models.ReviewReplies,
       Models.Photos,
-Models.Favorites,
-       Models.Booking,
+      Models.Favorites,
+      Models.Booking,
+      Models.StripeEventLog,
 
     ];
 

@@ -26,13 +26,13 @@ RoomOption.init(
       allowNull: false,
     },
 
-    // 🏷 plan name
+    // plan name
     name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
 
-    // 💰 base price per night
+    // base price per night
     price: {
       type: DataTypes.FLOAT,
       allowNull: false,
@@ -50,7 +50,7 @@ RoomOption.init(
       defaultValue: "none",
     },
 
-    // 💳 cancellation type
+    // cancellation type
     cancellation_type: {
       type: DataTypes.ENUM(
         "free",
@@ -67,13 +67,13 @@ RoomOption.init(
       defaultValue: 1,
     },
 
-    // 🕒 cutoff time (e.g. 23:59)
+    // cutoff time (e.g. 23:59)
     cancel_time: {
       type: DataTypes.STRING,
       defaultValue: "23:59",
     },
 
-    // 📅 season pricing
+    // season pricing
     season_start: {
       type: DataTypes.DATEONLY,
       allowNull: true,
@@ -84,13 +84,23 @@ RoomOption.init(
       allowNull: true,
     },
 
-    // 📈 price modifier (% or fixed adjustment)
+    //  price modifier (%)
     price_modifier: {
       type: DataTypes.FLOAT,
       defaultValue: 0,
     },
 
-    // 💳 pay rules
+    discount_start: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    discount_end: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+
+    // pay rules
     pay_later: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -101,7 +111,7 @@ RoomOption.init(
       defaultValue: true,
     },
 
-    // 📦 active/inactive plan
+    //  active/inactive plan
     status: {
       type: DataTypes.ENUM("active", "inactive"),
       defaultValue: "active",
@@ -121,79 +131,3 @@ RoomOption.init(
 export default RoomOption;
 
 
-
-// {
-//   title: {
-//     type: DataTypes.STRING, // "Free cancellation + Breakfast"
-//     allowNull: false,
-//   },
-//
-//   // 💰 final price (NOT modifier)
-//   price: {
-//     type: DataTypes.FLOAT,
-//     allowNull: false,
-//   },
-//
-//   // 🍽
-//   meal_plan: {
-//     type: DataTypes.ENUM(
-//       "none",
-//       "breakfast",
-//       "half_board",
-//       "full_board",
-//       "all_inclusive"
-//     ),
-//     defaultValue: "none",
-//   },
-//
-//   // 💳
-//   free_cancellation: {
-//     type: DataTypes.BOOLEAN,
-//     defaultValue: false,
-//   },
-//
-//   pay_later: {
-//     type: DataTypes.BOOLEAN,
-//     defaultValue: false,
-//   },
-//
-//   // 🕒 optional
-//   cancellation_deadline: DataTypes.DATE,
-//
-//   cancellation_type: {
-//     type: DataTypes.ENUM("free", "partial", "non_refundable"),
-//     defaultValue: "free",
-//   },
-//
-//   free_cancel_days: {
-//     type: DataTypes.INTEGER, // օրինակ՝ 1 → 1 օր առաջ
-//     defaultValue: 1,
-//   },
-//
-//   cancel_time: {
-//     type: DataTypes.STRING, // "23:59"
-//     defaultValue: "23:59",
-//   },
-//
-// },
-
-
-// RoomOption.init(
-//   {
-//     type: {
-//       type: DataTypes.STRING,
-//       allowNull: false, // refundable / non-refundable
-//     },
-//     priceModifier: {
-//       type: DataTypes.FLOAT,
-//       allowNull: false,
-//       defaultValue: 0,
-//     },
-//   },
-//   {
-//     sequelize,
-//     modelName: "RoomOption",
-//     tableName: "roomOptions",
-//     underscored: true
-//   }
-// );

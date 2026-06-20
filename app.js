@@ -14,6 +14,7 @@ import * as cheerio from "cheerio";
 import puppeteer from "puppeteer";
 import createCloudinaryUpload from './middlewares/upload.js';
 import * as paymentController from "./controllers/payment.js";
+import sequelize from "./clients/db.sequelize.mysql.js";
 
 
 const uploadRoomImages = createCloudinaryUpload('rooms');
@@ -94,7 +95,7 @@ app.get('/api/hotels', async (req, res) => {
 });
 
 
-
+console.log("DB:", sequelize.config.database),999999999999999;
 
 
 app.use((req, res, next) => {

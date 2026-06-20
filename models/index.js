@@ -16,6 +16,7 @@ export { default as Reviews } from './Reviews.js';
 export { default as ReviewLiked } from './ReviewLiked.js';
 export { default as ReviewReplies } from './ReviewReplies.js';
 export { default as Favorites } from './Favorites.js';
+export { default as StripeEventLog} from './StripeEventLog.js';
 
 export { default as RoomAmenities } from './RoomAmenities.js';
 export { default as Photos } from './Photo.js';
