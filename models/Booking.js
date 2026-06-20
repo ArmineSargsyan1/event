@@ -1,4 +1,4 @@
-import {DataTypes, Model} from "sequelize";
+import { DataTypes, Model } from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "./Room.js";
 import RoomOption from "./RoomOption.js";
@@ -6,7 +6,6 @@ import User from "./User.js";
 
 class Booking extends Model {
   static associate() {
-
     Booking.belongsTo(User, {
       foreignKey: "user_id",
       as: "user",
@@ -24,91 +23,55 @@ class Booking extends Model {
   }
 }
 
-
 Booking.init(
   {
-    // =========================
-    // ID
-    // =========================
     id: {
-
-      type:
-      DataTypes.INTEGER,
-
+      type: DataTypes.INTEGER,
       autoIncrement: true,
-
       primaryKey: true,
     },
 
-    // =========================
-    // RELATIONS
-    // =========================
     user_id: {
-
-      type:
-      DataTypes.INTEGER,
-
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
 
     customer_name: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
     },
 
     customer_phone: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
     },
 
     room_id: {
-
-      type:
-      DataTypes.INTEGER,
-
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
 
     option_id: {
-
-      type:
-      DataTypes.INTEGER,
-
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
 
-    // =========================
-    // BOOKING DATES
-    // =========================
     check_in: {
-
-      type:
-      DataTypes.DATEONLY,
-
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
 
     check_out: {
       type: DataTypes.DATEONLY,
-
       allowNull: false,
     },
 
-    // =========================
-    // GUESTS
-    // =========================
     guests: {
-
       type: DataTypes.INTEGER,
-
       defaultValue: 1,
     },
 
-    // =========================
-    // PRICE
-    // =========================
     total_price: {
-
       type: DataTypes.FLOAT,
       allowNull: false,
     },
@@ -118,92 +81,63 @@ Booking.init(
       defaultValue: 0,
     },
 
-    // =========================
-    // BOOKING STATUS
-    // =========================
     status: {
-
-      type:
-        DataTypes.ENUM("draft", "pending", "confirmed", "cancelled", "expired", "refunded"),
-
+      type: DataTypes.ENUM(
+        "draft",
+        "pending",
+        "confirmed",
+        "cancelled",
+        "expired",
+        "refunded"
+      ),
       defaultValue: "pending",
     },
 
-    // =========================
-    // PAYMENT STATUS
-    // =========================
     payment_status: {
-
-      type:
-        DataTypes.ENUM(
-          "pending", "paid", "failed", "refunded"
-        ),
+      type: DataTypes.ENUM(
+        "pending",
+        "paid",
+        "failed",
+        "refunded"
+      ),
       defaultValue: "pending",
     },
 
-    // =========================
-    // STRIPE
-    // =========================
     stripe_session_id: {
-
-      type:
-      DataTypes.STRING,
-
-      allowNull: true,
+      type: DataTypes.STRING,
     },
 
     paid_at: {
-
-      type:
-      DataTypes.DATE,
-
-      allowNull: true,
+      type: DataTypes.DATE,
     },
 
-    // =========================
-    // BOOKING EXPIRATION
-    // =========================
     expires_at: {
-
-      type:
-      DataTypes.DATE,
-
-      allowNull: true,
+      type: DataTypes.DATE,
     },
 
-    // =========================
-    // LOCK TOKEN
-    // =========================
     lock_token: {
-
-      type:
-      DataTypes.STRING,
-
-      allowNull: true,
+      type: DataTypes.STRING,
     },
 
-    // =========================
-    // CANCELLATION
-    // =========================
     cancelled_at: {
+      type: DataTypes.DATE,
+    },
 
-      type:
-      DataTypes.DATE,
+    // 🔐 SUCCESS PAGE SECURITY
+    success_token: {
+      type: DataTypes.STRING,
+    },
 
-      allowNull: true,
+    success_token_expires: {
+      type: DataTypes.DATE,
     },
   },
-
   {
     sequelize,
-
     modelName: "Booking",
-
     tableName: "bookings",
-
     underscored: true,
   }
 );
-
 
 export default Booking;

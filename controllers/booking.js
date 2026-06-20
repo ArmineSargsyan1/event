@@ -295,6 +295,58 @@ export const createBooking = async (req, res) => {
 };
 
 
+export const getSuccessToken = async (req, res) => {
+  const { id } = req.params;
+
+  const booking = await Booking.findByPk(id);
+
+  if (!booking || booking.status !== "confirmed") {
+    return res.status(403).json({ message: "Not allowed" });
+  }
+
+  return res.json({
+    token: booking.success_token,
+  });
+};
+
+export const getBookingConfirmation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { token } = req.query;
+
+    const booking = await Booking.findByPk(id);
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (
+      !booking.success_token ||
+      booking.success_token !== token ||
+      new Date(booking.success_token_expires) < new Date()
+    ) {
+      return res.status(403).json({ message: "Invalid or expired token" });
+    }
+
+    return res.json({
+      id: booking.id,
+      roomId: booking.room_id,
+      checkIn: booking.check_in,
+      checkOut: booking.check_out,
+      guests: booking.guests,
+      totalPrice: booking.total_price,
+
+      status: booking.status,
+      paymentStatus: booking.payment_status,
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 // export const createBooking = async (req, res) => {
 //   console.log(req.body,88888888888)
 //   const { room_id,

@@ -122,6 +122,7 @@ import Stripe from "stripe";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import {Op} from "sequelize";
 import StripeEventLog from "../models/StripeEventLog.js";
+import crypto from "crypto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -245,6 +246,8 @@ export const createBookingSession = async (req, res) => {
   }
 };
 
+
+
 export const stripeBookingWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
@@ -261,68 +264,163 @@ export const stripeBookingWebhook = async (req, res) => {
 
   try {
     // =========================
-    // 1. IDEMPOTENCY (STRIPE EVENT LEVEL)
+    // FILTER EVENTS
     // =========================
-    const alreadyProcessed = await StripeEventLog.findByPk(event.id);
-
-    if (alreadyProcessed) {
-      return res.json({received: true});
+    if (
+      event.type !== "payment_intent.succeeded" &&
+      event.type !== "payment_intent.payment_failed"
+    ) {
+      return res.json({ received: true });
     }
 
-    await StripeEventLog.create({id: event.id});
+    // =========================
+    // IDEMPOTENCY EVENT
+    // =========================
+    await StripeEventLog.findOrCreate({
+      where: { id: event.id },
+      defaults: { id: event.id },
+    });
 
-    // =========================
-    // 2. GET BOOKING
-    // =========================
     const paymentIntent = event.data.object;
+
+    if (!paymentIntent.metadata?.booking_id) {
+      return res.json({ received: true });
+    }
+
     const bookingId = paymentIntent.metadata.booking_id;
 
     const booking = await Booking.findByPk(bookingId);
-
-    if (!booking) {
-      return res.json({received: true});
-    }
+    if (!booking) return res.json({ received: true });
 
     // =========================
-    // 3. IDEMPOTENCY (BOOKING LEVEL)
-    // =========================
-    if (booking.status === "confirmed") {
-      return res.json({received: true});
-    }
-
-    if (booking.status === "cancelled") {
-      return res.json({received: true});
-    }
-
-    // =========================
-    // 4. SUCCESS
+    // SUCCESS
     // =========================
     if (event.type === "payment_intent.succeeded") {
-      booking.payment_status = "paid";
-      booking.status = "confirmed";
-      booking.paid_at = new Date();
-
-      await booking.save();
-
-      console.log(`Booking ${bookingId} confirmed`);
+      await Booking.update(
+        {
+          payment_status: "paid",
+          status: "confirmed",
+          paid_at: new Date(),
+          success_token: crypto.randomBytes(32).toString("hex"),
+          success_token_expires: new Date(Date.now() + 10 * 60 * 1000),
+        },
+        {
+          where: {
+            id: bookingId,
+            status: "pending",
+          },
+        }
+      );
     }
 
     // =========================
-    // 5. FAILED
+    // FAILED
     // =========================
     if (event.type === "payment_intent.payment_failed") {
-      booking.payment_status = "failed";
-      booking.status = "pending";
-
-      await booking.save();
-
-      console.log(`Booking ${bookingId} failed`);
+      await Booking.update(
+        {
+          payment_status: "failed",
+          status: "pending",
+        },
+        {
+          where: {
+            id: bookingId,
+            status: "pending",
+          },
+        }
+      );
     }
 
-    return res.json({received: true});
+    return res.json({ received: true });
   } catch (error) {
     console.error("Webhook error:", error);
-    return res.json({received: true});
+    return res.json({ received: true });
   }
 };
+
+
+
+// export const stripeBookingWebhook = async (req, res) => {
+//   const sig = req.headers["stripe-signature"];
+//   let event;
+//
+//   try {
+//     event = stripe.webhooks.constructEvent(
+//       req.body,
+//       sig,
+//       process.env.STRIPE_WEBHOOK_SECRET
+//     );
+//   } catch (err) {
+//     return res.status(400).send(`Webhook Error: ${err.message}`);
+//   }
+//
+//   try {
+//     // =========================
+//     // 1. IDEMPOTENCY (STRIPE EVENT LEVEL)
+//     // =========================
+//     const alreadyProcessed = await StripeEventLog.findByPk(event.id);
+//
+//     if (alreadyProcessed) {
+//       return res.json({received: true});
+//     }
+//
+//     await StripeEventLog.create({id: event.id});
+//
+//     // =========================
+//     // 2. GET BOOKING
+//     // =========================
+//     const paymentIntent = event.data.object;
+//     const bookingId = paymentIntent.metadata.booking_id;
+//
+//     const booking = await Booking.findByPk(bookingId);
+//
+//     if (!booking) {
+//       return res.json({received: true});
+//     }
+//
+//     // =========================
+//     // 3. IDEMPOTENCY (BOOKING LEVEL)
+//     // =========================
+//     if (booking.status === "confirmed") {
+//       return res.json({received: true});
+//     }
+//
+//     if (booking.status === "cancelled") {
+//       return res.json({received: true});
+//     }
+//
+//     // =========================
+//     // 4. SUCCESS
+//     // =========================
+//     if (event.type === "payment_intent.succeeded") {
+//       booking.payment_status = "paid";
+//       booking.status = "confirmed";
+//       booking.paid_at = new Date();
+//
+//       booking.success_token = crypto.randomBytes(32).toString("hex");
+//       booking.success_token_expires = new Date(Date.now() + 10 * 60 * 1000);
+//       await booking.save();
+//
+//       console.log(`Booking ${bookingId} confirmed`);
+//     }
+//
+//     // =========================
+//     // 5. FAILED
+//     // =========================
+//     if (event.type === "payment_intent.payment_failed") {
+//       booking.payment_status = "failed";
+//       booking.status = "pending";
+//
+//       await booking.save();
+//
+//       console.log(`Booking ${bookingId} failed`);
+//     }
+//
+//     return res.json({received: true});
+//   } catch (error) {
+//     console.error("Webhook error:", error);
+//     return res.json({received: true});
+//   }
+// };
+
 

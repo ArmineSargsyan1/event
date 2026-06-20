@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createBooking,
-  cancelBooking, getMyBookings, getBookingById, getBooking, createDraftBooking,
+  cancelBooking, getMyBookings, getBookingById, getBooking, createDraftBooking, getBookingConfirmation, getSuccessToken,
 } from "../controllers/booking.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/booking.schema.js";
@@ -24,6 +24,18 @@ router.get(
 
 // Create booking
 router.post("/", createBooking);
+
+
+router.get(
+  "/:id/success",
+  getSuccessToken
+);
+
+router.post(
+  "/${id}/confirmation",
+  getBookingConfirmation
+);
+
 
 // Cancel booking
 router.put("/:bookingId/cancel", cancelBooking);
