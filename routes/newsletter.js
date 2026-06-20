@@ -1,5 +1,5 @@
 import express from "express";
-import { subscribeNewsletter } from "../controllers/Newsletter.js";
+import { subscribeNewsletter } from "../controllers/newsletter.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/newsletter.schema.js";
 

@@ -128,25 +128,25 @@ export const createBookingSession = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { bookingId } = req.body;
+    const {bookingId} = req.body;
     // const userId = req.userid;
     const userId = 1;
 
     const booking = await Booking.findByPk(bookingId, {
-      include: [{ model: Room, as: "room" }],
+      include: [{model: Room, as: "room"}],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
 
     if (!booking) {
       await t.rollback();
-      return res.status(404).json({ message: "Booking not found" });
+      return res.status(404).json({message: "Booking not found"});
     }
 
 
     if (booking.user_id !== userId) {
       await t.rollback();
-      return res.status(403).json({ message: "Access denied" });
+      return res.status(403).json({message: "Access denied"});
     }
 
     // =========================
@@ -167,7 +167,7 @@ export const createBookingSession = async (req, res) => {
       new Date(booking.expires_at) < new Date()
     ) {
       await t.rollback();
-      return res.status(409).json({ message: "Booking expired" });
+      return res.status(409).json({message: "Booking expired"});
     }
 
     // =========================
@@ -176,10 +176,10 @@ export const createBookingSession = async (req, res) => {
     const conflict = await Booking.findOne({
       where: {
         room_id: booking.room_id,
-        id: { [Op.ne]: booking.id },
+        id: {[Op.ne]: booking.id},
         status: "confirmed",
-        check_in: { [Op.lt]: booking.check_out },
-        check_out: { [Op.gt]: booking.check_in },
+        check_in: {[Op.lt]: booking.check_out},
+        check_out: {[Op.gt]: booking.check_in},
       },
       transaction: t,
       lock: t.LOCK.UPDATE,
@@ -187,7 +187,7 @@ export const createBookingSession = async (req, res) => {
 
     if (conflict) {
       await t.rollback();
-      return res.status(409).json({ message: "Room already booked" });
+      return res.status(409).json({message: "Room already booked"});
     }
 
     // =========================
@@ -209,16 +209,22 @@ export const createBookingSession = async (req, res) => {
     // =========================
     // CREATE PAYMENT INTENT
     // =========================
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(booking.total_price * 100),
-      currency: "usd",
-      payment_method_types: ["card"],
-      metadata: { booking_id: bookingId },
-      idempotencyKey: `booking_${bookingId}`,
-    });
+
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: Math.round(booking.total_price * 100),
+        currency: "usd",
+        payment_method_types: ["card"],
+        metadata: {booking_id: bookingId,},
+      },
+      {
+        idempotencyKey: `booking_${bookingId}`,
+      }
+    );
+
 
     booking.stripe_session_id = paymentIntent.id;
-    await booking.save({ transaction: t });
+    await booking.save({transaction: t});
 
     await t.commit();
 
@@ -258,10 +264,10 @@ export const stripeBookingWebhook = async (req, res) => {
     const alreadyProcessed = await StripeEventLog.findByPk(event.id);
 
     if (alreadyProcessed) {
-      return res.json({ received: true });
+      return res.json({received: true});
     }
 
-    await StripeEventLog.create({ id: event.id });
+    await StripeEventLog.create({id: event.id});
 
     // =========================
     // 2. GET BOOKING
@@ -272,18 +278,18 @@ export const stripeBookingWebhook = async (req, res) => {
     const booking = await Booking.findByPk(bookingId);
 
     if (!booking) {
-      return res.json({ received: true });
+      return res.json({received: true});
     }
 
     // =========================
     // 3. IDEMPOTENCY (BOOKING LEVEL)
     // =========================
     if (booking.status === "confirmed") {
-      return res.json({ received: true });
+      return res.json({received: true});
     }
 
     if (booking.status === "cancelled") {
-      return res.json({ received: true });
+      return res.json({received: true});
     }
 
     // =========================
@@ -311,10 +317,10 @@ export const stripeBookingWebhook = async (req, res) => {
       console.log(`Booking ${bookingId} failed`);
     }
 
-    return res.json({ received: true });
+    return res.json({received: true});
   } catch (error) {
     console.error("Webhook error:", error);
-    return res.json({ received: true });
+    return res.json({received: true});
   }
 };
 
