@@ -162,16 +162,6 @@ export const createBookingSession = async (req, res) => {
       });
     }
 
-    // =========================
-    // EXPIRE CHECK
-    // =========================
-    if (
-      booking.expires_at &&
-      new Date(booking.expires_at) < new Date()
-    ) {
-      await t.rollback();
-      return res.status(409).json({message: "Booking expired"});
-    }
 
     // =========================
     // ROOM CONFLICT CHECK (LOCKED)
