@@ -254,7 +254,7 @@ export const stripeBookingWebhook = async (req, res) => {
 
   try {
     // =========================
-    // 1. FILTER ONLY IMPORTANT EVENTS
+    // FILTER EVENTS
     // =========================
     if (
       event.type !== "payment_intent.succeeded" &&
@@ -264,21 +264,17 @@ export const stripeBookingWebhook = async (req, res) => {
     }
 
     // =========================
-    // 2. IDEMPOTENCY (EVENT LEVEL)
+    // IDEMPOTENCY (EVENT LEVEL)
     // =========================
-    const alreadyProcessed = await StripeEventLog.findByPk(event.id);
+    const existing = await StripeEventLog.findByPk(event.id);
 
-    if (alreadyProcessed) {
+    if (existing) {
       return res.json({ received: true });
     }
 
     await StripeEventLog.create({ id: event.id });
 
-    // =========================
-    // 3. GET BOOKING
-    // =========================
     const paymentIntent = event.data.object;
-
     const bookingId = paymentIntent.metadata?.booking_id;
 
     if (!bookingId) {
@@ -292,41 +288,31 @@ export const stripeBookingWebhook = async (req, res) => {
     }
 
     // =========================
-    // 4. SUCCESS
+    // SUCCESS
     // =========================
     if (event.type === "payment_intent.succeeded") {
-      // 🔥 IMPORTANT: NO "pending" CONDITION (FIXED)
-      if (booking.payment_status !== "paid") {
+      if (booking.status !== "confirmed") {
         booking.payment_status = "paid";
         booking.status = "confirmed";
         booking.paid_at = new Date();
 
-        // 🔐 GENERATE SUCCESS TOKEN ALWAYS HERE
         booking.success_token = crypto.randomBytes(32).toString("hex");
-        booking.success_token_expires = new Date(
-          Date.now() + 10 * 60 * 1000
-        );
+        booking.success_token_expires = new Date(Date.now() + 10 * 60 * 1000);
 
         await booking.save();
       }
-
-      console.log(`Booking ${bookingId} confirmed`);
     }
 
     // =========================
-    // 5. FAILED PAYMENT
+    // FAILED
     // =========================
     if (event.type === "payment_intent.payment_failed") {
       if (booking.payment_status !== "failed") {
         booking.payment_status = "failed";
-
-        // keep it pending so user can retry
         booking.status = "pending";
 
         await booking.save();
       }
-
-      console.log(`Booking ${bookingId} failed`);
     }
 
     return res.json({ received: true });
