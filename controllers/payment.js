@@ -264,7 +264,7 @@ export const stripeBookingWebhook = async (req, res) => {
 
   try {
     // =========================
-    // FILTER EVENTS
+    // 1. FILTER ONLY IMPORTANT EVENTS
     // =========================
     if (
       event.type !== "payment_intent.succeeded" &&
@@ -274,61 +274,69 @@ export const stripeBookingWebhook = async (req, res) => {
     }
 
     // =========================
-    // IDEMPOTENCY EVENT
+    // 2. IDEMPOTENCY (EVENT LEVEL)
     // =========================
-    await StripeEventLog.findOrCreate({
-      where: { id: event.id },
-      defaults: { id: event.id },
-    });
+    const alreadyProcessed = await StripeEventLog.findByPk(event.id);
 
-    const paymentIntent = event.data.object;
-
-    if (!paymentIntent.metadata?.booking_id) {
+    if (alreadyProcessed) {
       return res.json({ received: true });
     }
 
-    const bookingId = paymentIntent.metadata.booking_id;
+    await StripeEventLog.create({ id: event.id });
+
+    // =========================
+    // 3. GET BOOKING
+    // =========================
+    const paymentIntent = event.data.object;
+
+    const bookingId = paymentIntent.metadata?.booking_id;
+
+    if (!bookingId) {
+      return res.json({ received: true });
+    }
 
     const booking = await Booking.findByPk(bookingId);
-    if (!booking) return res.json({ received: true });
 
-    // =========================
-    // SUCCESS
-    // =========================
-    if (event.type === "payment_intent.succeeded") {
-      await Booking.update(
-        {
-          payment_status: "paid",
-          status: "confirmed",
-          paid_at: new Date(),
-          success_token: crypto.randomBytes(32).toString("hex"),
-          success_token_expires: new Date(Date.now() + 10 * 60 * 1000),
-        },
-        {
-          where: {
-            id: bookingId,
-            status: "pending",
-          },
-        }
-      );
+    if (!booking) {
+      return res.json({ received: true });
     }
 
     // =========================
-    // FAILED
+    // 4. SUCCESS
+    // =========================
+    if (event.type === "payment_intent.succeeded") {
+      // 🔥 IMPORTANT: NO "pending" CONDITION (FIXED)
+      if (booking.payment_status !== "paid") {
+        booking.payment_status = "paid";
+        booking.status = "confirmed";
+        booking.paid_at = new Date();
+
+        // 🔐 GENERATE SUCCESS TOKEN ALWAYS HERE
+        booking.success_token = crypto.randomBytes(32).toString("hex");
+        booking.success_token_expires = new Date(
+          Date.now() + 10 * 60 * 1000
+        );
+
+        await booking.save();
+      }
+
+      console.log(`Booking ${bookingId} confirmed`);
+    }
+
+    // =========================
+    // 5. FAILED PAYMENT
     // =========================
     if (event.type === "payment_intent.payment_failed") {
-      await Booking.update(
-        {
-          payment_status: "failed",
-          status: "pending",
-        },
-        {
-          where: {
-            id: bookingId,
-            status: "pending",
-          },
-        }
-      );
+      if (booking.payment_status !== "failed") {
+        booking.payment_status = "failed";
+
+        // keep it pending so user can retry
+        booking.status = "pending";
+
+        await booking.save();
+      }
+
+      console.log(`Booking ${bookingId} failed`);
     }
 
     return res.json({ received: true });
