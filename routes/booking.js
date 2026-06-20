@@ -31,7 +31,7 @@ router.get(
   getSuccessToken
 );
 
-router.post(
+router.get(
   "/:id/confirmation",
   getBookingConfirmation
 );
