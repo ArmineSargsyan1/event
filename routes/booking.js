@@ -32,7 +32,7 @@ router.get(
 );
 
 router.post(
-  "/${id}/confirmation",
+  "/:id/confirmation",
   getBookingConfirmation
 );
 
