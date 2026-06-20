@@ -122,6 +122,9 @@ import Stripe from "stripe";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import {Op} from "sequelize";
 import StripeEventLog from "../models/StripeEventLog.js";
+import Hotels from "../models/Hotels.js";
+import Photo from "../models/Photo.js";
+import Amenity from "../models/Amenity.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -133,11 +136,33 @@ export const createBookingSession = async (req, res) => {
     // const userId = req.userid;
     const userId = 1;
 
+
     const booking = await Booking.findByPk(bookingId, {
-      include: [{model: Room, as: "room"}],
+      include: [
+        {model: Room, as: "room",
+          include: [
+            {
+              model: Hotels,
+              as: "hotel",
+              attributes: ["id", "name", "address", "lat", "lon",],
+            },
+            {
+              model: Photo,
+              as: "images",
+              attributes: ["id", "path"],
+            },
+            {
+              model: Amenity,
+              as: "amenities",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
+      ],
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
+
 
     if (!booking) {
       await t.rollback();
@@ -191,6 +216,24 @@ export const createBookingSession = async (req, res) => {
       return res.status(409).json({message: "Room already booked"});
     }
 
+
+    const room = booking.room || null;
+
+    const formattedRoom = {
+      id: room.id,
+      name: room.name,
+      images: room.images,
+      amenities: room.amenities,
+
+      hotel: {
+        id: room.hotel?.id,
+        name: room.hotel?.name,
+        address: room.hotel?.address,
+        lat: room.hotel?.lat,
+        lng: room.hotel?.lon,
+      },
+    };
+
     // =========================
     // REUSE INTENT (FIXED ORDER)
     // =========================
@@ -204,6 +247,7 @@ export const createBookingSession = async (req, res) => {
       return res.json({
         success: true,
         clientSecret: existingIntent.client_secret,
+        room: formattedRoom,
       });
     }
 
@@ -229,9 +273,11 @@ export const createBookingSession = async (req, res) => {
 
     await t.commit();
 
+
     return res.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
+      room: formattedRoom,
     });
   } catch (error) {
     console.log(error);
