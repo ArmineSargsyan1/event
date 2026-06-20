@@ -253,9 +253,6 @@ export const stripeBookingWebhook = async (req, res) => {
   }
 
   try {
-    // =========================
-    // FILTER EVENTS
-    // =========================
     if (
       event.type !== "payment_intent.succeeded" &&
       event.type !== "payment_intent.payment_failed"
@@ -263,37 +260,20 @@ export const stripeBookingWebhook = async (req, res) => {
       return res.json({ received: true });
     }
 
-    // =========================
-    // IDEMPOTENCY (EVENT LEVEL)
-    // =========================
-    const existing = await StripeEventLog.findByPk(event.id);
-
-    if (existing) {
-      return res.json({ received: true });
-    }
-
-    await StripeEventLog.create({ id: event.id });
-
     const paymentIntent = event.data.object;
     const bookingId = paymentIntent.metadata?.booking_id;
 
-    if (!bookingId) {
-      return res.json({ received: true });
-    }
+    if (!bookingId) return res.json({ received: true });
 
     const booking = await Booking.findByPk(bookingId);
 
-    if (!booking) {
-      return res.json({ received: true });
-    }
+    if (!booking) return res.json({ received: true });
 
-    // =========================
-    // SUCCESS
-    // =========================
+    // 🔥 SUCCESS
     if (event.type === "payment_intent.succeeded") {
       if (booking.status !== "confirmed") {
-        booking.payment_status = "paid";
         booking.status = "confirmed";
+        booking.payment_status = "paid";
         booking.paid_at = new Date();
 
         booking.success_token = crypto.randomBytes(32).toString("hex");
@@ -303,21 +283,17 @@ export const stripeBookingWebhook = async (req, res) => {
       }
     }
 
-    // =========================
-    // FAILED
-    // =========================
+    // ❌ FAILED
     if (event.type === "payment_intent.payment_failed") {
-      if (booking.payment_status !== "failed") {
-        booking.payment_status = "failed";
-        booking.status = "pending";
+      booking.status = "pending";
+      booking.payment_status = "failed";
 
-        await booking.save();
-      }
+      await booking.save();
     }
 
     return res.json({ received: true });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error(error);
     return res.json({ received: true });
   }
 };

@@ -330,16 +330,13 @@ export const getBookingConfirmation = async (req, res) => {
 
     return res.json({
       id: booking.id,
-      roomId: booking.room_id,
       checkIn: booking.check_in,
       checkOut: booking.check_out,
       guests: booking.guests,
       totalPrice: booking.total_price,
-
       status: booking.status,
       paymentStatus: booking.payment_status,
     });
-
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Server error" });
