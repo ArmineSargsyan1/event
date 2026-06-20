@@ -146,17 +146,17 @@ export const createBooking = async (req, res) => {
       check_in,
       check_out,
       guests,
-      customer_name,  // 🆕 Վերցնում ենք Sidebar-ից եկած անունը
-      customer_phone, // 🆕 Վերցնում ենք Sidebar-ից եկած հեռախոսահամարը
+      customer_name,
+      customer_phone,
     } = req.body;
 
     // =========================
     // AUTH USER
     // =========================
-    const user_id = 1; // Հետագայում կփոխեք req.user.id-ով
+    const user_id = 1;
 
     // =========================
-    // BOOKING EXPIRES (15 րոպե ժամանակ վճարման համար)
+
     // =========================
     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -256,9 +256,8 @@ export const createBooking = async (req, res) => {
         user_id,
         room_id,
         option_id: rate_plan_id,
-        // ratePlanId: rate_plan_id, // 👈 🆕 Փոխվեց ratePlanId-ի՝ ըստ մեր նոր մոդելի
-        customer_name,            // 👈 🆕 Պահպանում ենք անունը
-        customer_phone,           // 👈 🆕 Պահպանում ենք հեռախոսահամարը
+        customer_name,
+        customer_phone,
         check_in,
         check_out,
         guests,

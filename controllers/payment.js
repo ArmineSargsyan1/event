@@ -121,6 +121,7 @@ import Room from "../models/Room.js";
 import Stripe from "stripe";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import {Op} from "sequelize";
+import StripeEventLog from "../models/StripeEventLog.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
