@@ -4,6 +4,7 @@ import FileHelper from "../services/Utils.js";
 import {Op, Utils} from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "../models/Room.js";
+import {RoomExtra} from "../models/index.js";
 
 
 export const isRoomAvailable = async (room_id, check_in, check_out) => {
@@ -133,6 +134,168 @@ export const getBooking = async (req, res) => {
 
 
 
+// export const createBooking = async (req, res) => {
+//   console.log(req.body, 88888888888);
+//
+//   const transaction = await sequelize.transaction();
+//
+//   try {
+//     console.log("CREATE PAYMENT SESSION");
+//     const {
+//       room_id,
+//       rate_plan_id,
+//       check_in,
+//       check_out,
+//       guests,
+//       customer_name,
+//       customer_phone,
+//     } = req.body;
+//
+//     // =========================
+//     // AUTH USER
+//     // =========================
+//     const user_id = 1;
+//
+//     // =========================
+//
+//     // =========================
+//     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
+//
+//     // =========================
+//     // ROOM
+//     // =========================
+//     const room = await Room.findByPk(room_id, {
+//       transaction,
+//       lock: transaction.LOCK.UPDATE,
+//     });
+//
+//     if (!room) {
+//       await transaction.rollback();
+//       return res.status(404).json({ message: "Room not found" });
+//     }
+//
+//     // =========================
+//     // GUEST CHECK
+//     // =========================
+//     if (room.max_guests && guests > room.max_guests) {
+//       await transaction.rollback();
+//       return res.status(400).json({ message: "Too many guests" });
+//     }
+//
+//     // =========================
+//     // EXPIRE OLD BOOKINGS
+//     // =========================
+//     await Booking.update(
+//       { status: "expired" },
+//       {
+//         where: {
+//           status: "pending",
+//           expires_at: { [Op.lt]: new Date() },
+//         },
+//         transaction,
+//       }
+//     );
+//
+//     // =========================
+//     // CHECK CONFLICT
+//     // =========================
+//     const conflict = await Booking.findOne({
+//       where: {
+//         room_id,
+//         status: { [Op.in]: ["pending", "confirmed"] },
+//         check_in: { [Op.lt]: check_out },
+//         check_out: { [Op.gt]: check_in },
+//         [Op.or]: [
+//           { expires_at: null },
+//           { expires_at: { [Op.gt]: new Date() } },
+//         ],
+//       },
+//       transaction,
+//       lock: transaction.LOCK.UPDATE,
+//     });
+//
+//     if (conflict) {
+//       await transaction.rollback();
+//       return res.status(409).json({ message: "Room already booked" });
+//     }
+//
+//     // =========================
+//     // RATE PLAN
+//     // =========================
+//     console.log("RATE PLAN ID =", rate_plan_id);
+//     const ratePlan = await RoomOption.findOne({
+//       where: {
+//         id: rate_plan_id,
+//         status: "active",
+//       },
+//       transaction,
+//       lock: transaction.LOCK.UPDATE,
+//     });
+//
+//     console.log("RATE PLAN =", ratePlan);
+//
+//     if (!ratePlan) {
+//       await transaction.rollback();
+//       return res.status(404).json({ message: "Rate plan not found" });
+//     }
+//
+//     // =========================
+//     // CALCULATE PRICE
+//     // =========================
+//     const priceData = FileHelper.calculateBookingPrice(
+//       ratePlan,
+//       check_in,
+//       check_out,
+//       guests
+//     );
+//
+//     // =========================
+//     // CREATE BOOKING
+//     // =========================
+//     const booking = await Booking.create(
+//       {
+//         user_id,
+//         room_id,
+//         option_id: rate_plan_id,
+//         customer_name,
+//         customer_phone,
+//         check_in,
+//         check_out,
+//         guests,
+//         total_price: priceData.total,
+//         status: "pending",
+//         payment_status: "pending",
+//         expires_at,
+//         lock_token: crypto.randomUUID(),
+//       },
+//       { transaction }
+//     );
+//
+//     // =========================
+//     // COMMIT
+//     // =========================
+//     await transaction.commit();
+//
+//     // =========================
+//     // RETURN BOOKING ID
+//     // =========================
+//     return res.status(201).json({
+//       success: true,
+//       booking_id: booking.id,
+//       booking,
+//     });
+//
+//   } catch (error) {
+//     await transaction.rollback();
+//     console.log(error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Booking creation failed",
+//     });
+//   }
+// };
+
+
 export const createBooking = async (req, res) => {
   console.log(req.body, 88888888888);
 
@@ -148,14 +311,13 @@ export const createBooking = async (req, res) => {
       guests,
       customer_name,
       customer_phone,
+      selected_extras
     } = req.body;
 
     // =========================
     // AUTH USER
     // =========================
     const user_id = 1;
-
-    // =========================
 
     // =========================
     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
@@ -239,7 +401,7 @@ export const createBooking = async (req, res) => {
     }
 
     // =========================
-    // CALCULATE PRICE
+    // CALCULATE BASE PRICE
     // =========================
     const priceData = FileHelper.calculateBookingPrice(
       ratePlan,
@@ -247,6 +409,23 @@ export const createBooking = async (req, res) => {
       check_out,
       guests
     );
+
+    // 💡 2. Սահմանում ենք վերջնական գինը և սկզբից հավասարեցնում սենյակի բազային գնին
+    let finalTotalPrice = Number(priceData.total);
+
+    if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
+      const extras = await RoomExtra.findAll({
+        where: {
+          id: { [Op.in]: selected_extras }
+        },
+        transaction
+      });
+
+      // Ցիկլով անցնում ենք և բոլորի գները գումարում ընդհանուր հաշվին
+      const extrasSum = extras.reduce((sum, item) => sum + Number(item.price || 0), 0);
+      finalTotalPrice += extrasSum;
+    }
+    // ==========================================
 
     // =========================
     // CREATE BOOKING
@@ -261,7 +440,7 @@ export const createBooking = async (req, res) => {
         check_in,
         check_out,
         guests,
-        total_price: priceData.total,
+        total_price: finalTotalPrice,
         status: "pending",
         payment_status: "pending",
         expires_at,
