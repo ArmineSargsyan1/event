@@ -189,27 +189,30 @@ export default class FileHelper {
     // =========================
     // BASE PRICE
     // =========================
-    const basePrice = Number(ratePlan.price);
+    const basePrice = Number(ratePlan.price); // Ձեր դեպքում՝ 120
     let nightlyPrice = basePrice;
 
     // =========================
-    // SEASON MODIFIER
+    // SEASON / RATE PLAN MODIFIER
     // =========================
-    if (ratePlan.season_start && ratePlan.season_end) {
-      const today = dayjs(check_in);
+    const modifierPercent = Number(ratePlan.price_modifier || 0); // Ձեր դեպքում՝ -15
 
-      const inSeason =
-        today.isAfter(dayjs(ratePlan.season_start).subtract(1, "day")) &&
-        today.isBefore(dayjs(ratePlan.season_end).add(1, "day"));
+    if (modifierPercent !== 0) {
+      // 💡 1. Եթե սեզոնի ամսաթվերը լրացված են, ստուգում ենք սեզոնի մեջ լինելը
+      if (ratePlan.season_start && ratePlan.season_end) {
+        const today = dayjs(check_in);
+        const inSeason =
+          today.isAfter(dayjs(ratePlan.season_start).subtract(1, "day")) &&
+          today.isBefore(dayjs(ratePlan.season_end).add(1, "day"));
 
-      if (inSeason) {
-        const modifierPercent = Number(ratePlan.price_modifier || 0);
-
-        // 💡 Հաշվում ենք տոկոսի բերած արժեքը (օր.՝ 120 * -15 / 100 = -18)
-        const modifierAmount = (basePrice * modifierPercent) / 100;
-
-        // 💡 Գումարում ենք nightly_price-ին (օր.՝ 120 + (-18) = 102)
-        nightlyPrice += modifierAmount;
+        if (inSeason) {
+          const modifierAmount = (basePrice * modifierPercent) / 100;
+          nightlyPrice += modifierAmount;
+        }
+      } else {
+        // 💡 2. Եթե սեզոնի ամսաթվերը null են, նշանակում է զեղչը գործում է ՄԻՇՏ
+        const modifierAmount = (basePrice * modifierPercent) / 100; // (120 * -15) / 100 = -18
+        nightlyPrice += modifierAmount; // 120 + (-18) = 102
       }
     }
 
@@ -242,6 +245,7 @@ export default class FileHelper {
       total,
     };
   }
+
 
 }
 
