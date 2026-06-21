@@ -360,20 +360,38 @@ export const createBooking = async (req, res) => {
     // =========================
     // CHECK CONFLICT
     // =========================
+    // =========================================
+    // =========================================
     const conflict = await Booking.findOne({
       where: {
         room_id,
-        status: { [Op.in]: ["pending", "confirmed"] },
         check_in: { [Op.lt]: check_out },
         check_out: { [Op.gt]: check_in },
+
         [Op.or]: [
-          { expires_at: null },
-          { expires_at: { [Op.gt]: new Date() } },
-        ],
+          { status: "confirmed" },
+          {
+            [Op.and]: [
+              { status: "pending" },
+              {
+                [Op.or]: [
+                  { expires_at: null },
+                  { expires_at: { [Op.gt]: new Date() } }
+                ]
+              }
+            ]
+          }
+        ]
       },
       transaction,
-      lock: transaction.LOCK.UPDATE,
+      lock: transaction.LOCK.UPDATE, //2user dont
     });
+
+    if (conflict) {
+      await transaction.rollback();
+      return res.status(409).json({ message: "Room already booked for these dates" });
+    }
+
 
     if (conflict) {
       await transaction.rollback();
@@ -410,7 +428,6 @@ export const createBooking = async (req, res) => {
       guests
     );
 
-    // 💡 2. Սահմանում ենք վերջնական գինը և սկզբից հավասարեցնում սենյակի բազային գնին
     let finalTotalPrice = Number(priceData.total);
 
     if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
