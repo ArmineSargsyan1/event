@@ -77,6 +77,99 @@ export default class FileHelper {
 
 
 
+  // static calculateBookingPrice(
+  //   ratePlan,
+  //   check_in,
+  //   check_out,
+  //   guests = 1
+  // ) {
+  //
+  //   // =========================
+  //   // NIGHTS
+  //   // =========================
+  //   const nights =
+  //     dayjs(check_out).diff(
+  //       dayjs(check_in),
+  //       "day"
+  //     );
+  //
+  //   if (nights <= 0) {
+  //     throw new Error(
+  //       "Invalid booking dates"
+  //     );
+  //   }
+  //
+  //   // =========================
+  //   // BASE PRICE
+  //   // =========================
+  //   let nightlyPrice =
+  //     Number(ratePlan.price);
+  //
+  //   // =========================
+  //   // SEASON MODIFIER
+  //   // =========================
+  //   if (
+  //     ratePlan.season_start &&
+  //     ratePlan.season_end
+  //   ) {
+  //
+  //     const today =
+  //       dayjs(check_in);
+  //
+  //     const inSeason =
+  //       today.isAfter(
+  //         dayjs(ratePlan.season_start)
+  //           .subtract(1, "day")
+  //       ) &&
+  //       today.isBefore(
+  //         dayjs(ratePlan.season_end)
+  //           .add(1, "day")
+  //       );
+  //
+  //     if (inSeason) {
+  //
+  //       nightlyPrice +=
+  //         Number(
+  //           ratePlan.price_modifier || 0
+  //         );
+  //     }
+  //   }
+  //
+  //   // =========================
+  //   // EXTRA GUEST CHARGE
+  //   // example:
+  //   // first 2 guests free
+  //   // =========================
+  //   let extraGuestFee = 0;
+  //
+  //   if (guests > 2) {
+  //
+  //     extraGuestFee = (guests - 2) * 20 * nights;
+  //   }
+  //
+  //   // =========================
+  //   // SUBTOTAL
+  //   // =========================
+  //   const subtotal = nightlyPrice * nights;
+  //
+  //   // =========================
+  //   // TOTAL
+  //   // =========================
+  //   const total = subtotal + extraGuestFee;
+  //
+  //   // =========================
+  //   // RETURN
+  //   // =========================
+  //   return {
+  //
+  //     nights,
+  //
+  //     nightly_price: nightlyPrice,
+  //     subtotal,
+  //     extra_guest_fee: extraGuestFee,
+  //     total,
+  //   };
+  // };
   static calculateBookingPrice(
     ratePlan,
     check_in,
@@ -87,63 +180,44 @@ export default class FileHelper {
     // =========================
     // NIGHTS
     // =========================
-    const nights =
-      dayjs(check_out).diff(
-        dayjs(check_in),
-        "day"
-      );
+    const nights = dayjs(check_out).diff(dayjs(check_in), "day");
 
     if (nights <= 0) {
-      throw new Error(
-        "Invalid booking dates"
-      );
+      throw new Error("Invalid booking dates");
     }
 
     // =========================
     // BASE PRICE
     // =========================
-    let nightlyPrice =
-      Number(ratePlan.price);
+    const basePrice = Number(ratePlan.price);
+    let nightlyPrice = basePrice;
 
     // =========================
     // SEASON MODIFIER
     // =========================
-    if (
-      ratePlan.season_start &&
-      ratePlan.season_end
-    ) {
-
-      const today =
-        dayjs(check_in);
+    if (ratePlan.season_start && ratePlan.season_end) {
+      const today = dayjs(check_in);
 
       const inSeason =
-        today.isAfter(
-          dayjs(ratePlan.season_start)
-            .subtract(1, "day")
-        ) &&
-        today.isBefore(
-          dayjs(ratePlan.season_end)
-            .add(1, "day")
-        );
+        today.isAfter(dayjs(ratePlan.season_start).subtract(1, "day")) &&
+        today.isBefore(dayjs(ratePlan.season_end).add(1, "day"));
 
       if (inSeason) {
+        const modifierPercent = Number(ratePlan.price_modifier || 0);
 
-        nightlyPrice +=
-          Number(
-            ratePlan.price_modifier || 0
-          );
+        // 💡 Հաշվում ենք տոկոսի բերած արժեքը (օր.՝ 120 * -15 / 100 = -18)
+        const modifierAmount = (basePrice * modifierPercent) / 100;
+
+        // 💡 Գումարում ենք nightly_price-ին (օր.՝ 120 + (-18) = 102)
+        nightlyPrice += modifierAmount;
       }
     }
 
     // =========================
     // EXTRA GUEST CHARGE
-    // example:
-    // first 2 guests free
     // =========================
     let extraGuestFee = 0;
-
     if (guests > 2) {
-
       extraGuestFee = (guests - 2) * 20 * nights;
     }
 
@@ -161,15 +235,13 @@ export default class FileHelper {
     // RETURN
     // =========================
     return {
-
       nights,
-
       nightly_price: nightlyPrice,
       subtotal,
       extra_guest_fee: extraGuestFee,
       total,
     };
-  };
+  }
 
 }
 
