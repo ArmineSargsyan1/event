@@ -360,8 +360,7 @@ export const createBooking = async (req, res) => {
     // =========================
     // CHECK CONFLICT
     // =========================
-    // =========================================
-    // =========================================
+
     const conflict = await Booking.findOne({
       where: {
         room_id,

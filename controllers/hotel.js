@@ -173,7 +173,7 @@ export const getHotels = async (req, res, next) => {
         },
       }),
 
-      ...(city && { city }),
+      ...(city && {city}),
 
       ...(property_class &&
         allowedPropertyClasses.includes(
@@ -212,7 +212,7 @@ export const getHotels = async (req, res, next) => {
     // ======================
     // GET HOTELS
     // ======================
-    const { rows } =
+    const {rows} =
       await Hotels.findAndCountAll({
 
         where,
@@ -257,7 +257,7 @@ export const getHotels = async (req, res, next) => {
             },
 
             where: userId
-              ? { id: userId }
+              ? {id: userId}
               : undefined,
 
             required: false,
@@ -435,10 +435,10 @@ export const getHotels = async (req, res, next) => {
         description: hotel.description,
         price: hotel.price_from,
         rating: hotel.avgRating !== null
-            ? Number(
-              hotel.avgRating.toFixed(1)
-            )
-            : null,
+          ? Number(
+            hotel.avgRating.toFixed(1)
+          )
+          : null,
         stars: hotel.starsComputed,
         reviewCount: Number(hotel.review_count),
         images: hotel.images,
@@ -521,8 +521,8 @@ const isRoomAvailable = async (roomId, checkIn, checkOut) => {
       status: "confirmed",
       [Op.or]: [
         {
-          check_in: { [Op.lt]: checkOut },
-          check_out: { [Op.gt]: checkIn },
+          check_in: {[Op.lt]: checkOut},
+          check_out: {[Op.gt]: checkIn},
         },
       ],
     },
@@ -543,9 +543,6 @@ const calcRoomOptionPrice = (option, nights) => {
 };
 
 
-
-
-
 export const getTopRatedHotels = async (req, res) => {
   try {
     const userId = 1;
@@ -562,10 +559,10 @@ export const getTopRatedHotels = async (req, res) => {
         {
           model: User,
           as: "usersWhoFavorited",
-          where: { id: userId },
+          where: {id: userId},
           attributes: ["id"],
           required: false,
-          through: { attributes: [] },
+          through: {attributes: []},
           duplicating: false
         }
       ],
@@ -576,7 +573,7 @@ export const getTopRatedHotels = async (req, res) => {
     });
 
     const data = hotels.map((h) => {
-      const rawHotel = h.get({ plain: true });
+      const rawHotel = h.get({plain: true});
       const hotelData = mapHotel(h);
 
       const isFavorite = rawHotel.usersWhoFavorited && rawHotel.usersWhoFavorited.length > 0;
@@ -620,13 +617,13 @@ export const getPopularHotels = async (req, res) => {
         },
         {
           model: Amenity,
-          through: { attributes: [] },
+          through: {attributes: []},
         },
         {
           model: User,
           as: "usersWhoFavorited",
           attributes: ["id"],
-          through: { attributes: [] },
+          through: {attributes: []},
         },
 
       ],
@@ -654,7 +651,6 @@ export const getPopularHotels = async (req, res) => {
     });
   }
 };
-
 
 
 // export const getPopularHotels = async (req, res) => {
@@ -740,7 +736,7 @@ export const getSponsoredHotels = async (req, res, next) => {
         featured_until: {
           [Op.or]: [
             null,
-            { [Op.gt]: new Date() },
+            {[Op.gt]: new Date()},
           ],
         },
       },
@@ -755,7 +751,7 @@ export const getSponsoredHotels = async (req, res, next) => {
         },
         {
           model: Amenity,
-          through: { attributes: [] },
+          through: {attributes: []},
         },
         {
           model: Reviews,
@@ -767,8 +763,8 @@ export const getSponsoredHotels = async (req, res, next) => {
           model: User,
           as: "usersWhoFavorited",
           attributes: ["id"],
-          through: { attributes: [] },
-          where: userId ? { id: userId } : undefined,
+          through: {attributes: []},
+          where: userId ? {id: userId} : undefined,
           required: false,
         },
       ],
@@ -814,124 +810,38 @@ export const getSponsoredHotels = async (req, res, next) => {
 };
 
 
-
-///redis
-// export const getSponsoredHotels = async (req, res, next) => {
-//   try {
-//     const userId = req.user?.id || 1;
-//
-//     const cacheKey = "sponsored_hotels";
-//
-//     // 🔥 1. CHECK CACHE
-//     const cached = await redis.get(cacheKey);
-//
-//     if (cached) {
-//       return res.json({
-//         success: true,
-//         source: "cache",
-//         data: JSON.parse(cached),
-//       });
-//     }
-//
-//     // 🔥 2. DB QUERY
-//     const hotels = await Hotels.findAll({
-//       where: {
-//         featured: true,
-//         featured_until: {
-//           [Op.or]: [
-//             null,
-//             { [Op.gt]: new Date() },
-//           ],
-//         },
-//       },
-//
-//       limit: 10,
-//
-//       include: [
-//         {
-//           model: HotelPhotos,
-//           as: "images",
-//           attributes: ["id", "path", "is_main", "sort_order"],
-//         },
-//         {
-//           model: Amenity,
-//           through: { attributes: [] },
-//         },
-//         {
-//           model: Reviews,
-//           as: "Reviews",
-//           attributes: [],
-//           required: false,
-//         },
-//         {
-//           model: User,
-//           as: "usersWhoFavorited",
-//           attributes: ["id"],
-//           through: { attributes: [] },
-//           where: userId ? { id: userId } : undefined,
-//           required: false,
-//         },
-//       ],
-//
-//       attributes: {
-//         include: [
-//           [
-//             Sequelize.fn("COUNT", Sequelize.col("Reviews.id")),
-//             "review_count",
-//           ],
-//         ],
-//       },
-//
-//       group: [
-//         "Hotels.id",
-//         "images.id",
-//         "Amenities.id",
-//       ],
-//
-//       subQuery: false,
-//     });
-//
-//     const data = hotels.map((h) => ({
-//       ...mapHotel(h, userId),
-//       featured: h.featured,
-//       featured_until: h.featured_until,
-//     }));
-//
-//     // 🔥 3. SAVE CACHE (10 min)
-//     await redis.set(
-//       cacheKey,
-//       JSON.stringify(data),
-//       "EX",
-//       600
-//     );
-//
-//     res.json({
-//       success: true,
-//       source: "db",
-//       data,
-//     });
-//
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
 export const getHotelById = async (req, res, next) => {
+  // const userId = req.body.userId
+  const userId = 1;
   try {
     const hotelId = Number(req.params.hotelId);
 
-    const { checkIn, checkOut, guests = 1 } = req.query;
+    const {checkIn, checkOut} = req.query;
 
     // ======================
     // GET HOTEL (single query)
     // ======================
     const hotel = await Hotels.findByPk(hotelId, {
       include: [
-        { model: HotelPhotos, as: "images" },
-        { model: Amenity, as: "Amenities", through: { attributes: [] } },
+        {model: HotelPhotos, as: "images"},
+        {model: Amenity, as: "Amenities", through: {attributes: []}},
         {
           model: Reviews,
-          include: [{ model: ReviewLiked, as: "liked_features" }],
+          include: [{model: ReviewLiked, as: "liked_features"}],
+        },
+        {
+          model: User,
+          as: "usersWhoFavorited",
+          attributes: ["id"],
+          through: {attributes: [],
+          },
+
+          where: userId
+            ? {id: userId}
+
+            : undefined,
+
+          required: false,
         },
       ],
     });
@@ -950,32 +860,22 @@ export const getHotelById = async (req, res, next) => {
     // SAFE INCREMENT
     // ======================
     await Hotels.increment(
-      { views: 1 },
-      { where: { id: hotelId } }
+      {views: 1},
+      {where: {id: hotelId}}
     );
 
     // ======================
     // NIGHTS
     // ======================
-    const nights =
-      checkIn && checkOut
+    const nights = checkIn && checkOut
         ? dayjs(checkOut).diff(dayjs(checkIn), "day")
         : 1;
 
-    // ======================
-    // REVIEWS
-    // ======================
+    const calculatedStars =FileHelper.getHotelStars(hotel);
+
     const reviews = hotel.Reviews || [];
 
-    const avgScore =
-      reviews.length
-        ? Number(
-          (
-            reviews.reduce((s, r) => s + Number(r.score || 0), 0) /
-            reviews.length
-          ).toFixed(1)
-        )
-        : 0;
+
 
     // ======================
     // FEATURE COUNTS
@@ -996,8 +896,9 @@ export const getHotelById = async (req, res, next) => {
       });
     });
 
+    const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0
     // ======================
-    // RESPONSE (CLEAN)
+    // RESPONSE
     // ======================
     return res.json({
       success: true,
@@ -1006,21 +907,36 @@ export const getHotelById = async (req, res, next) => {
         name: hotel.name,
         city: hotel.city,
         country: hotel.country,
-        stars: hotel.stars,
+        address: hotel.address,
+        description: hotel.description || "Welcome to our premium property.",
+
+        propertyClass: hotel.property_class,
+        hotelCategory: hotel.hotel_category,
+
+
+        lat: hotel.lat,
+        lon: hotel.lon,
+
         views: hotel.views + 1,
+        priceFrom: hotel.price_from || 50,
+        currency: hotel.currency || "USD",
+        featured: hotel.featured,
 
         images: hotel.images || [],
         amenities: hotel.Amenities || [],
-
+        stars: calculatedStars,
+        isFavorite: isFavorite,
         reviewStats: {
-          total: reviews.length,
-          avgScore,
+          total: hotel.review_count || reviews.length,
+          avgScore: hotel.rating,
           ...featureCounts,
         },
 
         nights,
       },
     });
+
+
   } catch (e) {
     next(e);
   }
@@ -1029,7 +945,29 @@ export const getHotelById = async (req, res, next) => {
 
 
 
-
+// return res.json({
+//   success: true,
+//   data: {
+//     id: hotel.id,
+//     name: hotel.name,
+//     city: hotel.city,
+//     country: hotel.country,
+//     stars: hotel.stars,
+//     views: hotel.views + 1,
+//
+//     images: hotel.images || [],
+//     amenities: hotel.Amenities || [],
+//
+//     reviewStats: {
+//       total: reviews.length,
+//       avgScore,
+//       ...featureCounts,
+//     },
+//
+//     nights,
+//     featured
+//   },
+// });
 
 
 
