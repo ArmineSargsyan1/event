@@ -931,36 +931,32 @@ export const getRoomGallery = async (req, res) => {
    UPLOAD IMAGES (CLOUDINARY READY)
 ========================================================= */
 
+
 export const uploadRoomImages = async (req, res) => {
   try {
-    const { id } = req.params; // Սենյակի ID-ն
+    const { id } = req.params;
     const { category } = req.body;
-    const authUserId = req.user?.id; // 💡 Մուտք գործած օգտատիրոջ ID-ն
-    const authUserRole = req.user?.role; // 💡 Օգտատիրոջ դերը (օրն. 'superadmin')
+    const authUserId = req.user?.id;
+    const authUserRole = req.user?.role;
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: "No files uploaded" });
     }
 
-    // 1. 💡 Գտնում ենք սենյակը և դրա միջոցով նաև հյուրանոցի տվյալները (ներառյալ սեփականատիրոջ/ադմինի ID-ն)
-    const room = await Room.findByPk(id, {
-      include: [
-        {
-          model: Hotels,
-          as: "hotel",
-          attributes: ["id", "user_id"], // 💡 Վերցնում ենք հյուրանոցի սեփականատիրոջ user_id-ն
-        },
-      ],
-    });
-
-    if (!room || !room.hotel) {
-      return res.status(404).json({ success: false, message: "Room or Hotel not found" });
+    // 1. Գտնում ենք սենյակը
+    const room = await Room.findByPk(id);
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Room not found" });
     }
 
-    // 2. 💡 Ստուգում ենք հասանելիությունը (Ադմինիստրատորի իրավունքներ)
-    // Եթե օգտատերը գլխավոր ադմին չէ (superadmin) ԵՎ այս հյուրանոցի սեփականատերը չէ՝ արգելում ենք
-    const isHotelOwner = room.hotel.user_id === authUserId;
-    const isSuperAdmin = authUserRole === "superadmin"; // Փոխիր այս անունը քո բազայի դերի անունով
+    const hotel = await Hotels.findByPk(room.hotel_id);
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    // 3. Իրավունքների ստուգում
+    const isHotelOwner = hotel.user_id === authUserId;
+    const isSuperAdmin = authUserRole === "superadmin";
 
     if (!isHotelOwner && !isSuperAdmin) {
       return res.status(403).json({
@@ -969,20 +965,20 @@ export const uploadRoomImages = async (req, res) => {
       });
     }
 
-    // 3. Պատրաստում ենք նկարների մասիվը
     const images = req.files.map((file) => ({
       room_id: Number(id),
       hotel_id: room.hotel_id,
       path: file.path,
-      public_id: file.filename,
+      public_id: file.filename || null,
       category: category || "Bedrooms",
-      uploaded_by: authUserId
+      uploaded_by: authUserId || null
     }));
 
     await HotelPhotos.bulkCreate(images);
 
     return res.json({ success: true, images });
   } catch (e) {
+    console.error("!!! UPLOAD ERROR DETECTED !!!", e);
     return res.status(500).json({ success: false, message: "Upload failed", error: e.message });
   }
 };
