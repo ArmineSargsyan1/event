@@ -1,6 +1,6 @@
 import path from 'path';
 import logger from 'morgan';
-import express, {response} from 'express';
+import express  from 'express';
 import createError from 'http-errors';
 // import errorHandler from './middlewares/errorHandler.js';
 import router from './routes/index.js';
@@ -8,10 +8,7 @@ import cors from "./middlewares/cors.js";
 import './migrate.js';
 import axios from "axios";
 import Hotel from "./models/Hotels.js";
-import Room from "./models/Room.js";
 import Photo from "./models/Photo.js";
-import * as cheerio from "cheerio";
-import puppeteer from "puppeteer";
 import createCloudinaryUpload from './middlewares/upload.js';
 import * as paymentController from "./controllers/payment.js";
 import sequelize from "./clients/db.sequelize.mysql.js";

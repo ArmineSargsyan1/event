@@ -945,6 +945,27 @@ export const getHotelById = async (req, res, next) => {
 
 
 
+export const getHotelGallery = async (req, res) => {
+  try {
+    const { hotel_id, category } = req.query;
+
+    const whereCondition = { hotel_id };
+
+    if (category && category !== "All") {
+      whereCondition.category = category;
+    }
+
+    const photos = await HotelPhotos.findAll({
+      where: whereCondition,
+      order: [["sort_order", "ASC"]],
+    });
+
+    return res.status(200).json({ success: true, data: photos });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // return res.json({
 //   success: true,
 //   data: {

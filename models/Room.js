@@ -1,11 +1,11 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Hotels from "./Hotels.js";
-import Photo from "./Photo.js";
 import RoomAmenity from "./RoomAmenities.js";
 import Amenity from "./Amenity.js";
 import RoomOption from "./RoomOption.js";
 import RoomExtra from "./RoomExtra.js";
+import HotelPhotos from "./HotelPhotos.js";
 
 class Room extends Model {
   static associate() {
@@ -13,12 +13,6 @@ class Room extends Model {
     Room.belongsTo(Hotels, {
       foreignKey: "hotel_id",
       as: "hotel",
-      onDelete: "RESTRICT"
-    });
-
-    Room.hasMany(Photo, {
-      foreignKey: "room_id",
-      as: "images",
       onDelete: "RESTRICT"
     });
 
@@ -37,6 +31,12 @@ class Room extends Model {
     Room.hasMany(RoomExtra, {
       foreignKey: "room_id",
       as: "extras",
+    });
+
+    Room.hasMany(HotelPhotos, {
+      foreignKey: "room_id",
+      as: "images",
+      onDelete: "CASCADE"
     });
 
   }

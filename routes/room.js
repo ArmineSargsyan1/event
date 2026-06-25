@@ -21,9 +21,11 @@ router.post("/",
 ========================================================= */
 router.get("/", Controller.getRooms);
 
-router.get("/similar", getSimilarRooms);
+router.get("/similar", Controller.getSimilarRooms);
 
-router.get("/:id", getRoomById);
+router.get("/:id", Controller.getRoomById);
+
+router.get("/gallery", Controller.getRoomGallery);
 
 
 

@@ -236,6 +236,18 @@ export default {
 
   },
 
+
+  getHotelGallery: {
+
+    params: Joi.object({
+
+      hotelId: Joi.number()
+        .integer()
+        .positive()
+        .required(),
+
+    }),
+  },
   // =========================
   // UPDATE HOTEL
   // =========================

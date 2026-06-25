@@ -7,129 +7,15 @@ import RoomOption from "../models/RoomOption.js";
 import RoomExtra from "../models/RoomExtra.js";
 import Photo from "../models/Photo.js";
 import Hotels from "../models/Hotels.js";
-import {cloudinary} from "../middlewares/upload.js";
 import Booking from "../models/Booking.js";
 import dayjs from "dayjs";
+import HotelPhotos from "../models/HotelPhotos.js";
 
 
 
 /* =========================================================
    CREATE ROOM
 ========================================================= */
-
-
-// export const createRoom = async (req, res) => {
-//   const t = await sequelize.transaction();
-//
-//   console.log(req.body.extras, req.body.options, 888888)
-//   try {
-//     let {
-//       hotel_id,
-//       name,
-//       size,
-//       bed_type,
-//       max_guests,
-//       price,
-//       status = "active",
-//       amenities = [],
-//       options = [],
-//       extras = [],
-//     } = req.body;
-//
-//     // 🔥 Parse FormData JSON
-//     if (typeof amenities === "string") amenities = JSON.parse(amenities);
-//     if (typeof options === "string") options = JSON.parse(options);
-//     if (typeof extras === "string") extras = JSON.parse(extras);
-//
-//     // 1. ROOM CREATE
-//     const room = await Room.create(
-//       {
-//         hotel_id: Number(hotel_id),
-//         name,
-//         size: Number(size),
-//         bed_type,
-//         max_guests: Number(max_guests),
-//         price: Number(price),
-//         status,
-//       },
-//       { transaction: t }
-//     );
-//
-//     // Վերցնում ենք ստեղծված ID-ն
-//     const roomId = room.id;
-//     console.log(roomId,123)
-//     // 2. AMENITIES (Փոխված է id-ով փնտրելու համար)
-//     if (amenities && amenities.length) {
-//       const am = await Amenity.findAll({
-//         where: { id: amenities }, // Օգտագործում ենք id, ոչ թե key
-//         transaction: t,
-//       });
-//       await room.setAmenities(am, { transaction: t });
-//     }
-//
-//     // 3. OPTIONS (Հստակ roomId-ով)
-//     if (options && options.length) {
-//       await RoomOption.bulkCreate(
-//         options.map((o) => ({
-//           ...o,
-//           price: Number(o.price),
-//           room_id: roomId,
-//         })),
-//         { transaction: t }
-//       );
-//     }
-//
-//     // 4. EXTRAS (Հստակ roomId-ով)
-//     if (extras && extras.length) {
-//       await RoomExtra.bulkCreate(
-//         extras.map((e) => ({
-//           ...e,
-//           price: Number(e.price),
-//           room_id: roomId,
-//         })),
-//         { transaction: t }
-//       );
-//     }
-//
-//     // 5. PHOTOS (Հստակ roomId-ով)
-//     if (req.files?.length) {
-//       await Photo.bulkCreate(
-//         req.files.map((file) => ({
-//           room_id: roomId,
-//           path: file.path,
-//         })),
-//         { transaction: t }
-//       );
-//     }
-//
-//     await t.commit();
-//
-//     // 6. RETURN FULL ROOM
-//     const fullRoom = await Room.findByPk(roomId, {
-//       include: [
-//         { model: Amenity, as: "amenities", through: { attributes: [] } },
-//         { model: RoomOption, as: "options" },
-//         { model: RoomExtra, as: "extras" },
-//         { model: Photo, as: "images" },
-//       ],
-//     });
-//
-//     res.json({
-//       success: true,
-//       room: fullRoom,
-//     });
-//   } catch (e) {
-//     if (t) await t.rollback();
-//     console.error("CREATE ROOM ERROR:", e);
-//     res.status(500).json({
-//       message: "Create failed",
-//       error: e.message,
-//     });
-//   }
-// };
-//
-
-
 
 export const createRoom = async (req, res) => {
   const t = await sequelize.transaction();
@@ -417,92 +303,6 @@ export const updateRoom = async (req, res) => {
   }
 };
 
-
-// export const updateRoom = async (req, res) => {
-//   const t = await sequelize.transaction();
-//
-//   try {
-//     const { id } = req.params;
-//
-//     const {
-//       name,
-//       size,
-//       bed_type,
-//       max_guests,
-//       price,
-//       status,
-//       amenities,
-//       options,
-//       extras,
-//     } = req.body;
-//
-//     const room = await Room.findByPk(id);
-//     if (!room) {
-//       await t.rollback();
-//       return res.status(404).json({ message: "Not found" });
-//     }
-//
-//     await room.update(
-//       {
-//         ...(name && { name }),
-//         ...(size && { size }),
-//         ...(bed_type && { bed_type }),
-//         ...(max_guests && { max_guests }),
-//         ...(price && { price }),
-//         ...(status && { status }),
-//       },
-//       { transaction: t }
-//     );
-//
-//     if (amenities) {
-//       const am = await Amenity.findAll({
-//         where: { id: amenities },
-//         transaction: t,
-//       });
-//
-//       await room.setAmenities(am, { transaction: t });
-//     }
-//
-//     if (options) {
-//       await RoomOption.destroy({ where: { room_id: id }, transaction: t });
-//
-//       if (options.length) {
-//         await RoomOption.bulkCreate(
-//           options.map((o) => ({ ...o, room_id: id })),
-//           { transaction: t }
-//         );
-//       }
-//     }
-//
-//     if (extras) {
-//       await RoomExtra.destroy({ where: { room_id: id }, transaction: t });
-//
-//       if (extras.length) {
-//         await RoomExtra.bulkCreate(
-//           extras.map((e) => ({ ...e, room_id: id })),
-//           { transaction: t }
-//         );
-//       }
-//     }
-//
-//     await t.commit();
-//
-//     const updated = await Room.findByPk(id, {
-//       include: [
-//         { model: Amenity, through: { attributes: [] } },
-//         { model: RoomOption },
-//         { model: RoomExtra },
-//         { model: Photo, as: "images" },
-//       ],
-//     });
-//
-//     res.json({ success: true, room: updated });
-//   } catch (e) {
-//     await t.rollback();
-//     res.status(500).json({ message: "Update failed" });
-//   }
-// };
-
 /* =========================================================
    DELETE (SOFT DELETE)
 ========================================================= */
@@ -520,21 +320,6 @@ export const deleteRoom = async (req, res) => {
     res.status(500).json({ message: "Delete failed" });
   }
 };
-
-/* =========================================================
-   RESTORE ROOM
-========================================================= */
-// export const restoreRoom = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//
-//     await Room.restore({ where: { id } });
-//
-//     res.json({ success: true });
-//   } catch (e) {
-//     res.status(500).json({ message: "Restore failed" });
-//   }
-// };
 
 
 export const restoreRoom = async (req, res) => {
@@ -599,9 +384,6 @@ const isRoomAvailable = async (roomId, checkIn, checkOut) => {
   return !conflict;
 };
 
-
-
-
 const calcRoomOptionPrice = (option, nights) => {
   const base = Number(option.price || 0);
   let price = base;
@@ -630,66 +412,7 @@ const calcRoomOptionPrice = (option, nights) => {
   };
 };
 
-
-// const calcRoomOptionPrice = (option, nights) => {
-//   const base = Number(option.price || 0);
-//
-//   let finalPricePerNight = base;
-//
-//   const now = new Date();
-//
-//   const discountStart = option.discount_start
-//     ? new Date(option.discount_start)
-//     : null;
-//
-//   const discountEnd = option.discount_end
-//     ? new Date(option.discount_end)
-//     : null;
-//
-//   const isDiscountActive =
-//     discountStart &&
-//     discountEnd &&
-//     now >= discountStart &&
-//     now <= discountEnd;
-//
-//   if (isDiscountActive) {
-//     const modifier = Number(option.price_modifier || 0);
-//
-//     finalPricePerNight =
-//       base + (base * modifier) / 100;
-//   }
-//
-//   return {
-//     ...option,
-//     price_per_night: Number(finalPricePerNight.toFixed(2)),
-//     total_price: Number(
-//       (finalPricePerNight * nights).toFixed(2)
-//     ),
-//   };
-// };
-
-// const calcRoomOptionPrice = (option, nights) => {
-//   const base = Number(option.price || 0);
-//   const modifier = Number(option.price_modifier || 0);
-//
-//
-//   const finalPricePerNight = base + (base * (modifier / 100));
-//
-//   return {
-//     ...option,
-//     price_per_night: Number(finalPricePerNight.toFixed(2)),
-//     total_price: Number((finalPricePerNight * nights).toFixed(2)),
-//   };
-// };
-//
-
-
-
-
-
-
 export const getRooms = async (req, res) => {
-  console.log(req.query, 555);
 
   try {
     const {
@@ -716,9 +439,6 @@ export const getRooms = async (req, res) => {
       ? dayjs(check_out).diff(dayjs(check_in), "day")
       : 1;
 
-    // ======================
-    // SORT (💡 SQL-ից հանում ենք բարդ տեսակավորումը, թողնում ենք ID-ն, որ limit-ը չփչանա)
-    // ======================
     let order = [["id", "ASC"]];
 
     // ======================
@@ -749,8 +469,15 @@ export const getRooms = async (req, res) => {
     const rooms = await Room.findAll({
       where: whereRoom,
       include: [
-        { model: Hotels, as: "hotel" },
-        { model: Photo, as: "images", attributes: ["id", "path"] },
+        {model: Hotels, as: "hotel" },
+        {model: HotelPhotos,
+          as: "images",
+          attributes: ["id", "path"],
+          required: false,
+          separate: true,
+          limit: 5,
+          order: [["sort_order", "ASC"]]
+        },
         { model: Amenity, as: "amenities", through: { attributes: [] } },
         {
           model: RoomOption,
@@ -854,9 +581,7 @@ export const getRooms = async (req, res) => {
     }
 
     // ======================
-    // 💡 🆕 JS SORT (ԱՎԵԼԱՑՐԵՑԻՆՔ ԱՅՍ ՄԱՍԸ RESPONSE-ԻՑ ԱՌԱՋ)
     // ======================
-    // Տեսակավորում ենք արդեն ստացված սենյակները ըստ իրենց հաշվարկված վերջնական գնի (lowest_price)
     if (sort === "price_asc") {
       formattedRooms.sort((a, b) => a.lowest_price - b.lowest_price);
     } else if (sort === "price_desc") {
@@ -883,763 +608,6 @@ export const getRooms = async (req, res) => {
 };
 
 
-// export const getRooms = async (req, res) => {
-//   console.log(req.query,555)
-//
-//
-//   try {
-//     const {
-//       hotel_id,
-//       minPrice,
-//       maxPrice,
-//       guests,
-//       bed_type,
-//
-//       check_in,
-//       check_out,
-//
-//       page = 1,
-//       limit = 10,
-//       sort,
-//     } = req.query;
-//
-//     const limitInt =
-//       Math.max(
-//         parseInt(limit) || 10,
-//         1
-//       );
-//
-//     const pageInt =
-//       Math.max(
-//         parseInt(page) || 1,
-//         1
-//       );
-//
-//     const offset =
-//       (pageInt - 1) * limitInt;
-//
-//     // ======================
-//     // NIGHTS
-//     // ======================
-//
-//     const nights =
-//       check_in && check_out
-//         ? dayjs(check_out).diff(
-//           dayjs(check_in),
-//           "day"
-//         )
-//         : 1;
-//
-//
-//     let order = [];
-//
-//     if (sort === "price_asc") {
-//       order.push([{ model: RoomOption, as: "options" }, "price", "ASC"]);
-//     } else if (sort === "price_desc") {
-//       order.push([{ model: RoomOption, as: "options" }, "price", "DESC"]);
-//     } else {
-//       order.push(["id", "ASC"]);
-//     }
-//
-//     // ======================
-//     // ROOM FILTER
-//     // ======================
-//
-//     const whereRoom = {
-//       status: "active",
-//
-//       ...(hotel_id && {
-//         hotel_id: Number(hotel_id),
-//       }),
-//
-//       ...(guests && {
-//         max_guests: {
-//           [Op.gte]:
-//             Number(guests),
-//         },
-//       }),
-//
-//       ...(bed_type && {
-//         bed_type,
-//       }),
-//     };
-//
-//     // ======================
-//     // OPTION FILTER
-//     // ======================
-//
-//     const whereOption = {
-//       status: "active",
-//     };
-//
-//     if (minPrice) {
-//       whereOption.price = {
-//         ...whereOption.price,
-//
-//         [Op.gte]:
-//           Number(minPrice),
-//       };
-//     }
-//
-//     if (maxPrice) {
-//       whereOption.price = {
-//         ...whereOption.price,
-//
-//         [Op.lte]:
-//           Number(maxPrice),
-//       };
-//     }
-//
-//     // ======================
-//     // FETCH ROOMS
-//     // ======================
-//
-//     const rooms = await Room.findAll({
-//       where: whereRoom,
-//
-//       include: [
-//         {
-//           model: Hotels,
-//           as: "hotel",
-//         },
-//
-//         {
-//           model: Photo,
-//           as: "images",
-//           attributes: ["id", "path"],
-//
-//         },
-//
-//         {
-//           model: Amenity,
-//           as: "amenities",
-//           through: {
-//             attributes: [],
-//           },
-//         },
-//
-//         {
-//           model: RoomOption,
-//           as: "options",
-//
-//           required: false,
-//
-//           where:
-//             Object.keys(
-//               whereOption
-//             ).length
-//               ? whereOption
-//               : undefined,
-//         },
-//
-//         {
-//           model: RoomExtra,
-//           as: "extras",
-//         },
-//       ],
-//
-//       distinct: true,
-//
-//       limit: limitInt,
-//
-//       offset,
-//
-//       order,
-//     });
-//
-//     // ======================
-//     // FORMAT
-//     // ======================
-//
-//     const formattedRooms = [];
-//
-//     for (const room of rooms) {
-//       const r = room.toJSON();
-//
-//       // ======================
-//       // AVAILABILITY
-//       // ======================
-//
-//       let available = true;
-//
-//       if (
-//         check_in &&
-//         check_out
-//       ) {
-//         available =
-//           await isRoomAvailable(
-//             r.id,
-//             check_in,
-//             check_out
-//           );
-//       }
-//
-//       if (!available) {
-//         continue;
-//       }
-//
-//       // ======================
-//       // OPTIONS
-//       // ======================
-//
-//       // const options = (
-//       //   r.options || []
-//       // ).map((opt) =>
-//       //   calcRoomOptionPrice(
-//       //     opt,
-//       //     nights
-//       //   )
-//       // );
-//
-//       const options = (
-//         r.options || []
-//       ).map((opt) => {
-//
-//         const priced =
-//           calcRoomOptionPrice(
-//             opt,
-//             nights
-//           );
-//
-//         const freeCancellationUntil =
-//           check_in
-//             ? dayjs(check_in)
-//               .subtract(
-//                 opt.free_cancel_days,
-//                 "day"
-//               )
-//               .format(
-//                 "YYYY-MM-DD"
-//               )
-//             : null;
-//
-//         return {
-//           ...priced,
-//
-//           free_cancellation_until:
-//           freeCancellationUntil,
-//         };
-//       });
-//
-//       // ======================
-//       // LOWEST PRICE
-//       // ======================
-//
-//       const lowestPrice =
-//         options.length > 0
-//           ? Math.min(
-//             ...options.map(
-//               (o) =>
-//                 o.total_price
-//             )
-//           )
-//           : 0;
-//
-//       // ======================
-//       // GROUP AMENITIES
-//       // ======================
-//
-//       const groupedAmenities =
-//         {};
-//
-//       (
-//         r.amenities || []
-//       ).forEach((a) => {
-//         const key =
-//           a.category ||
-//           "Other";
-//
-//         if (
-//           !groupedAmenities[key]
-//         ) {
-//           groupedAmenities[
-//             key
-//             ] = [];
-//         }
-//
-//         groupedAmenities[
-//           key
-//           ].push({
-//           id: a.id,
-//
-//           name: a.name,
-//
-//           key: a.key,
-//         });
-//       });
-//
-//       // ======================
-//       // EXTRAS
-//       // ======================
-//
-//       const extras = (
-//         r.extras || []
-//       ).map((e) => ({
-//         id: e.id,
-//
-//         name: e.name,
-//
-//         type: e.type,
-//
-//         price: e.price,
-//       }));
-//
-//       // ======================
-//       // PUSH
-//       // ======================
-//
-//       formattedRooms.push({
-//         id: r.id,
-//
-//         hotel_id:
-//         r.hotel_id,
-//
-//         name: r.name,
-//
-//         size: r.size,
-//
-//         bed_type:
-//         r.bed_type,
-//
-//         max_guests:
-//         r.max_guests,
-//
-//         lowest_price:
-//         lowestPrice,
-//
-//         available,
-//
-//         images:
-//           r.images || [],
-//
-//         amenities:
-//           r.amenities || [],
-//
-//         groupedAmenities,
-//
-//         extras,
-//
-//         options,
-//
-//         hotel: r.hotel,
-//       });
-//     }
-//
-//     // ======================
-//     // RESPONSE
-//     // ======================
-//
-//     return res.json({
-//       success: true,
-//
-//       page: pageInt,
-//
-//       limit: limitInt,
-//
-//       total:
-//       formattedRooms.length,
-//
-//       data: formattedRooms,
-//     });
-//   } catch (error) {
-//     console.log(
-//       "GET ROOMS ERROR:",
-//       error
-//     );
-//
-//     return res
-//       .status(500)
-//       .json({
-//         success: false,
-//
-//         message:
-//           "Fetch failed",
-//       });
-//   }
-// };
-
-
-
-// export const getRooms = async (req, res) => {
-//   console.log(req.check_in,555)
-//
-//
-//   try {
-//     const {
-//       hotel_id,
-//       minPrice,
-//       maxPrice,
-//       guests,
-//       bed_type,
-//
-//       check_in,
-//       check_out,
-//
-//       page = 1,
-//       limit = 10,
-//       sort,
-//     } = req.query;
-//
-//     const limitInt =
-//       Math.max(
-//         parseInt(limit) || 10,
-//         1
-//       );
-//
-//     const pageInt =
-//       Math.max(
-//         parseInt(page) || 1,
-//         1
-//       );
-//
-//     const offset =
-//       (pageInt - 1) * limitInt;
-//
-//     // ======================
-//     // NIGHTS
-//     // ======================
-//
-//     const nights =
-//       check_in && check_out
-//         ? dayjs(check_out).diff(
-//           dayjs(check_in),
-//           "day"
-//         )
-//         : 1;
-//
-//     // ======================
-//     // SORT
-//     // ======================
-//
-//     let order = [];
-//
-//     if (sort === "price_asc") {
-//       order.push(["id", "ASC"]);
-//     }
-//
-//     if (sort === "price_desc") {
-//       order.push(["id", "DESC"]);
-//     }
-//
-//     // ======================
-//     // ROOM FILTER
-//     // ======================
-//
-//     const whereRoom = {
-//       status: "active",
-//
-//       ...(hotel_id && {
-//         hotel_id: Number(hotel_id),
-//       }),
-//
-//       ...(guests && {
-//         max_guests: {
-//           [Op.gte]:
-//             Number(guests),
-//         },
-//       }),
-//
-//       ...(bed_type && {
-//         bed_type,
-//       }),
-//     };
-//
-//     // ======================
-//     // OPTION FILTER
-//     // ======================
-//
-//     const whereOption = {
-//       status: "active",
-//     };
-//
-//     if (minPrice) {
-//       whereOption.price = {
-//         ...whereOption.price,
-//
-//         [Op.gte]:
-//           Number(minPrice),
-//       };
-//     }
-//
-//     if (maxPrice) {
-//       whereOption.price = {
-//         ...whereOption.price,
-//
-//         [Op.lte]:
-//           Number(maxPrice),
-//       };
-//     }
-//
-//     // ======================
-//     // FETCH ROOMS
-//     // ======================
-//
-//     const rooms = await Room.findAll({
-//       where: whereRoom,
-//
-//       include: [
-//         {
-//           model: Hotels,
-//           as: "hotel",
-//         },
-//
-//         {
-//           model: Photo,
-//           as: "images",
-//           attributes: ["id", "path"],
-//
-//         },
-//
-//         {
-//           model: Amenity,
-//           as: "amenities",
-//           through: {
-//             attributes: [],
-//           },
-//         },
-//
-//         {
-//           model: RoomOption,
-//           as: "options",
-//
-//           required: false,
-//
-//           where:
-//             Object.keys(
-//               whereOption
-//             ).length
-//               ? whereOption
-//               : undefined,
-//         },
-//
-//         {
-//           model: RoomExtra,
-//           as: "extras",
-//         },
-//       ],
-//
-//       distinct: true,
-//
-//       limit: limitInt,
-//
-//       offset,
-//
-//       order,
-//     });
-//
-//     // ======================
-//     // FORMAT
-//     // ======================
-//
-//     const formattedRooms = [];
-//
-//     for (const room of rooms) {
-//       const r = room.toJSON();
-//
-//       // ======================
-//       // AVAILABILITY
-//       // ======================
-//
-//       let available = true;
-//
-//       if (
-//         check_in &&
-//         check_out
-//       ) {
-//         available =
-//           await isRoomAvailable(
-//             r.id,
-//             check_in,
-//             check_out
-//           );
-//       }
-//
-//       if (!available) {
-//         continue;
-//       }
-//
-//       // ======================
-//       // OPTIONS
-//       // ======================
-//
-//       // const options = (
-//       //   r.options || []
-//       // ).map((opt) =>
-//       //   calcRoomOptionPrice(
-//       //     opt,
-//       //     nights
-//       //   )
-//       // );
-//
-//       const options = (
-//         r.options || []
-//       ).map((opt) => {
-//
-//         const priced =
-//           calcRoomOptionPrice(
-//             opt,
-//             nights
-//           );
-//
-//         const freeCancellationUntil =
-//           check_in
-//             ? dayjs(check_in)
-//               .subtract(
-//                 opt.free_cancel_days,
-//                 "day"
-//               )
-//               .format(
-//                 "YYYY-MM-DD"
-//               )
-//             : null;
-//
-//         return {
-//           ...priced,
-//
-//           free_cancellation_until:
-//           freeCancellationUntil,
-//         };
-//       });
-//
-//       // ======================
-//       // LOWEST PRICE
-//       // ======================
-//
-//       const lowestPrice =
-//         options.length > 0
-//           ? Math.min(
-//             ...options.map(
-//               (o) =>
-//                 o.total_price
-//             )
-//           )
-//           : 0;
-//
-//       // ======================
-//       // GROUP AMENITIES
-//       // ======================
-//
-//       const groupedAmenities =
-//         {};
-//
-//       (
-//         r.amenities || []
-//       ).forEach((a) => {
-//         const key =
-//           a.category ||
-//           "Other";
-//
-//         if (
-//           !groupedAmenities[key]
-//         ) {
-//           groupedAmenities[
-//             key
-//             ] = [];
-//         }
-//
-//         groupedAmenities[
-//           key
-//           ].push({
-//           id: a.id,
-//
-//           name: a.name,
-//
-//           key: a.key,
-//         });
-//       });
-//
-//       // ======================
-//       // EXTRAS
-//       // ======================
-//
-//       const extras = (
-//         r.extras || []
-//       ).map((e) => ({
-//         id: e.id,
-//
-//         name: e.name,
-//
-//         type: e.type,
-//
-//         price: e.price,
-//       }));
-//
-//       // ======================
-//       // PUSH
-//       // ======================
-//
-//       formattedRooms.push({
-//         id: r.id,
-//
-//         hotel_id:
-//         r.hotel_id,
-//
-//         name: r.name,
-//
-//         size: r.size,
-//
-//         bed_type:
-//         r.bed_type,
-//
-//         max_guests:
-//         r.max_guests,
-//
-//         lowest_price:
-//         lowestPrice,
-//
-//         available,
-//
-//         images:
-//           r.images || [],
-//
-//         amenities:
-//           r.amenities || [],
-//
-//         groupedAmenities,
-//
-//         extras,
-//
-//         options,
-//
-//         hotel: r.hotel,
-//       });
-//     }
-//
-//     // ======================
-//     // RESPONSE
-//     // ======================
-//
-//     return res.json({
-//       success: true,
-//
-//       page: pageInt,
-//
-//       limit: limitInt,
-//
-//       total:
-//       formattedRooms.length,
-//
-//       data: formattedRooms,
-//     });
-//   } catch (error) {
-//     console.log(
-//       "GET ROOMS ERROR:",
-//       error
-//     );
-//
-//     return res
-//       .status(500)
-//       .json({
-//         success: false,
-//
-//         message:
-//           "Fetch failed",
-//       });
-//   }
-// };
-
-
-
 export const getSimilarRooms = async (req, res, next) => {
   try {
     const { roomId, hotelId, property_class } = req.query;
@@ -1651,9 +619,7 @@ export const getSimilarRooms = async (req, res, next) => {
       });
     }
 
-    // ========================================================
-    // 🔍 ՄԵԿ ՄԻԱՍՆԱԿԱՆ ՈՒ ՕՊՏԻՄԱԼԱՑՎԱԾ SEQUELIZE ՀԱՐՑՈՒՄ
-    // ========================================================
+
     const rooms = await Room.findAll({
       where: {
         id: { [Op.ne]: Number(roomId) },
@@ -1664,7 +630,7 @@ export const getSimilarRooms = async (req, res, next) => {
       limit: 3,
       order: [["id", "DESC"]],
 
-      subQuery: false, // Թույլ է տալիս, որ limit-ը ճիշտ աշխատի JOIN-երի հետ
+      subQuery: false,
 
       include: [
         {
@@ -1682,14 +648,15 @@ export const getSimilarRooms = async (req, res, next) => {
           where: { status: "active" },
           required: true,
           attributes: ["price"],
-          separate: true // Բեռնում է գները առանձին թեթև sub-query-ով
+          separate: true
         },
         {
-          model: Photo,
+          model: HotelPhotos,
           as: "images",
-          attributes: ["path", "room_id"],
+          attributes: ["path", "room_id", "is_main"],
+          where: { is_main: true },
           required: false,
-          separate: true // Բեռնում է նկարները առանձին թեթև sub-query-ով
+          separate: true
         },
         {
           model: Amenity,
@@ -1723,7 +690,6 @@ export const getSimilarRooms = async (req, res, next) => {
       const pricesArray = roomOptions.map(opt => opt.price);
       const lowestPrice = pricesArray.length > 0 ? Math.min(...pricesArray) : 0;
 
-      // 3. Լոգարանի դինամիկ ընտրություն
       const foundBathroom = roomAmenities[0];
       const bathsCount = foundBathroom ? foundBathroom.name : "1 Bath";
 
@@ -1731,7 +697,6 @@ export const getSimilarRooms = async (req, res, next) => {
         id: plain.id,
         name: plain.name,
         image: mainImage,
-        // 🆕 ԿԱՏԱՐՅԱԼ ԴԻՆԱՄԻԿ. Քարտի վրայի թագի համար կարդում ենք սենյակի սեփական `room_type` սյունակը
         property_class: plain.roomType || "Standard Room",
         price: lowestPrice,
         rating: hotelData.rating ? Number(hotelData.rating.toFixed(1)) : 5.0,
@@ -1750,17 +715,6 @@ export const getSimilarRooms = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
-
-
-
-
-
-
-
-///singleRoom
 
 
 export const getRoomById = async (req, res) => {
@@ -1792,7 +746,11 @@ export const getRoomById = async (req, res) => {
           required: false,
         },
         { model: RoomExtra, as: "extras" },
-        { model: Photo, as: "images", attributes: ["id", "path"] },
+        {  model: HotelPhotos,
+          as: "images",
+          attributes: ["id", "path", "category", "is_main"],
+          required: false,
+          order: [["sort_order", "ASC"]] },
       ],
     });
 
@@ -1813,44 +771,9 @@ export const getRoomById = async (req, res) => {
         ? await isRoomAvailable(r.id, check_in, check_out)
         : true;
 
-    // ==========================================
-    // 💳 OPTIONS (SINGLE SOURCE OF TRUTH)
-    // ==========================================
-    // const options = (r.options || []).map((opt) => {
-    //   const priced = calcRoomOptionPrice(opt, nights);
-    //
-    //   return {
-    //     id: opt.id,
-    //     room_id: opt.room_id,
-    //
-    //     name: opt.name,
-    //     meal_plan: opt.meal_plan,
-    //
-    //     price: Number(opt.price || 0),
-    //     price_modifier: Number(opt.price_modifier || 0),
-    //
-    //     cancellation_type: opt.cancellation_type,
-    //     free_cancel_days: opt.free_cancel_days,
-    //     cancel_time: opt.cancel_time || "23:59",
-    //
-    //     price_per_night: priced.price_per_night,
-    //     total_price: priced.total_price,
-    //
-    //     discount_active: priced.discount_active || false,
-    //   };
-    // });
-
-    // ==========================================
-    // 💳 OPTIONS (SINGLE SOURCE OF TRUTH)
-    // ==========================================
-    // ==========================================
-    // 💳 OPTIONS (SINGLE SOURCE OF TRUTH)
-    // ==========================================
-    // ==========================================
     // 💳 OPTIONS (SINGLE SOURCE OF TRUTH)
     // ==========================================
     const options = (r.options || []).map((opt) => {
-      // 1. Կանչում ենք ձեր հիմնական ֆունկցիան (որը 120-ից սարքում է 96)
       const priced = calcRoomOptionPrice(opt, nights);
 
       const now = dayjs();
@@ -1977,596 +900,29 @@ export const getRoomById = async (req, res) => {
   }
 };
 
-// export const getRoomById = async (req, res) => {
-//   try {
-//     const { check_in, check_out } = req.query;
-//
-//     // ==========================================
-//     // ⏳ NIGHTS
-//     // ==========================================
-//     const nights =
-//       check_in && check_out
-//         ? dayjs(check_out).diff(dayjs(check_in), "day")
-//         : 1;
-//
-//     // ==========================================
-//     // 🛏️ ROOM FETCH
-//     // ==========================================
-//     const room = await Room.findByPk(req.params.id, {
-//       include: [
-//         { model: Hotels, as: "hotel" },
-//         {
-//           model: Amenity,
-//           as: "amenities",
-//           through: { attributes: [] },
-//         },
-//         {
-//           model: RoomOption,
-//           as: "options",
-//           where: { status: "active" },
-//           required: false,
-//         },
-//         { model: RoomExtra, as: "extras" },
-//         { model: Photo, as: "images", attributes: ["id", "path"] },
-//       ],
-//     });
-//
-//     if (!room) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Room not found",
-//       });
-//     }
-//
-//     const r = room.toJSON();
-//
-//     // ==========================================
-//     // 📅 AVAILABILITY
-//     // ==========================================
-//     const available =
-//       check_in && check_out
-//         ? await isRoomAvailable(r.id, check_in, check_out)
-//         : true;
-//
-//     // ==========================================
-//     // 💳 OPTIONS (NORMALIZED PRICING - FIXED)
-//     // ==========================================
-//     const options = (r.options || []).map((opt) => {
-//       const priced = calcRoomOptionPrice(opt, nights);
-//
-//       const basePrice = Number(opt.price || 0);
-//       const modifier = Number(opt.price_modifier || 0);
-//
-//       // 🔥 SINGLE SOURCE OF TRUTH
-//       const total_price =
-//         priced.total_price ??
-//         basePrice + (basePrice * modifier) / 100;
-//
-//       return {
-//         id: opt.id,
-//         room_id: opt.room_id,
-//
-//         name: opt.name,
-//         meal_plan: opt.meal_plan,
-//
-//         price: basePrice,
-//         price_modifier: modifier,
-//
-//         cancellation_type: opt.cancellation_type,
-//         free_cancel_days: opt.free_cancel_days,
-//         cancel_time: opt.cancel_time || "23:59",
-//
-//         total_price,
-//
-//         price_per_night: priced.price_per_night || total_price,
-//       };
-//     });
-//
-//     // ==========================================
-//     // 💰 LOWEST PRICE
-//     // ==========================================
-//     const lowestPrice =
-//       options.length > 0
-//         ? Math.min(...options.map((o) => o.total_price))
-//         : 0;
-//
-//     // ==========================================
-//     // 🛠️ AMENITIES GROUPING
-//     // ==========================================
-//     const groupedAmenities = {};
-//
-//     (r.amenities || []).forEach((a) => {
-//       const key = a.category || "Other";
-//
-//       if (!groupedAmenities[key]) {
-//         groupedAmenities[key] = [];
-//       }
-//
-//       groupedAmenities[key].push({
-//         id: a.id,
-//         name: a.name,
-//         key: a.key,
-//       });
-//     });
-//
-//     // ==========================================
-//     // 📦 EXTRAS
-//     // ==========================================
-//     const extras = (r.extras || []).map((e) => ({
-//       id: e.id,
-//       name: e.name,
-//       type: e.type,
-//       price: Number(e.price || 0),
-//     }));
-//
-//     // ==========================================
-//     // 🚀 RESPONSE (FINAL CLEAN)
-//     // ==========================================
-//     return res.json({
-//       success: true,
-//       data: {
-//         id: r.id,
-//         hotel_id: r.hotel_id,
-//         name: r.name,
-//
-//         room_type: r.roomType || "Standard Room",
-//
-//         size: r.size,
-//         bed_type: r.bed_type,
-//         max_guests: r.max_guests,
-//
-//         available, // ✅ FIXED
-//
-//         lowest_price: lowestPrice,
-//
-//         images: r.images || [],
-//         amenities: r.amenities || [],
-//         groupedAmenities,
-//
-//         extras,
-//         options,
-//
-//         hotel: r.hotel,
-//       },
-//     });
-//   } catch (err) {
-//     console.error("GET ROOM BY ID ERROR:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
 
-// export const getRoomById = async (req, res) => {
-//   try {
-//     const { check_in, check_out } = req.query;
-//
-//     // ==========================================
-//     // ⏳ ԳԻՇԵՐՆԵՐԻ ՀԱՇՎԱՐԿ (NIGHTS)
-//     // ==========================================
-//     const nights = check_in && check_out
-//       ? dayjs(check_out).diff(dayjs(check_in), "day")
-//       : 1;
-//
-//     // ==========================================
-//     // 🛏️ ՍԵՆՅԱԿԻ ԲԵՌՆՈՒՄ (ROOM WITH RELATIONS)
-//     // ==========================================
-//     // ==========================================
-//     // 🛏️ ՍԵՆՅԱԿԻ ԲԵՌՆՈՒՄ (ROOM WITH RELATIONS)
-//     // ==========================================
-//     const room = await Room.findByPk(req.params.id, {
-//       // 💡 Ջնջեցինք attributes տողը, քանի որ room_type AS roomType-ը բազայից ավտոմատ գալիս է
-//       include: [
-//         {
-//           model: Hotels,
-//           as: "hotel",
-//         },
-//         {
-//           model: Amenity,
-//           as: "amenities",
-//           through: { attributes: [] },
-//         },
-//         {
-//           model: RoomOption,
-//           as: "options",
-//           where: { status: "active" },
-//           required: false,
-//         },
-//         {
-//           model: RoomExtra,
-//           as: "extras",
-//         },
-//         {
-//           model: Photo,
-//           as: "images",
-//           attributes: ["id", "path"],
-//         }
-//       ],
-//     });
-//
-//
-//     if (!room) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Room not found",
-//       });
-//     }
-//
-//     const r = room.toJSON();
-//
-//     // ==========================================
-//     // 📅 ՀԱՍԱՆԵԼԻՈՒԹՅԱՆ ՍՏՈՒԳՈՒՄ (AVAILABILITY)
-//     // ==========================================
-//     let available = true;
-//     if (check_in && check_out) {
-//       // 💡 Կանչում է մեր կողմից ուղղված, Timezone-ից պաշտպանված ֆունկցիան
-//       available = await isRoomAvailable(r.id, check_in, check_out);
-//     }
-//
-//     // ==========================================
-//     // 💳 ԳՆԱՅԻՆ ՊԼԱՆՆԵՐ ԵՎ ՉԵՂԱՐԿՄԱՆ ԴԻՆԱՄԻԿ ՏՐԱՄԱԲԱՆՈՒԹՅՈՒՆ
-//     // ==========================================
-//     const options = (r.options || []).map((opt) => {
-//       const priced = calcRoomOptionPrice(opt, nights);
-//
-//       let freeCancellationUntil = null;
-//       let isFullyRefundable = opt.cancellation_type === "free";
-//
-//       if (isFullyRefundable && check_in) {
-//         freeCancellationUntil = dayjs(check_in)
-//           .subtract(opt.free_cancel_days || 1, "day")
-//           .format("YYYY-MM-DD");
-//       }
-//
-//       return {
-//         ...priced,
-//         cancellation_type: opt.cancellation_type,
-//         is_fully_refundable: isFullyRefundable,
-//         free_cancellation_until: freeCancellationUntil,
-//         cancel_time: opt.cancel_time || "23:59",
-//         free_cancel_days: opt.free_cancel_days
-//       };
-//     });
-//
-//     // ==========================================
-//     // 💰 ԱՄԵՆԱԷԺԱՆ ԳՆԻ ՈՐՈՇՈՒՄ (LOWEST PRICE)
-//     // ==========================================
-//     const lowestPrice = options.length > 0
-//       ? Math.min(...options.map((o) => o.total_price))
-//       : 0;
-//
-//     // ==========================================
-//     // 🛠️ ԱՄԵՆԻԹԻՆԵՐԻ ԽՄԲԱՎՈՐՈՒՄ (GROUP AMENITIES)
-//     // ==========================================
-//     const groupedAmenities = {};
-//     (r.amenities || []).forEach((a) => {
-//       const key = a.category || "Other";
-//       if (!groupedAmenities[key]) {
-//         groupedAmenities[key] = [];
-//       }
-//       groupedAmenities[key].push({ id: a.id, name: a.name, key: a.key });
-//     });
-//
-//     // ==========================================
-//     // 📦 ԼՐԱՑՈՒՑԻՉ ԾԱՌԱՅՈՒԹՅՈՒՆՆԵՐ (EXTRAS)
-//     // ==========================================
-//     const extras = (r.extras || []).map((e) => ({
-//       id: e.id,
-//       name: e.name,
-//       type: e.type,
-//       price: e.price,
-//     }));
-//
-//     // ==========================================
-//     // 🚀 ՎԵՐՋՆԱԿԱՆ ՊԱՏԱՍԽԱՆ (RESPONSE)
-//     // ==========================================
-//     return res.json({
-//       success: true,
-//       data: {
-//         id: r.id,
-//         hotel_id: r.hotel_id,
-//         name: r.name,
-//         room_type: r.roomType || "Standard Room", // 💡 Ապահովագրված fallback
-//         size: r.size,
-//         bed_type: r.bed_type,
-//         max_guests: r.max_guests,
-//         available: lowestPrice === 0 ? false : available, // 💡 Եթե գին չկա, ավտոմատ դարձնում ենք անհասանելի
-//         lowest_price: lowestPrice,
-//         images: r.images || [],
-//         amenities: r.amenities || [],
-//         groupedAmenities,
-//         extras,
-//         options,
-//         hotel: r.hotel,
-//       },
-//     });
-//   } catch (err) {
-//     console.error("GET ROOM BY ID ERROR:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
+export const getRoomGallery = async (req, res) => {
+  try {
+    const { room_id } = req.query;
+
+    if (!room_id) {
+      return res.status(400).json({ success: false, message: "room_id is required" });
+    }
+
+    // 💡 Բերում է միայն տվյալ սենյակին պատկանող նկարները (օրն. Bedrooms, Bathroom, Kitchen)
+    const photos = await HotelPhotos.findAll({
+      where: { room_id },
+      order: [["sort_order", "ASC"]],
+    });
+
+    return res.status(200).json({ success: true, data: photos });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 
 
-// export const getRoomById = async (req, res) => {
-//   try {
-//     const {
-//       check_in,
-//       check_out,
-//     } = req.query;
-//
-//     // ======================
-//     // NIGHTS
-//     // ======================
-//
-//     const nights =
-//       check_in && check_out
-//         ? dayjs(check_out).diff(
-//           dayjs(check_in),
-//           "day"
-//         )
-//         : 1;
-//
-//     // ======================
-//     // ROOM
-//     // ======================
-//
-//     const room = await Room.findByPk(
-//       req.params.id,
-//       {
-//         include: [
-//           {
-//             model: Hotels,
-//             as: "hotel",
-//           },
-//
-//           {
-//             model: Amenity,
-//             as: "amenities",
-//             through: {
-//               attributes: [],
-//             },
-//           },
-//
-//           {
-//             model: RoomOption,
-//             as: "options",
-//             where: {
-//               status: "active",
-//             },
-//             required: false,
-//           },
-//
-//           {
-//             model: RoomExtra,
-//             as: "extras",
-//           },
-//
-//           {
-//             model: Photo,
-//             as: "images",
-//             attributes: ["id", "path"],
-//           }
-//         ],
-//       }
-//     );
-//
-//     // ======================
-//     // NOT FOUND
-//     // ======================
-//
-//     if (!room) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Room not found",
-//       });
-//     }
-//
-//     const r = room.toJSON();
-//
-//     // ======================
-//     // AVAILABILITY
-//     // ======================
-//
-//     let available = true;
-//
-//     if (check_in && check_out) {
-//       available =
-//         await isRoomAvailable(
-//           r.id,
-//           check_in,
-//           check_out
-//         );
-//     }
-//
-//     // ======================
-//     // OPTIONS
-//     // ======================
-//
-//     const options = (
-//       r.options || []
-//     ).map((opt) => {
-//       const priced =
-//         calcRoomOptionPrice(
-//           opt,
-//           nights
-//         );
-//
-//       const freeCancellationUntil =
-//         check_in
-//           ? dayjs(check_in)
-//             .subtract(
-//               opt.free_cancel_days,
-//               "day"
-//             )
-//             .format(
-//               "YYYY-MM-DD"
-//             )
-//           : null;
-//
-//       return {
-//         ...priced,
-//
-//         free_cancellation_until:
-//         freeCancellationUntil,
-//       };
-//     });
-//
-//     // ======================
-//     // LOWEST PRICE
-//     // ======================
-//
-//     const lowestPrice =
-//       options.length > 0
-//         ? Math.min(
-//           ...options.map(
-//             (o) => o.total_price
-//           )
-//         )
-//         : 0;
-//
-//     // ======================
-//     // GROUP AMENITIES
-//     // ======================
-//
-//     const groupedAmenities = {};
-//
-//     (r.amenities || []).forEach(
-//       (a) => {
-//         const key =
-//           a.category || "Other";
-//
-//         if (
-//           !groupedAmenities[key]
-//         ) {
-//           groupedAmenities[key] =
-//             [];
-//         }
-//
-//         groupedAmenities[key].push({
-//           id: a.id,
-//           name: a.name,
-//           key: a.key,
-//         });
-//       }
-//     );
-//
-//     // ======================
-//     // EXTRAS
-//     // ======================
-//
-//     const extras = (
-//       r.extras || []
-//     ).map((e) => ({
-//       id: e.id,
-//       name: e.name,
-//       type: e.type,
-//       price: e.price,
-//     }));
-//
-//     // ======================
-//     // RESPONSE
-//     // ======================
-//
-//     return res.json({
-//       success: true,
-//
-//       data: {
-//         id: r.id,
-//
-//         hotel_id: r.hotel_id,
-//
-//         name: r.name,
-//
-//         size: r.size,
-//
-//         bed_type: r.bed_type,
-//
-//         max_guests:
-//         r.max_guests,
-//
-//         available,
-//
-//         lowest_price:
-//         lowestPrice,
-//
-//         images:
-//           r.images || [],
-//
-//         amenities:
-//           r.amenities || [],
-//
-//         groupedAmenities,
-//
-//         extras,
-//
-//         options,
-//
-//         hotel: r.hotel,
-//       },
-//     });
-//   } catch (err) {
-//     console.error(
-//       "GET ROOM BY ID ERROR:",
-//       err
-//     );
-//
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
-
-// export const getRoomById = async (req, res) => {
-//   console.log(888)
-//   try {
-//     const room = await Room.findByPk(req.params.id, {
-//       include: [
-//         {
-//           model: Amenity,
-//           as: "amenities",
-//           through: { attributes: [] },
-//         },
-//         {
-//           model: RoomOption,
-//           as: "options",
-//         },
-//         {
-//           model: RoomExtra,
-//           as: "extras",
-//         },
-//         {
-//           model: Photo,
-//           as: "images",
-//         },
-//
-//         // {
-//         //   model: Photo,
-//         //   as: "images",
-//         //   attributes: ["path"]
-//         // },
-//       ],
-//     });
-//
-//     if (!room) {
-//       return res.status(404).json({
-//         message: "Room not found",
-//       });
-//     }
-//
-//     res.json(room);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({
-//       message: "Server error",
-//     });
-//   }
-// };
 
 
 
@@ -2574,22 +930,80 @@ export const getRoomById = async (req, res) => {
 /* =========================================================
    UPLOAD IMAGES (CLOUDINARY READY)
 ========================================================= */
+
 export const uploadRoomImages = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // Սենյակի ID-ն
+    const { category } = req.body;
+    const authUserId = req.user?.id; // 💡 Մուտք գործած օգտատիրոջ ID-ն
+    const authUserRole = req.user?.role; // 💡 Օգտատիրոջ դերը (օրն. 'superadmin')
 
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No files uploaded" });
+    }
+
+    // 1. 💡 Գտնում ենք սենյակը և դրա միջոցով նաև հյուրանոցի տվյալները (ներառյալ սեփականատիրոջ/ադմինի ID-ն)
+    const room = await Room.findByPk(id, {
+      include: [
+        {
+          model: Hotels,
+          as: "hotel",
+          attributes: ["id", "user_id"], // 💡 Վերցնում ենք հյուրանոցի սեփականատիրոջ user_id-ն
+        },
+      ],
+    });
+
+    if (!room || !room.hotel) {
+      return res.status(404).json({ success: false, message: "Room or Hotel not found" });
+    }
+
+    // 2. 💡 Ստուգում ենք հասանելիությունը (Ադմինիստրատորի իրավունքներ)
+    // Եթե օգտատերը գլխավոր ադմին չէ (superadmin) ԵՎ այս հյուրանոցի սեփականատերը չէ՝ արգելում ենք
+    const isHotelOwner = room.hotel.user_id === authUserId;
+    const isSuperAdmin = authUserRole === "superadmin"; // Փոխիր այս անունը քո բազայի դերի անունով
+
+    if (!isHotelOwner && !isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not the admin of this hotel."
+      });
+    }
+
+    // 3. Պատրաստում ենք նկարների մասիվը
     const images = req.files.map((file) => ({
-      room_id: id,
+      room_id: Number(id),
+      hotel_id: room.hotel_id,
       path: file.path,
+      public_id: file.filename,
+      category: category || "Bedrooms",
+      uploaded_by: authUserId
     }));
 
-    await Photo.bulkCreate(images);
+    await HotelPhotos.bulkCreate(images);
 
-    res.json({ success: true, images });
+    return res.json({ success: true, images });
   } catch (e) {
-    res.status(500).json({ message: "Upload failed" });
+    return res.status(500).json({ success: false, message: "Upload failed", error: e.message });
   }
 };
+
+//sa verjinn er
+// export const uploadRoomImages = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//
+//     const images = req.files.map((file) => ({
+//       room_id: id,
+//       path: file.path,
+//     }));
+//
+//     await Photo.bulkCreate(images);
+//
+//     res.json({ success: true, images });
+//   } catch (e) {
+//     res.status(500).json({ message: "Upload failed" });
+//   }
+// };
 
 /* =========================================================
    ADMIN DASHBOARD STATS
