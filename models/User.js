@@ -80,6 +80,12 @@ User.hasMany(
       as: "favoriteHotels",
     });
 
+    User.hasMany(Hotels, {
+      foreignKey: "user_id",
+      as: "managedHotels",
+      onDelete: "RESTRICT"
+    });
+
   }
 }
 

@@ -2,6 +2,7 @@ import express from "express";
 import * as Controller from "../controllers/room.js";
 import createCloudinaryUpload from "../middlewares/upload.js";
 import {getRoomById, getSimilarRooms} from "../controllers/room.js";
+import authorize from "../middlewares/authMiddlewere.js";
 
 const upload = createCloudinaryUpload('rooms');
 
@@ -57,6 +58,7 @@ router.patch("/archive/bulk", Controller.bulkArchiveRooms);
 router.post(
   "/:id/images",
   upload.array("photos"),
+  authorize,
   Controller.uploadRoomImages);
 
 

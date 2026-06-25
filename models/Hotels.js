@@ -45,6 +45,12 @@ class Hotels extends Model {
       otherKey: "user_id",
       as: "usersWhoFavorited",
     });
+
+    Hotels.belongsTo(User, {
+      foreignKey: "user_id",
+      as: "owner",
+      onDelete: "RESTRICT"
+    });
   }
 }
 
@@ -54,6 +60,11 @@ Hotels.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+    },
+
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     },
 
     name: {

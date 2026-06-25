@@ -932,12 +932,13 @@ export const getRoomGallery = async (req, res) => {
 ========================================================= */
 
 
-export const uploadRoomImages = async (req, res) => {
+export const uploadRoomImages = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { category } = req.body;
-    const authUserId = req.user?.id;
+    const authUserId = req.userId;
     const authUserRole = req.user?.role;
+
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: "No files uploaded" });
@@ -978,8 +979,7 @@ export const uploadRoomImages = async (req, res) => {
 
     return res.json({ success: true, images });
   } catch (e) {
-    console.error("!!! UPLOAD ERROR DETECTED !!!", e);
-    return res.status(500).json({ success: false, message: "Upload failed", error: e.message });
+    next(e)
   }
 };
 
