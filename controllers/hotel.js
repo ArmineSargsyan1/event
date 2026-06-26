@@ -945,6 +945,7 @@ export const getSponsoredHotels = async (req, res, next) => {
 
 
 export const getHotelById = async (req, res, next) => {
+  console.log(req.params,88)
   const userId = 1;
   // const userId = req.userId;
   try {
