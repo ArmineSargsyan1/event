@@ -1,7 +1,7 @@
 import Hotels from "../models/Hotels.js";
 import Amenity from "../models/Amenity.js";
 import HotelPhotos from "../models/HotelPhotos.js";
-import {Op, Sequelize} from "sequelize";
+import {Op, QueryTypes, Sequelize} from "sequelize";
 import Reviews from "../models/Reviews.js";
 import HotelAmenities from "../models/HotelAmenity.js";
 import FileHelper from "../services/Utils.js";
