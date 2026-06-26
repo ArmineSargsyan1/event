@@ -239,17 +239,18 @@ export default {
 
 
   getHotelGallery: {
-    query: Joi.object({
-      hotel_id: Joi.number()
-        .integer()
-        .positive()
-        .required(),
-
-      category: Joi.string()
-        .valid("All", "Pool", "Cafe", "Restaurant", "Exterior", "Bathroom", "Bedrooms", "Kitchen", "Amenities")
-        .optional()
+    params: Joi.object({
+      hotelId: Joi.number().integer().positive().required()
     }),
+
+    query: Joi.object({
+      category: Joi.string()
+        .valid("Pool", "Cafe", "Restaurant", "Exterior", "Bathroom", "Bedrooms", "Kitchen", "Amenities")
+        .optional()
+    })
   },
+
+
   // =========================
   // UPDATE HOTEL
   // =========================

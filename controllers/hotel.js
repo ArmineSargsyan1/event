@@ -827,6 +827,7 @@ export const getHotelById = async (req, res, next) => {
         {model: Amenity, as: "Amenities", through: {attributes: []}},
         {
           model: Reviews,
+          as: "reviews",
           include: [{model: ReviewLiked, as: "liked_features"}],
         },
         {
@@ -945,23 +946,21 @@ export const getHotelById = async (req, res, next) => {
 
 
 export const getHotelGallery = async (req, res) => {
-  console.log(req)
   try {
-    const { hotelId, category } = req.query;
+    const { hotelId } = req.params;
+    const { category } = req.query;
 
-    // Ստուգում ենք՝ արդյոք ID-ն առկա է
-    if (!hotelId) {
-      return res.status(400).json({ success: false, message: "hotelId is requerd" });
-    }
+    const whereCondition = {hotel_id: hotelId};
 
-    const whereCondition = { hotelId };
-
-    if (category && category.trim() !== "" && category.toLowerCase() !== "all") {
+    if (category) {
       whereCondition.category = category;
     }
 
     const photos = await HotelPhotos.findAll({
       where: whereCondition,
+      attributes: {
+        exclude: ['createdAt', 'updatedAt', 'public_id', 'room_id', 'uploaded_by']
+      },
       order: [["sort_order", "ASC"]],
     });
 
@@ -970,6 +969,7 @@ export const getHotelGallery = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 
 // export const getHotelGallery = async (req, res) => {

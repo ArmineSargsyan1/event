@@ -4,6 +4,7 @@ import { Op, fn, col } from "sequelize";
 import User from "../models/User.js";
 import ReviewReplies from "../models/ReviewReplies.js";
 import Hotels from "../models/Hotels.js";
+import Room from "../models/Room.js";
 
 export const createReview = async (req, res) => {
   console.log(req.body,999)
@@ -76,6 +77,114 @@ export const createReview = async (req, res) => {
 
 
 
+// export const getReviews = async (req, res) => {
+//   try {
+//     const {
+//       page = 1,
+//       limit = 5,
+//       hotel_id,
+//       min_score,
+//       max_score,
+//       traveller_type,
+//       feature,
+//       sort,
+//       search,
+//       verified,
+//     } = req.query;
+//
+//     const pageNum = Number(page);
+//     const limitNum = Number(limit);
+//     const offset = (pageNum - 1) * limitNum;
+//
+//     const where = {};
+//
+//     if (hotel_id) where.hotel_id = hotel_id;
+//
+//     if (min_score || max_score) {
+//       where.score = {};
+//       if (min_score) where.score[Op.gte] = Number(min_score);
+//       if (max_score) where.score[Op.lte] = Number(max_score);
+//     }
+//
+//     if (traveller_type) where.traveller_type = traveller_type;
+//
+//     if (verified === "true" || verified === "false") {
+//       where.verified = verified === "true";
+//     }
+//
+//     if (search) {
+//       where[Op.or] = [
+//         { comment: { [Op.like]: `%${search}%` } },
+//         { '$user.user_name$': { [Op.like]: `%${search}%` } }
+//       ];
+//     }
+//
+//     const include = [
+//       {
+//         model: ReviewLiked,
+//         as: "liked_features",
+//       },
+//       {
+//         model: User,
+//         as: "user",
+//         attributes: ["id", "userName", "profilePicture"],
+//       },
+//       {
+//         model: Room,
+//         as: "room",
+//         attributes: ["id", "name"],
+//         required: false
+//       }
+//     ];
+//
+//     if (feature) {
+//       include[0].where = { feature };
+//       include[0].required = true;
+//     }
+//
+//     let order = [["createdAt", "DESC"]];
+//
+//     const sortMap = {
+//       score_desc: ["score", "DESC"],
+//       score_asc: ["score", "ASC"],
+//       oldest: ["createdAt", "ASC"],
+//       newest: ["createdAt", "DESC"],
+//     };
+//
+//     if (sort && sortMap[sort]) {
+//       order = [sortMap[sort]];
+//     }
+//
+//     const { rows, count } = await Reviews.findAndCountAll({
+//       where,
+//       include,
+//       limit: limitNum,
+//       offset,
+//       order,
+//       distinct: true,
+//     });
+//
+//     return res.json({
+//       success: true,
+//       data: rows,
+//       pages: {
+//         total: count,
+//         page: pageNum,
+//         pages: Math.ceil(count / limitNum),
+//       }
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
+
+
+
+
+
 export const getReviews = async (req, res) => {
   try {
     const {
@@ -85,10 +194,8 @@ export const getReviews = async (req, res) => {
       min_score,
       max_score,
       traveller_type,
-      feature,
       sort,
       search,
-      verified,
     } = req.query;
 
     const pageNum = Number(page);
@@ -99,6 +206,7 @@ export const getReviews = async (req, res) => {
 
     if (hotel_id) where.hotel_id = hotel_id;
 
+    // Սքորի ֆիլտր
     if (min_score || max_score) {
       where.score = {};
       if (min_score) where.score[Op.gte] = Number(min_score);
@@ -107,36 +215,31 @@ export const getReviews = async (req, res) => {
 
     if (traveller_type) where.traveller_type = traveller_type;
 
-    if (verified === "true" || verified === "false") {
-      where.verified = verified === "true";
-    }
-
+    // Որոնում ըստ մեկնաբանության կամ օգտատիրոջ անվան
     if (search) {
       where[Op.or] = [
         { comment: { [Op.like]: `%${search}%` } },
-        { reviewer_name: { [Op.like]: `%${search}%` } },
+        { '$user.user_name$': { [Op.like]: `%${search}%` } }
       ];
     }
 
     const include = [
       {
-        model: ReviewLiked,
-        as: "liked_features",
-      },
+        model: User,
+        as: "user",
+        attributes: ["id", "userName", "profilePicture", "country"],
+        required: false
+      }
     ];
 
-    if (feature) {
-      include[0].where = { feature };
-      include[0].required = true;
-    }
-
-    let order = [["created_at", "DESC"]];
+    // Սորտավորում ըստ Sequelize-ի ավտոմատ կառավարվող createdAt դաշտի
+    let order = [["createdAt", "DESC"]];
 
     const sortMap = {
       score_desc: ["score", "DESC"],
       score_asc: ["score", "ASC"],
-      oldest: ["created_at", "ASC"],
-      newest: ["created_at", "DESC"],
+      oldest: ["createdAt", "ASC"],
+      newest: ["createdAt", "DESC"],
     };
 
     if (sort && sortMap[sort]) {
@@ -160,7 +263,6 @@ export const getReviews = async (req, res) => {
         page: pageNum,
         pages: Math.ceil(count / limitNum),
       }
-
     });
   } catch (err) {
     return res.status(500).json({
@@ -169,6 +271,7 @@ export const getReviews = async (req, res) => {
     });
   }
 };
+
 
 
 export const getHotelReviews =
@@ -449,7 +552,10 @@ export const getTestimonials = async (req, res) => {
           [Op.gte]: 8,
         },
         comment: {
-          [Op.ne]: null,
+          [Op.and]: [
+            { [Op.ne]: null },
+            { [Op.ne]: "" }
+          ]
         },
       },
 
@@ -458,19 +564,24 @@ export const getTestimonials = async (req, res) => {
           model: Hotels,
           attributes: ["id", "name"],
         },
+
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "first_name", "last_name"],
+        }
       ],
 
       attributes: [
         "id",
-        "reviewer_name",
         "score",
         "comment",
-        "review_date",
+        "created_at",
       ],
 
       order: [
         ["score", "DESC"],
-        ["review_date", "DESC"],
+        ["created_at", "DESC"],
       ],
 
       limit: 6,
@@ -488,6 +599,56 @@ export const getTestimonials = async (req, res) => {
     });
   }
 };
+
+
+// export const getTestimonials = async (req, res) => {
+//   try {
+//     const reviews = await Reviews.findAll({
+//       where: {
+//         verified: true,
+//         score: {
+//           [Op.gte]: 8,
+//         },
+//         comment: {
+//           [Op.ne]: null,
+//         },
+//       },
+//
+//       include: [
+//         {
+//           model: Hotels,
+//           attributes: ["id", "name"],
+//         },
+//       ],
+//
+//       attributes: [
+//         "id",
+//         "reviewer_name",
+//         "score",
+//         "comment",
+//         "review_date",
+//       ],
+//
+//       order: [
+//         ["score", "DESC"],
+//         ["review_date", "DESC"],
+//       ],
+//
+//       limit: 6,
+//     });
+//
+//     res.json({
+//       success: true,
+//       data: reviews,
+//     });
+//
+//   } catch (err) {
+//     res.status(500).json({
+//       success: false,
+//       message: err.message,
+//     });
+//   }
+// };
 
 export const getRatingBreakdown = async (req, res) => {
   try {

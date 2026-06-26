@@ -40,10 +40,17 @@ router.get( "/:hotelId",
 
 
 router.get(
-  "/gallery",
-  // validation(schema.getHotelGallery),
-  Controller.getHotelGallery,
+  "/gallery/:hotelId",
+  validation(schema.getHotelGallery),
+  Controller.getHotelGallery
 );
+
+
+// router.get(
+//   "/gallery",
+//   validation(schema.getHotelGallery),
+//   Controller.getHotelGallery,
+// );
 export default router;
 
 

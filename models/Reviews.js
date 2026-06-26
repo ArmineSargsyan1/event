@@ -332,6 +332,8 @@ import sequelize from "../clients/db.sequelize.mysql.js";
 import Hotels from "./Hotels.js";
 import ReviewLiked from "./ReviewLiked.js";
 import ReviewReplies from "./ReviewReplies.js";
+import User from "./User.js";
+import Room from "./Room.js";
 
 class Reviews extends Model {
   static associate() {
@@ -354,6 +356,9 @@ class Reviews extends Model {
         onDelete: "CASCADE",
       }
     );
+
+    Reviews.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+    Reviews.belongsTo(Room, { foreignKey: 'room_id', as: 'room' });
   }
 }
 
@@ -367,11 +372,6 @@ Reviews.init(
       primaryKey: true,
     },
 
-    reviewer_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-
     score: {
       type: DataTypes.DECIMAL(4, 2),
       allowNull: false,
@@ -383,23 +383,26 @@ Reviews.init(
     stay_duration: DataTypes.INTEGER,
     stay_date: DataTypes.DATE,
 
-    review_date: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-    },
-
     verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
 
-    // user_id: DataTypes.INTEGER,
-    // hotel_id: DataTypes.INTEGER,
+    user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
 
     hotel_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    room_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    }
+
   },
   {
     sequelize,
@@ -407,15 +410,6 @@ Reviews.init(
     tableName: "reviews",
     timestamps: true,
     underscored: true,
-
-
-    ///chkrknvel
-    // indexes: [
-    //   {
-    //     unique: true,
-    //     fields: ["user_id", "hotel_id"],
-    //   },
-    // ],
 
   }
 
@@ -526,6 +520,23 @@ Reviews.afterUpdate(async (review, options) => {
   );
 });
 
+
+Reviews.afterBulkDestroy(async (options) => {
+  const hotelId = options.where?.hotel_id;
+  if (hotelId) {
+    await recalcHotelRating(hotelId, options.transaction || null);
+  }
+});
+
+// ==========================
+// 🟡 AFTER BULK UPDATE
+// ==========================
+Reviews.afterBulkUpdate(async (options) => {
+  const hotelId = options.where?.hotel_id;
+  if (hotelId) {
+    await recalcHotelRating(hotelId, options.transaction || null);
+  }
+});
 
 // //
 // // ==========================

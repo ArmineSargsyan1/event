@@ -6,6 +6,7 @@ import Amenity from "./Amenity.js";
 import RoomOption from "./RoomOption.js";
 import RoomExtra from "./RoomExtra.js";
 import HotelPhotos from "./HotelPhotos.js";
+import Reviews from "./Reviews.js";
 
 class Room extends Model {
   static associate() {
@@ -38,6 +39,8 @@ class Room extends Model {
       as: "images",
       onDelete: "CASCADE"
     });
+
+    Room.hasMany(Reviews, { foreignKey: 'room_id' });
 
   }
 }

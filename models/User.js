@@ -52,26 +52,24 @@
 // export default User;
 
 
-
-
-
-import { Model, DataTypes } from 'sequelize';
+import {Model, DataTypes} from 'sequelize';
 import crypto from 'crypto';
 import sequelize from '../clients/db.sequelize.mysql.js';
 import Room from "./Room.js";
 import ReviewReplies from "./ReviewReplies.js";
 import Favorite from "./Favorites.js";
 import Hotels from "./Hotels.js";
+import Reviews from "./Reviews.js";
 
 class User extends Model {
   static associate() {
 
-User.hasMany(
-  ReviewReplies,
-  {
-    foreignKey: "owner_id",
-    as: "reviewReplies",
-  });
+    User.hasMany(
+      ReviewReplies,
+      {
+        foreignKey: "owner_id",
+        as: "reviewReplies",
+      });
 
     User.belongsToMany(Hotels, {
       through: Favorite,
@@ -86,6 +84,11 @@ User.hasMany(
       onDelete: "RESTRICT"
     });
 
+    User.hasMany(Reviews, {
+        foreignKey: 'user_id',
+        as: 'reviews'
+      }
+    );
   }
 }
 
@@ -111,14 +114,14 @@ User.init(
     userName: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      validate: { len: [3, 100] }
+      validate: {len: [3, 100]}
     },
 
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
       unique: 'users_email_unique', // points to a single unique index
-      validate: { isEmail: true },
+      validate: {isEmail: true},
       set(value) {
         this.setDataValue('email', value.toLowerCase().trim());
       }
@@ -127,7 +130,7 @@ User.init(
     password: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      validate: { len: [6, 255] }
+      validate: {len: [6, 255]}
     },
 
     profilePicture: {
