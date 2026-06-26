@@ -810,97 +810,190 @@ export const getSponsoredHotels = async (req, res, next) => {
 };
 
 
+// export const getHotelById = async (req, res, next) => {
+//   // const userId = req.body.userId
+//   const userId = 1;
+//   try {
+//     const hotelId = Number(req.params.hotelId);
+//
+//     const {checkIn, checkOut} = req.query;
+//
+//     // ======================
+//     // GET HOTEL (single query)
+//     // ======================
+//     const hotel = await Hotels.findByPk(hotelId, {
+//       include: [
+//         {model: HotelPhotos, as: "images"},
+//         {model: Amenity, as: "Amenities", through: {attributes: []}},
+//         {
+//           model: Reviews,
+//           as: "reviews",
+//           include: [{model: ReviewLiked, as: "liked_features"}],
+//         },
+//         {
+//           model: User,
+//           as: "usersWhoFavorited",
+//           attributes: ["id"],
+//           through: {attributes: [],
+//           },
+//
+//           where: userId
+//             ? {id: userId}
+//
+//             : undefined,
+//
+//           required: false,
+//         },
+//       ],
+//     });
+//
+//     // ======================
+//     // NOT FOUND
+//     // ======================
+//     if (!hotel) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Hotel not found",
+//       });
+//     }
+//
+//     // ======================
+//     // SAFE INCREMENT
+//     // ======================
+//     await Hotels.increment(
+//       {views: 1},
+//       {where: {id: hotelId}}
+//     );
+//
+//     // ======================
+//     // NIGHTS
+//     // ======================
+//     const nights = checkIn && checkOut
+//         ? dayjs(checkOut).diff(dayjs(checkIn), "day")
+//         : 1;
+//
+//     const calculatedStars =FileHelper.getHotelStars(hotel);
+//
+//     const reviews = hotel.Reviews || [];
+//
+//
+//
+//     // ======================
+//     // FEATURE COUNTS
+//     // ======================
+//     const featureCounts = {
+//       cleanliness: 0,
+//       staff: 0,
+//       facilities: 0,
+//       location: 0,
+//       value_for_money: 0,
+//     };
+//
+//     reviews.forEach((review) => {
+//       (review.liked_features || []).forEach((item) => {
+//         if (featureCounts[item.feature] !== undefined) {
+//           featureCounts[item.feature]++;
+//         }
+//       });
+//     });
+//
+//     const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0
+//     // ======================
+//     // RESPONSE
+//     // ======================
+//     return res.json({
+//       success: true,
+//       data: {
+//         id: hotel.id,
+//         name: hotel.name,
+//         city: hotel.city,
+//         country: hotel.country,
+//         address: hotel.address,
+//         description: hotel.description || "Welcome to our premium property.",
+//
+//         propertyClass: hotel.property_class,
+//         hotelCategory: hotel.hotel_category,
+//
+//
+//         lat: hotel.lat,
+//         lon: hotel.lon,
+//
+//         views: hotel.views + 1,
+//         priceFrom: hotel.price_from || 50,
+//         currency: hotel.currency || "USD",
+//         featured: hotel.featured,
+//
+//         images: hotel.images || [],
+//         amenities: hotel.Amenities || [],
+//         stars: calculatedStars,
+//         isFavorite: isFavorite,
+//         reviewStats: {
+//           total: hotel.review_count || reviews.length,
+//           avgScore: hotel.rating,
+//           ...featureCounts,
+//         },
+//
+//         nights,
+//       },
+//     });
+//
+//
+//   } catch (e) {
+//     next(e);
+//   }
+// };
+
+
 export const getHotelById = async (req, res, next) => {
-  // const userId = req.body.userId
   const userId = 1;
   try {
     const hotelId = Number(req.params.hotelId);
-
-    const {checkIn, checkOut} = req.query;
+    const { checkIn, checkOut } = req.query;
 
     // ======================
     // GET HOTEL (single query)
     // ======================
     const hotel = await Hotels.findByPk(hotelId, {
       include: [
-        {model: HotelPhotos, as: "images"},
-        {model: Amenity, as: "Amenities", through: {attributes: []}},
+        { model: HotelPhotos, as: "images" },
+        { model: Amenity, as: "Amenities", through: { attributes: [] } },
         {
           model: Reviews,
-          as: "reviews",
-          include: [{model: ReviewLiked, as: "liked_features"}],
+          as: "reviews", // 💡 Եթե սա սխալ տա, նշանակում է մոդելների ֆայլում 'as' դրված չէ
+          required: false,
+          include: [{ model: ReviewLiked, as: "liked_features", required: false }],
         },
         {
           model: User,
           as: "usersWhoFavorited",
           attributes: ["id"],
-          through: {attributes: [],
-          },
-
-          where: userId
-            ? {id: userId}
-
-            : undefined,
-
+          through: { attributes: [] },
+          where: userId ? { id: userId } : undefined,
           required: false,
         },
       ],
     });
 
-    // ======================
-    // NOT FOUND
-    // ======================
     if (!hotel) {
-      return res.status(404).json({
-        success: false,
-        message: "Hotel not found",
-      });
+      return res.status(404).json({ success: false, message: "Hotel not found" });
     }
 
-    // ======================
-    // SAFE INCREMENT
-    // ======================
-    await Hotels.increment(
-      {views: 1},
-      {where: {id: hotelId}}
-    );
+    // Increments views
+    await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
 
-    // ======================
-    // NIGHTS
-    // ======================
-    const nights = checkIn && checkOut
-        ? dayjs(checkOut).diff(dayjs(checkIn), "day")
-        : 1;
+    const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
+    const calculatedStars = FileHelper.getHotelStars(hotel);
+    const hotelReviews = hotel.reviews || [];
 
-    const calculatedStars =FileHelper.getHotelStars(hotel);
-
-    const reviews = hotel.Reviews || [];
-
-
-
-    // ======================
-    // FEATURE COUNTS
-    // ======================
-    const featureCounts = {
-      cleanliness: 0,
-      staff: 0,
-      facilities: 0,
-      location: 0,
-      value_for_money: 0,
-    };
-
-    reviews.forEach((review) => {
+    const featureCounts = { Pool: 0, Cafe: 0, Restaurant: 0, Exterior: 0, Bathroom: 0, Bedrooms: 0, Kitchen: 0, Amenities: 0 };
+    hotelReviews.forEach((review) => {
       (review.liked_features || []).forEach((item) => {
-        if (featureCounts[item.feature] !== undefined) {
-          featureCounts[item.feature]++;
-        }
+        if (featureCounts[item.feature] !== undefined) featureCounts[item.feature]++;
       });
     });
 
-    const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0
-    // ======================
-    // RESPONSE
-    // ======================
+    const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0;
+
     return res.json({
       success: true,
       data: {
@@ -910,35 +1003,25 @@ export const getHotelById = async (req, res, next) => {
         country: hotel.country,
         address: hotel.address,
         description: hotel.description || "Welcome to our premium property.",
-
-        propertyClass: hotel.property_class,
-        hotelCategory: hotel.hotel_category,
-
-
-        lat: hotel.lat,
-        lon: hotel.lon,
-
-        views: hotel.views + 1,
+        views: (hotel.views || 0) + 1,
         priceFrom: hotel.price_from || 50,
-        currency: hotel.currency || "USD",
-        featured: hotel.featured,
-
         images: hotel.images || [],
         amenities: hotel.Amenities || [],
         stars: calculatedStars,
-        isFavorite: isFavorite,
+        isFavorite,
         reviewStats: {
-          total: hotel.review_count || reviews.length,
-          avgScore: hotel.rating,
+          total: hotel.review_count || hotelReviews.length,
+          avgScore: Number(hotel.rating || 0),
           ...featureCounts,
         },
-
         nights,
       },
     });
 
-
   } catch (e) {
+    // 💡 ՍԱ ՇԱՏ ԿԱՐԵՎՈՐ Է Render-ի համար. Տերմինալում կտպի հենց MySQL-ի տված սխալը (օրինակ՝ Unknown column...)
+    console.error("⛔ MYSQL ERROR IN GET_HOTEL_BY_ID:", e.message);
+    if (e.parent) console.error("🔍 EXECUTED SQL:", e.parent.sql);
     next(e);
   }
 };
