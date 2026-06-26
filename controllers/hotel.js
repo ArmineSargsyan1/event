@@ -14,6 +14,7 @@ import Booking from "../models/Booking.js";
 import ReviewLiked from "../models/ReviewLiked.js";
 import User from "../models/User.js";
 import Favorites from "../models/Favorites.js";
+import sequelize from "../clients/db.sequelize.mysql.js";
 
 const allowedPropertyClasses = [
   "hotel",
