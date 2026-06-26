@@ -945,43 +945,51 @@ export const getSponsoredHotels = async (req, res, next) => {
 
 
 export const getHotelById = async (req, res, next) => {
-  const userId = 1; // Ժամանակավոր հաստատուն ID
+  const userId = 1;
+  // const userId = req.userId;
   try {
     const hotelId = Number(req.params.hotelId);
+
+    if (isNaN(hotelId) || hotelId <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid Hotel ID" });
+    }
+
     const { checkIn, checkOut } = req.query;
 
-    // ==========================================================================
-    // 🏨 GET HOTEL WITH SCOPE (ALL 10 DYNAMIC AGGREGATIONS ARE LOADED AUTOMATICALLY)
     // ==========================================================================
     const hotel = await Hotels.scope("withReviewStats").findByPk(hotelId, {
       include: [
         { model: HotelPhotos, as: "images" },
-        { model: Amenity, as: "Amenities", through: { attributes: [] } },
-        {
-          model: User,
-          as: "usersWhoFavorited",
-          attributes: ["id"],
-          through: { attributes: [] },
-          where: userId ? { id: userId } : undefined,
-          required: false,
-        },
+        { model: Amenity, as: "Amenities", through: { attributes: [] } }
       ],
     });
 
-    // If hotel not found
     if (!hotel) {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
 
-    // Views increment
+    // Views-ի ավելացում
     await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
+
+    // ==========================================================================
+    // ❤️ ՔԱՅԼ 2. ՊԱՐԶ ՈՒ ԱՊԱՀՈՎ ՍՏՈՒԳՈՒՄ `favorites` ԱՂՅՈՒՍԱԿՈՒՄ
+    // ==========================================================================
+    let isFavorite = false;
+    if (userId) {
+      const favoriteRecord = await Favorites.findOne({
+        where: {
+          hotel_id: hotelId,
+          user_id: Number(userId)
+        }
+      });
+      isFavorite = !!favoriteRecord;
+    }
 
     const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
     const calculatedStars = FileHelper.getHotelStars(hotel);
-    const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0;
 
     // ==========================================================================
-    // 🚀 RESPONSE)
+    // 🚀 RESPONSE
     // ==========================================================================
     return res.json({
       success: true,
