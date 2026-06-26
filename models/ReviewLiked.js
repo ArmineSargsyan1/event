@@ -6,6 +6,7 @@ class ReviewLiked extends Model {
   static associate() {
     ReviewLiked.belongsTo(Reviews, {
       foreignKey: "review_id",
+      as: "review",
       onDelete: "CASCADE",
     });
   }
@@ -13,18 +14,31 @@ class ReviewLiked extends Model {
 
 ReviewLiked.init(
   {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+
     review_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: "reviews",
+        key: "id",
+      },
     },
 
     feature: {
       type: DataTypes.ENUM(
-        "cleanliness",
-        "staff",
-        "facilities",
-        "location",
-        "value"
+        "Pool",
+        "Cafe",
+        "Restaurant",
+        "Exterior",
+        "Bathroom",
+        "Bedrooms",
+        "Kitchen",
+        "Amenities"
       ),
       allowNull: false,
     },
@@ -38,24 +52,6 @@ ReviewLiked.init(
   }
 );
 
-// ReviewLiked.init(
-//   {
-//     review_id: { // ✅ սա պարտադիր է
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//     feature: {
-//       type: DataTypes.STRING,
-//       allowNull: false,
-//     }
-//   },
-//   {
-//     sequelize,
-//     modelName: "ReviewLiked",
-//     tableName: "review_liked",
-//     timestamps: false,
-//     underscored: true,
-//   }
-// );
-
 export default ReviewLiked;
+
+
