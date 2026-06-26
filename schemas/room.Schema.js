@@ -384,4 +384,10 @@ export default {
 
   },
 
+
+  uploadRoomImagesSchema:{
+    category: Joi.string().valid("Pool", "Cafe", "Restaurant", "Exterior", "Bathroom", "Bedrooms", "Kitchen", "Amenities").optional(),
+    photos: Joi.any().optional()
+  }
+
 };

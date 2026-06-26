@@ -909,7 +909,6 @@ export const getRoomGallery = async (req, res) => {
       return res.status(400).json({ success: false, message: "room_id is required" });
     }
 
-    // 💡 Բերում է միայն տվյալ սենյակին պատկանող նկարները (օրն. Bedrooms, Bathroom, Kitchen)
     const photos = await HotelPhotos.findAll({
       where: { room_id },
       order: [["sort_order", "ASC"]],
