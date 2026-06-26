@@ -176,21 +176,18 @@ Hotels.init(
       withReviewStats: {
         attributes: {
           include: [
-            // 📊 1. Կարծիքների ընդհանուր քանակը դինամիկ
             [
-              sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.deleted_at IS NULL)`),
+              sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id)`),
               "dynamic_review_count"
             ],
-            // 📊 2. Միջին վարկանիշը դինամիկ
             [
-              sequelize.literal(`(SELECT COALESCE(ROUND(AVG(score), 2), 0) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.deleted_at IS NULL)`),
+              sequelize.literal(`(SELECT COALESCE(ROUND(AVG(score), 2), 0) FROM reviews WHERE reviews.hotel_id = Hotels.id)`),
               "dynamic_rating"
             ],
           ],
         },
       },
-    },
-
+    }
   }
 );
 
