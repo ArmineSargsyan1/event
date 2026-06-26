@@ -944,8 +944,9 @@ export const getSponsoredHotels = async (req, res, next) => {
 // };
 
 
+
 export const getHotelById = async (req, res, next) => {
-  const userId = 1; // Ժամանակավոր Auth ID bypass
+  const userId = 1;
   try {
     const hotelId = Number(req.params.hotelId);
 
@@ -955,6 +956,7 @@ export const getHotelById = async (req, res, next) => {
 
     const { checkIn, checkOut } = req.query;
 
+    // ==========================================================================
     const hotel = await Hotels.scope("withReviewStats").findByPk(hotelId, {
       include: [
         { model: HotelPhotos, as: "images" },
@@ -969,7 +971,7 @@ export const getHotelById = async (req, res, next) => {
     // Դիտումների (views) ավելացում
     await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
 
-    // ==========================================================================
+
     const featuresResult = await sequelize.query(
       `
       SELECT feature, COUNT(*) AS count 
@@ -999,7 +1001,7 @@ export const getHotelById = async (req, res, next) => {
     const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
     const calculatedStars = FileHelper.getHotelStars(hotel);
 
-    // ==========================================================================
+
     return res.json({
       success: true,
       data: {
@@ -1021,6 +1023,7 @@ export const getHotelById = async (req, res, next) => {
         amenities: hotel.Amenities || [],
         stars: calculatedStars,
         isFavorite,
+
         reviewStats: {
           total: Number(hotel.getDataValue("dynamic_review_count") || 0),
           avgScore: Number(hotel.getDataValue("dynamic_rating") || 0),
@@ -1031,7 +1034,7 @@ export const getHotelById = async (req, res, next) => {
     });
 
   } catch (e) {
-    console.error( e);
+    console.error( e.message);
     next(e);
   }
 };
