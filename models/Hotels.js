@@ -176,27 +176,21 @@ Hotels.init(
       withReviewStats: {
         attributes: {
           include: [
+            // 📊 1. Կարծիքների ընդհանուր քանակը դինամիկ
             [
-              sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id)`),
+              sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.deleted_at IS NULL)`),
               "dynamic_review_count"
             ],
+            // 📊 2. Միջին վարկանիշը դինամիկ
             [
-              sequelize.literal(`(SELECT COALESCE(ROUND(AVG(score), 1), 0) FROM reviews WHERE reviews.hotel_id = Hotels.id)`),
+              sequelize.literal(`(SELECT COALESCE(ROUND(AVG(score), 2), 0) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.deleted_at IS NULL)`),
               "dynamic_rating"
             ],
+          ],
+        },
+      },
+    },
 
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Pool')`), 'Pool'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Cafe')`), 'Cafe'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Restaurant')`), 'Restaurant'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Exterior')`), 'Exterior'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Bathroom')`), 'Bathroom'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Bedrooms')`), 'Bedrooms'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Kitchen')`), 'Kitchen'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Amenities')`), 'Amenities']
-          ]
-        }
-      }
-    }
   }
 );
 

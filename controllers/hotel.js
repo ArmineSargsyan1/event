@@ -945,19 +945,16 @@ export const getSponsoredHotels = async (req, res, next) => {
 
 
 export const getHotelById = async (req, res, next) => {
-  console.log(req.params,88)
-  const userId = 1;
-  // const userId = req.userId;
+  const userId = 1; // Ժամանակավոր Auth ID bypass
   try {
     const hotelId = Number(req.params.hotelId);
 
-    if (isNaN(hotelId) || hotelId <= 0) {
-      return res.status(400).json({ success: false, message: "Invalid Hotel ID" });
+    if (!hotelId || isNaN(hotelId)) {
+      return res.status(400).json({ success: false, message: "Invalid Hotel ID parameter." });
     }
 
     const { checkIn, checkOut } = req.query;
 
-    // ==========================================================================
     const hotel = await Hotels.scope("withReviewStats").findByPk(hotelId, {
       include: [
         { model: HotelPhotos, as: "images" },
@@ -966,31 +963,42 @@ export const getHotelById = async (req, res, next) => {
     });
 
     if (!hotel) {
-      return res.status(404).json({ success: false, message: "Hotel not found" });
+      return res.status(404).json({ success: false, message: "Hotel not found in database registry." });
     }
 
-    // Views-ի ավելացում
+    // Դիտումների (views) ավելացում
     await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
 
     // ==========================================================================
-    // ❤️ ՔԱՅԼ 2. ՊԱՐԶ ՈՒ ԱՊԱՀՈՎ ՍՏՈՒԳՈՒՄ `favorites` ԱՂՅՈՒՍԱԿՈՒՄ
-    // ==========================================================================
-    let isFavorite = false;
-    if (userId) {
-      const favoriteRecord = await Favorites.findOne({
-        where: {
-          hotel_id: hotelId,
-          user_id: Number(userId)
+    const featuresResult = await sequelize.query(
+      `
+      SELECT feature, COUNT(*) AS count 
+      FROM review_liked rl
+      INNER JOIN reviews r ON rl.review_id = r.id
+      WHERE r.hotel_id = :hotelId
+      GROUP BY feature
+      `,
+      { replacements: { hotelId }, type: QueryTypes.SELECT }
+    );
+
+    const featureCounts = { Pool: 0, Cafe: 0, Restaurant: 0, Exterior: 0, Bathroom: 0, Bedrooms: 0, Kitchen: 0, Amenities: 0 };
+    if (Array.isArray(featuresResult)) {
+      featuresResult.forEach(row => {
+        if (featureCounts[row.feature] !== undefined) {
+          featureCounts[row.feature] = Number(row.count);
         }
       });
+    }
+
+    let isFavorite = false;
+    if (Favorite && typeof Favorite.findOne === "function") {
+      const favoriteRecord = await Favorite.findOne({ where: { hotel_id: hotelId, user_id: userId } });
       isFavorite = !!favoriteRecord;
     }
 
     const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
     const calculatedStars = FileHelper.getHotelStars(hotel);
 
-    // ==========================================================================
-    // 🚀 RESPONSE
     // ==========================================================================
     return res.json({
       success: true,
@@ -1013,28 +1021,22 @@ export const getHotelById = async (req, res, next) => {
         amenities: hotel.Amenities || [],
         stars: calculatedStars,
         isFavorite,
-
         reviewStats: {
           total: Number(hotel.getDataValue("dynamic_review_count") || 0),
           avgScore: Number(hotel.getDataValue("dynamic_rating") || 0),
-          Pool: Number(hotel.getDataValue("Pool") || 0),
-          Cafe: Number(hotel.getDataValue("Cafe") || 0),
-          Restaurant: Number(hotel.getDataValue("Restaurant") || 0),
-          Exterior: Number(hotel.getDataValue("Exterior") || 0),
-          Bathroom: Number(hotel.getDataValue("Bathroom") || 0),
-          Bedrooms: Number(hotel.getDataValue("Bedrooms") || 0),
-          Kitchen: Number(hotel.getDataValue("Kitchen") || 0),
-          Amenities: Number(hotel.getDataValue("Amenities") || 0)
+          ...featureCounts
         },
         nights,
       },
     });
 
   } catch (e) {
-    console.error("CRITICAL ERROR IN getHotelById:", e.message);
+    console.error( e);
     next(e);
   }
 };
+
+
 
 
 export const getHotelGallery = async (req, res) => {
