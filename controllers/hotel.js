@@ -947,7 +947,7 @@ export const getSponsoredHotels = async (req, res, next) => {
 
 
 export const getHotelById = async (req, res, next) => {
-  const userId = 1;
+  const userId = 1; // Ժամանակավոր Auth ID bypass
   try {
     const hotelId = Number(req.params.hotelId);
 
@@ -969,9 +969,7 @@ export const getHotelById = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Hotel not found in database registry." });
     }
 
-    // Դիտումների (views) ավելացում
     await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
-
 
     const featuresResult = await sequelize.query(
       `
@@ -993,11 +991,11 @@ export const getHotelById = async (req, res, next) => {
       });
     }
 
-    let isFavorite = false;
-    if (Favorite && typeof Favorite.findOne === "function") {
-      const favoriteRecord = await Favorite.findOne({ where: { hotel_id: hotelId, user_id: userId } });
-      isFavorite = !!favoriteRecord;
-    }
+
+    const favoriteRecord = await Favorites.findOne({
+      where: { hotel_id: hotelId, user_id: userId }
+    });
+    let isFavorite = !!favoriteRecord;
 
     const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
     const calculatedStars = FileHelper.getHotelStars(hotel);
@@ -1035,10 +1033,11 @@ export const getHotelById = async (req, res, next) => {
     });
 
   } catch (e) {
-    console.error( e.message);
+    console.error("⛔ ERROR IN getHotelById:", e.message);
     next(e);
   }
 };
+
 
 
 
