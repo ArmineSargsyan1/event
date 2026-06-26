@@ -945,24 +945,18 @@ export const getSponsoredHotels = async (req, res, next) => {
 
 
 export const getHotelById = async (req, res, next) => {
-  const userId = 1;
+  const userId = 1; // Ժամանակավոր հաստատուն ID
   try {
     const hotelId = Number(req.params.hotelId);
     const { checkIn, checkOut } = req.query;
 
-    // ======================
-    // GET HOTEL (single query)
-    // ======================
-    const hotel = await Hotels.findByPk(hotelId, {
+    // ==========================================================================
+    // 🏨 GET HOTEL WITH SCOPE (ALL 10 DYNAMIC AGGREGATIONS ARE LOADED AUTOMATICALLY)
+    // ==========================================================================
+    const hotel = await Hotels.scope("withReviewStats").findByPk(hotelId, {
       include: [
         { model: HotelPhotos, as: "images" },
         { model: Amenity, as: "Amenities", through: { attributes: [] } },
-        {
-          model: Reviews,
-          as: "reviews", // 💡 Եթե սա սխալ տա, նշանակում է մոդելների ֆայլում 'as' դրված չէ
-          required: false,
-          include: [{ model: ReviewLiked, as: "liked_features", required: false }],
-        },
         {
           model: User,
           as: "usersWhoFavorited",
@@ -974,26 +968,21 @@ export const getHotelById = async (req, res, next) => {
       ],
     });
 
+    // If hotel not found
     if (!hotel) {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
 
-    // Increments views
+    // Views increment
     await Hotels.increment({ views: 1 }, { where: { id: hotelId } });
 
     const nights = checkIn && checkOut ? dayjs(checkOut).diff(dayjs(checkIn), "day") : 1;
     const calculatedStars = FileHelper.getHotelStars(hotel);
-    const hotelReviews = hotel.reviews || [];
-
-    const featureCounts = { Pool: 0, Cafe: 0, Restaurant: 0, Exterior: 0, Bathroom: 0, Bedrooms: 0, Kitchen: 0, Amenities: 0 };
-    hotelReviews.forEach((review) => {
-      (review.liked_features || []).forEach((item) => {
-        if (featureCounts[item.feature] !== undefined) featureCounts[item.feature]++;
-      });
-    });
-
     const isFavorite = hotel.usersWhoFavorited && hotel.usersWhoFavorited.length > 0;
 
+    // ==========================================================================
+    // 🚀 RESPONSE)
+    // ==========================================================================
     return res.json({
       success: true,
       data: {
@@ -1003,29 +992,40 @@ export const getHotelById = async (req, res, next) => {
         country: hotel.country,
         address: hotel.address,
         description: hotel.description || "Welcome to our premium property.",
+        propertyClass: hotel.property_class,
+        hotelCategory: hotel.hotel_category,
+        lat: hotel.lat,
+        lon: hotel.lon,
         views: (hotel.views || 0) + 1,
         priceFrom: hotel.price_from || 50,
+        currency: hotel.currency || "USD",
+        featured: hotel.featured,
         images: hotel.images || [],
         amenities: hotel.Amenities || [],
         stars: calculatedStars,
         isFavorite,
+
         reviewStats: {
-          total: hotel.review_count || hotelReviews.length,
-          avgScore: Number(hotel.rating || 0),
-          ...featureCounts,
+          total: Number(hotel.getDataValue("dynamic_review_count") || 0),
+          avgScore: Number(hotel.getDataValue("dynamic_rating") || 0),
+          Pool: Number(hotel.getDataValue("Pool") || 0),
+          Cafe: Number(hotel.getDataValue("Cafe") || 0),
+          Restaurant: Number(hotel.getDataValue("Restaurant") || 0),
+          Exterior: Number(hotel.getDataValue("Exterior") || 0),
+          Bathroom: Number(hotel.getDataValue("Bathroom") || 0),
+          Bedrooms: Number(hotel.getDataValue("Bedrooms") || 0),
+          Kitchen: Number(hotel.getDataValue("Kitchen") || 0),
+          Amenities: Number(hotel.getDataValue("Amenities") || 0)
         },
         nights,
       },
     });
 
   } catch (e) {
-    // 💡 ՍԱ ՇԱՏ ԿԱՐԵՎՈՐ Է Render-ի համար. Տերմինալում կտպի հենց MySQL-ի տված սխալը (օրինակ՝ Unknown column...)
-    console.error("⛔ MYSQL ERROR IN GET_HOTEL_BY_ID:", e.message);
-    if (e.parent) console.error("🔍 EXECUTED SQL:", e.parent.sql);
+    console.error("CRITICAL ERROR IN getHotelById:", e.message);
     next(e);
   }
 };
-
 
 
 export const getHotelGallery = async (req, res) => {
