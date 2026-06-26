@@ -184,14 +184,15 @@ Hotels.init(
               sequelize.literal(`(SELECT COALESCE(ROUND(AVG(score), 1), 0) FROM reviews WHERE reviews.hotel_id = Hotels.id)`),
               "dynamic_rating"
             ],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Pool')`), 'Pool'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Cafe')`), 'Cafe'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Restaurant')`), 'Restaurant'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Exterior')`), 'Exterior'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Bathroom')`), 'Bathroom'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Bedrooms')`), 'Bedrooms'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Kitchen')`), 'Kitchen'],
-            [sequelize.literal(`(SELECT COUNT(*) FROM review_liked rl INNER JOIN reviews r ON rl.review_id = r.id WHERE r.hotel_id = Hotels.id AND rl.feature = 'Amenities')`), 'Amenities']
+
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Pool')`), 'Pool'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Cafe')`), 'Cafe'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Restaurant')`), 'Restaurant'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Exterior')`), 'Exterior'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Bathroom')`), 'Bathroom'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Bedrooms')`), 'Bedrooms'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Kitchen')`), 'Kitchen'],
+            [sequelize.literal(`(SELECT COUNT(*) FROM reviews WHERE reviews.hotel_id = Hotels.id AND reviews.traveller_type = 'Amenities')`), 'Amenities']
           ]
         }
       }
