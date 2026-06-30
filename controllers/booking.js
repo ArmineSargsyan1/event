@@ -770,18 +770,48 @@ export const createBooking = async (req, res) => {
 
 
 export const getSuccessToken = async (req, res) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  const booking = await Booking.findByPk(id);
+    const booking = await Booking.findByPk(id);
 
-  if (!booking || booking.status !== "confirmed") {
-    return res.status(403).json({ message: "Not allowed" });
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (booking.status !== "confirmed") {
+      return res.status(200).json({
+        success: true,
+        message: "Payment is still processing by Stripe Webhook. Retrying...",
+        token: null
+      });
+    }
+
+    return res.json({
+      success: true,
+      token: booking.success_token,
+    });
+
+  } catch (error) {
+    console.error("⛔ Success token route error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
-
-  return res.json({
-    token: booking.success_token,
-  });
 };
+
+
+// export const getSuccessToken = async (req, res) => {
+//   const { id } = req.params;
+//
+//   const booking = await Booking.findByPk(id);
+//
+//   if (!booking || booking.status !== "confirmed") {
+//     return res.status(403).json({ message: "Not allowed" });
+//   }
+//
+//   return res.json({
+//     token: booking.success_token,
+//   });
+// };
 
 export const getBookingConfirmation = async (req, res) => {
   try {
