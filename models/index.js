@@ -3,6 +3,7 @@ export { default as Newsletter } from './Newsletter.js';
 export { default as Event } from './Event.js';
 export { default as UserEvents } from './UserEvents.js';
 export { default as Booking } from './Booking.js';
+export { default as BookingExtra } from './BookingExtra.js';
 export { default as Hotels} from './Hotels.js';
 export { default as HotelPhotos} from './HotelPhotos.js';
 export { default as HotelAmenity} from './HotelAmenity.js';

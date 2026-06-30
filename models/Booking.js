@@ -3,9 +3,11 @@ import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "./Room.js";
 import RoomOption from "./RoomOption.js";
 import User from "./User.js";
+import BookingExtra from "./BookingExtra.js";
 
 class Booking extends Model {
   static associate() {
+
     Booking.belongsTo(User, {
       foreignKey: "user_id",
       as: "user",
@@ -20,6 +22,12 @@ class Booking extends Model {
       foreignKey: "option_id",
       as: "option",
     });
+
+    Booking.hasMany(BookingExtra, {
+      foreignKey: "booking_id",
+      as: "bookedExtras",
+    });
+
   }
 }
 
@@ -34,6 +42,14 @@ Booking.init(
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+
+    customer_email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isEmail: true,
+      }
     },
 
     customer_name: {
@@ -55,6 +71,12 @@ Booking.init(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+
+    snapshot_option_name: { type: DataTypes.STRING, allowNull: false },
+    snapshot_meal_plan: { type: DataTypes.STRING, allowNull: false },
+    snapshot_cancellation_policy: { type: DataTypes.STRING, allowNull: false },
+    snapshot_free_cancel_days: { type: DataTypes.INTEGER, defaultValue: 1 },
+    snapshot_cancel_time: { type: DataTypes.STRING, defaultValue: "23:59" },
 
     check_in: {
       type: DataTypes.DATEONLY,

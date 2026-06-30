@@ -123,6 +123,7 @@ import sequelize from "../clients/db.sequelize.mysql.js";
 import {Op} from "sequelize";
 import StripeEventLog from "../models/StripeEventLog.js";
 import crypto from "crypto";
+import {sendMail} from "../services/mail.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -383,6 +384,27 @@ export const stripeBookingWebhook = async (req, res) => {
         booking.success_token_expires = new Date(Date.now() + 10 * 60 * 1000);
 
         await booking.save({ transaction: wt });
+
+
+        try {
+          await sendMail({
+            to: booking.customer_email,
+            subject: `Booking Confirmed! Reservation #${booking.id}`,
+            template: "voucher",
+            templateData: {
+              id: booking.id,
+              customerName: booking.customer_name,
+              checkIn: booking.check_in,
+              checkOut: booking.check_out,
+              totalPrice: booking.total_price
+            }
+          });
+          console.log(` Voucher email successfully dispatched to customer.`);
+        } catch (mailErr) {
+          console.error(" Nodemailer failed but database transaction saved:", mailErr);
+        }
+
+
       }
     }
 

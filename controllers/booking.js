@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import Hotels from "../models/Hotels.js";
 import HotelPhotos from "../models/HotelPhotos.js";
 import Stripe from "stripe";
+import BookingExtra from "../models/BookingExtra.js";
 
 
 
@@ -132,21 +133,23 @@ export const getBookingDetails = async (req, res) => {
           model: Room,
           as: "room",
           include: [
-            { model: Hotels, as: "hotel",
+            { model: Hotels,
+              as: "hotel",
               include: [
                 {
                   model: HotelPhotos,
                   as: "images",
                   where: { is_main: true },
+                  required: false,
                 }
               ]
             }
           ]
         },
         {
-          model: RoomOption,
-          as: "option"
-        },
+          model: BookingExtra,
+          as: "bookedExtras"
+        }
       ],
     });
 
@@ -159,20 +162,19 @@ export const getBookingDetails = async (req, res) => {
 
     let cancellationDeadline = null;
 
-    if (booking.option && booking.option.cancellation_type === "free") {
-      const cancelDays = booking.option.free_cancel_days;
-      const cancelTime = booking.option.cancel_time;
+    if (booking.snapshot_cancellation_policy === "free") {
+      const cancelDays = booking.snapshot_free_cancel_days;
+      const cancelTime = booking.snapshot_cancel_time || "23:59";
 
-      if (cancelTime) {
-        const [hours, minutes] = cancelTime.split(":");
-        cancellationDeadline = dayjs(booking.check_in)
-          .subtract(cancelDays || 0, "day")
-          .hour(parseInt(hours))
-          .minute(parseInt(minutes))
-          .second(0)
-          .format("YYYY-MM-DD HH:mm:ss");
-      }
+      const [hours, minutes] = cancelTime.split(":");
+      cancellationDeadline = dayjs(booking.check_in)
+        .subtract(cancelDays || 0, "day")
+        .hour(parseInt(hours || 0))
+        .minute(parseInt(minutes || 0))
+        .second(0)
+        .format("YYYY-MM-DD HH:mm:ss");
     }
+
 
     const hotelImage =
       booking.room.hotel.images?.find(i => i.is_main)?.path ||
@@ -190,9 +192,9 @@ export const getBookingDetails = async (req, res) => {
       paymentStatus: booking.payment_status,
       paidAt: booking.paid_at,
       customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
       customerPhone: booking.customer_phone,
       cancellationDeadline: cancellationDeadline,
-
       refundAmount: booking.refund_amount,
 
       room: booking.room ? {
@@ -203,7 +205,6 @@ export const getBookingDetails = async (req, res) => {
         size: booking.room.size,
         images: hotelImage,
 
-        // 🏨 Հյուրանոցի տվյալները ուղիղ բազայից
         hotel: booking.room.hotel ? {
           name: booking.room.hotel.name,
           address: booking.room.hotel.address,
@@ -212,13 +213,21 @@ export const getBookingDetails = async (req, res) => {
         } : null
       } : null,
 
-      option: booking.option ? {
-        id: booking.option.id,
-        name: booking.option.name,
-        mealPlan: booking.option.meal_plan,
-        cancellationType: booking.option.cancellation_type,
-      } : null
+      option: {
+        id: booking.option_id,
+        name: booking.snapshot_option_name,
+        mealPlan: booking.snapshot_meal_plan,
+        cancellationType: booking.snapshot_cancellation_policy,
+      },
+
+      extras: booking.bookedExtras ? booking.bookedExtras.map(e => ({
+        id: e.id,
+        name: e.name,
+        price: Number(e.price || 0)
+      })) : []
     };
+
+
 
     return res.json({
       success: true,
@@ -539,7 +548,6 @@ export const createBooking = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    console.log("CREATE PAYMENT SESSION");
     const {
       room_id,
       rate_plan_id,
@@ -547,6 +555,7 @@ export const createBooking = async (req, res) => {
       check_out,
       guests,
       customer_name,
+      customer_email,
       customer_phone,
       selected_extras
     } = req.body;
@@ -666,19 +675,32 @@ export const createBooking = async (req, res) => {
 
     let finalTotalPrice = Number(priceData.total);
 
+    // if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
+    //   const extras = await RoomExtra.findAll({
+    //     where: {
+    //       id: { [Op.in]: selected_extras }
+    //     },
+    //     transaction
+    //   });
+    //
+    //   // Ցիկլով անցնում ենք և բոլորի գները գումարում ընդհանուր հաշվին
+    //   const extrasSum = extras.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    //   finalTotalPrice += extrasSum;
+    // }
+    // ==========================================
+
+    let extras = [];
     if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
-      const extras = await RoomExtra.findAll({
+      extras = await RoomExtra.findAll({
         where: {
           id: { [Op.in]: selected_extras }
         },
         transaction
       });
 
-      // Ցիկլով անցնում ենք և բոլորի գները գումարում ընդհանուր հաշվին
       const extrasSum = extras.reduce((sum, item) => sum + Number(item.price || 0), 0);
       finalTotalPrice += extrasSum;
     }
-    // ==========================================
 
     // =========================
     // CREATE BOOKING
@@ -688,7 +710,15 @@ export const createBooking = async (req, res) => {
         user_id,
         room_id,
         option_id: rate_plan_id,
+
+        snapshot_option_name: ratePlan.name,
+        snapshot_meal_plan: ratePlan.meal_plan,
+        snapshot_cancellation_policy: ratePlan.cancellation_type,
+        snapshot_free_cancel_days: ratePlan.free_cancel_days,
+        snapshot_cancel_time: ratePlan.cancel_time,
+
         customer_name,
+        customer_email,
         customer_phone,
         check_in,
         check_out,
@@ -701,6 +731,18 @@ export const createBooking = async (req, res) => {
       },
       { transaction }
     );
+
+
+    if (extras.length > 0) {
+      const snapshotPayloads = extras.map(item => ({
+        booking_id: booking.id,
+        extra_id: item.id,
+        name: item.name,
+        price: Number(item.price || 0),
+      }));
+
+      await BookingExtra.bulkCreate(snapshotPayloads, { transaction });
+    }
 
     // =========================
     // COMMIT
@@ -802,11 +844,19 @@ export const cancelBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: "Expired booking cannot be cancelled" });
     }
 
+
+    const optionSnapshotForRefund = {
+      cancellation_type: booking.snapshot_cancellation_policy,
+      free_cancel_days: booking.snapshot_free_cancel_days,
+      cancel_time: booking.snapshot_cancel_time,
+    };
+
     // =========================
     // REFUND CALCULATION
     // =========================
-    const refund = FileHelper.calculateRefund(booking.option, booking.check_in, new Date());
-    const refundAmount = (booking.total_price * refund.refundPercent) / 100;
+    const refund = FileHelper.calculateRefund(optionSnapshotForRefund, booking.check_in, new Date());
+    const refundPercent = refund?.refundPercent ?? 0;
+    const refundAmount = (booking.total_price * refundPercent) / 100;
 
     // =========================
     // 🔥 AUTOMATIC STRIPE REFUND ENGINE
@@ -866,81 +916,88 @@ export const cancelBooking = async (req, res) => {
 
 
 
+export const getBookingById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-export const getBookingById =
-  async (req, res) => {
+    const booking = await Booking.findByPk(id, {
+      include: [
+        {
+          model: Room,
+          as: "room",
+        },
+        {
+          model: BookingExtra,
+          as: "bookedExtras"
+        }
+      ],
+    });
 
-    try {
-
-      const { id } =
-        req.params;
-
-      const booking =
-        await Booking.findByPk(
-          id,
-          {
-
-            include: [
-
-              {
-                model: Room,
-                as: "room",
-              },
-
-              {
-                model: RoomOption,
-                as: "option",
-              },
-
-            ],
-          }
-        );
-
-      if (!booking) {
-
-        return res.status(404).json({
-
-          success: false,
-
-          message:
-            "Booking not found",
-        });
-      }
-
-
-      if (
-        booking.user_id !== 1
-      ) {
-
-        return res.status(403).json({
-
-          success: false,
-
-          message:
-            "Forbidden",
-        });
-      }
-
-      return res.status(200).json({
-
-        success: true,
-
-        booking,
-      });
-
-    } catch (error) {
-
-      console.log(error);
-
-      return res.status(500).json({
-
+    if (!booking) {
+      return res.status(404).json({
         success: false,
-
-        message:
-          "Failed to fetch booking",
+        message: "Booking not found",
       });
     }
-  };
+
+    if (booking.user_id !== 1) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden",
+      });
+    }
+
+    const cleanBooking = {
+      id: booking.id,
+      createdAt: booking.createdAt,
+      checkIn: booking.check_in,
+      checkOut: booking.check_out,
+      guests: booking.guests,
+      totalPrice: booking.total_price,
+      status: booking.status,
+      paymentStatus: booking.payment_status,
+      paidAt: booking.paid_at,
+      customerName: booking.customer_name,
+      customerEmail: booking.customer_email,
+      customerPhone: booking.customer_phone,
+      refundAmount: booking.refund_amount,
+
+      room: booking.room ? {
+        id: booking.room.id,
+        name: booking.room.name,
+        roomType: booking.room.roomType,
+        bedType: booking.room.bedType,
+        size: booking.room.size,
+      } : null,
+
+      option: {
+        id: booking.option_id,
+        name: booking.snapshot_option_name,
+        mealPlan: booking.snapshot_meal_plan,
+        cancellationType: booking.snapshot_cancellation_policy,
+      },
+
+      extras: booking.bookedExtras ? booking.bookedExtras.map(e => ({
+        id: e.id,
+        name: e.name,
+        price: Number(e.price || 0)
+      })) : []
+    };
+
+    return res.status(200).json({
+      success: true,
+      booking: cleanBooking,
+    });
+
+  } catch (error) {
+    console.error("⛔ Fetch booking by id error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch booking",
+    });
+  }
+};
+
 
 
 
@@ -993,16 +1050,17 @@ export const getMyBookings = async (req, res) => {
         }
       }
 
-      if (type === "past") {
-        where.check_out = { [Op.lt]: todayDate };
-      }
+      where[Op.or] = [
+        { check_out: { [Op.lt]: todayDate } },
+        { status: { [Op.in]: ["cancelled", "expired"] } }
+      ];
     }
 
     const { rows, count } = await Booking.findAndCountAll({
       where,
       include: [
         { model: Room, as: "room" },
-        { model: RoomOption, as: "option" },
+        { model: BookingExtra, as: "bookedExtras" }
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
@@ -1013,15 +1071,15 @@ export const getMyBookings = async (req, res) => {
 
       let cancellationDeadline = null;
 
-      if (booking.option && booking.option.cancellation_type === "free") {
-        const cancelDays = booking.option.free_cancel_days || 0;
-        const cancelTime = booking.option.cancel_time || "23:59";
+      if (booking.snapshot_cancellation_policy === "free") {
+        const cancelDays = booking.snapshot_free_cancel_days || 0;
+        const cancelTime = booking.snapshot_cancel_time || "23:59";
 
         const [hours, minutes] = cancelTime.split(":");
         cancellationDeadline = dayjs(booking.check_in)
           .subtract(cancelDays, "day")
-          .hour(parseInt(hours))
-          .minute(parseInt(minutes))
+          .hour(parseInt(hours || 0))
+          .minute(parseInt(minutes || 0))
           .second(0)
           .format("YYYY-MM-DD HH:mm:ss");
       }
@@ -1047,12 +1105,18 @@ export const getMyBookings = async (req, res) => {
           bedType: booking.room.bedType,
           size: booking.room.size,
         } : null,
-        option: booking.option ? {
-          id: booking.option.id,
-          name: booking.option.name,
-          cancellationType: booking.option.cancellation_type,
-          mealPlan: booking.option.meal_plan,
-        } : null,
+        option: {
+          id: booking.option_id,
+          name: booking.snapshot_option_name,
+          cancellationType: booking.snapshot_cancellation_policy,
+          mealPlan: booking.snapshot_meal_plan,
+        },
+
+        extras: booking.bookedExtras ? booking.bookedExtras.map(e => ({
+          id: e.id,
+          name: e.name,
+          price: Number(e.price || 0)
+        })) : []
       };
     });
 

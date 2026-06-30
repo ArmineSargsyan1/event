@@ -1,0 +1,26 @@
+<!-- views/email/voucher.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; color: #333; }
+        .receipt-card { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; max-width: 500px; }
+        .total { font-size: 20px; color: #059669; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h2>Booking Confirmed! 🎉</h2>
+<p>Dear <%= customerName %>,</p>
+<p>Thank you for your payment. Your stay has been successfully secured.</p>
+
+<div class="receipt-card">
+    <h3>Reservation Details</h3>
+    <p><strong>Booking ID:</strong> BOOKING- #GPH-000000<%= id %></p>
+    <p><strong>Check-in:</strong> <%= checkIn %></p>
+    <p><strong>Check-out:</strong> <%= checkOut %></p>
+    <p class="total">Total Paid: $<%= totalPrice %></p>
+</div>
+
+<p>A formal invoice copy has been saved to your dashboard profile account.</p>
+</body>
+</html>

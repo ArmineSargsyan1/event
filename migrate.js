@@ -22,6 +22,7 @@ import * as Models from "./models/index.js";
       Models.Photos,
       Models.Favorites,
       Models.Booking,
+      Models.BookingExtra,
       Models.StripeEventLog,
 
     ];
