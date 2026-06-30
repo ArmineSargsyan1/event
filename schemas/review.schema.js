@@ -2,68 +2,24 @@ import Joi from "joi";
 
 export default {
 
-  // =========================
-  // CREATE REVIEW
-  // =========================
   createReview: {
-
     body: Joi.object({
+      booking_id: Joi.number().integer().positive().required(),
 
-      hotel_id: Joi.number()
-        .integer()
-        .positive()
+      room_id: Joi.number().integer().positive().allow(null).optional(),
+
+      score: Joi.number().min(0).max(10).required(),
+      rating_category: Joi.string()
+        .valid("cleanliness", "staff", "facilities", "location", "value")
         .required(),
-
-      reviewer_name: Joi.string()
-        .min(2)
-        .max(100)
-        .required(),
-
-      score: Joi.number()
-        .min(0)
-        .max(10)
-        .required(),
-
-      comment: Joi.string()
-        .allow("")
-        .optional(),
-
-      traveller_type: Joi.string()
-        .valid(
-          "solo",
-          "couple",
-          "family",
-          "friends",
-          "business"
-        )
-        .optional(),
-
-      stay_duration: Joi.number()
-        .integer()
-        .min(1)
-        .optional(),
-
-      stay_date: Joi.date()
-        .iso()
-        .optional(),
-
+      comment: Joi.string().allow("").optional(),
+      traveller_type: Joi.string().valid("solo", "couple", "family", "business").optional(),
       liked_features: Joi.array()
-        .items(
-
-          Joi.string().valid(
-            "cleanliness",
-            "staff",
-            "facilities",
-            "location",
-            "value"
-          )
-
-        )
+        .items(Joi.string().valid("Pool", "Cafe", "Restaurant", "Exterior", "Bathroom", "Bedrooms", "Kitchen", "Amenities"))
         .optional(),
-
     }),
-
   },
+
 
   // =========================
   // GET REVIEWS

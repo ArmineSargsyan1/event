@@ -5,75 +5,476 @@ import User from "../models/User.js";
 import ReviewReplies from "../models/ReviewReplies.js";
 import Hotels from "../models/Hotels.js";
 import Room from "../models/Room.js";
+import Booking from "../models/Booking.js";
+import dayjs from "dayjs";
+import sequelize from "../clients/db.sequelize.mysql.js";
+
+// export const createReview = async (req, res) => {
+//   console.log(req.body,999)
+//   try {
+//     const {
+//       reviewer_name,
+//       score,
+//       comment,
+//       traveller_type,
+//       stay_duration,
+//       stay_date,
+//       liked_features,
+//       hotel_id ,
+//     } = req.body;
+//
+//
+//     const existing = await Reviews.findOne({
+//       where: {
+//         hotel_id,
+//         user_id,
+//       }
+//     });
+//
+//     console.log(existing,888)
+//     if (existing) {
+//       return res.status(409).json({ message: "Already reviewed" });
+//     }
+//
+//     const review = await Reviews.create(
+//       {
+//         reviewer_name,
+//         score,
+//         comment,
+//         traveller_type,
+//         stay_duration,
+//         stay_date,
+//
+//         verified: false,
+//         hotel_id,
+//
+//         liked_features: Array.isArray(liked_features)
+//           ? liked_features.map((f) => ({ feature: f }))
+//           : [],
+//       },
+//       {
+//         include: [
+//           {
+//             model: ReviewLiked,
+//             as: "liked_features",
+//           },
+//         ],
+//       }
+//     );
+//
+//     return res.status(201).json({
+//       success: true,
+//       data: review,
+//     });
+//   } catch (error) {
+//     console.error("Create review error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+
+
+// export const createReview = async (req, res) => {
+//   console.log("RECEIVED BODY:", req.body);
+//
+//   try {
+//     const userId = req.userId || 1;
+//
+//     const {
+//       score,
+//       comment,
+//       traveller_type,
+//       rating_category,
+//       liked_features,
+//       hotel_id,
+//       room_id,
+//     } = req.body;
+//
+//
+//     const today = new Date().toISOString().split('T')[0];
+//
+//     const validBooking = await Booking.findOne({
+//       where: {
+//         user_id: userId,
+//         room_id: Number(room_id),
+//         status: "confirmed",
+//         check_out: { [Op.lte]: today }
+//       },
+//       include: [{
+//         model: Room,
+//         as: "room",
+//         where: { hotel_id: Number(hotel_id) },
+//         attributes: ["id", "hotel_id"]
+//       }]
+//     });
+//
+//     if (!validBooking) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Access denied. You can only review a property after your stay is completed."
+//       });
+//     }
+//
+//     const exactStayDate = dayjs(validBooking.check_in).format("YYYY-MM-DD");
+//
+//     const existingReview = await Reviews.findOne({
+//       where: {
+//         hotel_id: Number(hotel_id),
+//         room_id: Number(room_id),
+//         user_id: userId,
+//         [Op.and]: [
+//           sequelize.where(sequelize.fn('DATE', sequelize.col('stay_date')), exactStayDate)
+//         ]
+//       }
+//     });
+//
+//     if (existingReview) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "You have already submitted a review for this specific booking stay."
+//       });
+//     }
+//
+//     const checkInDate = new Date(validBooking.check_in);
+//     const checkOutDate = new Date(validBooking.check_out);
+//     const totalNights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) || 1;
+//
+//     const review = await Reviews.create(
+//       {
+//         score: Number(score),
+//         comment,
+//         traveller_type: traveller_type || "solo",
+//         stay_duration: totalNights,
+//         stay_date: exactStayDate,
+//         rating_category,
+//         verified: true,
+//         user_id: userId,
+//         hotel_id: Number(hotel_id),
+//         room_id: Number(room_id),
+//
+//         liked_features: Array.isArray(liked_features)
+//           ? liked_features.map((f) => ({ feature: f }))
+//           : [],
+//       },
+//       {
+//         include: [
+//           {
+//             model: ReviewLiked,
+//             as: "liked_features",
+//           },
+//         ],
+//       }
+//     );
+//
+//     return res.status(201).json({
+//       success: true,
+//       message: "Review verified and created successfully!",
+//       data: review,
+//     });
+//
+//   } catch (error) {
+//     console.error("Create review error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+// export const createReview = async (req, res) => {
+//   console.log("📥 RECEIVED BODY:", req.body);
+//
+//   try {
+//     const userId = req.userId || 1; // 🔒 Օգտատիրոջ ID-ն Auth Token-ից
+//     const { booking_id, score, comment, traveller_type, rating_category, liked_features } = req.body;
+//
+//     // ՔԱՅԼ 1: Փնտրում ենք հաստատված (confirmed) բուքինգ, որի check_out-ն անցել է
+//     const today = dayjs().format("YYYY-MM-DD");
+//
+//     const validBooking = await Booking.findOne({
+//       where: {
+//         id: Number(booking_id),
+//         user_id: userId,
+//         status: "confirmed",
+//         check_out: { [Op.lte]: today }
+//       },
+//       include: [{
+//         model: Room,
+//         as: "room",
+//         attributes: ["id", "hotel_id"] // 🏢 Վերցնում ենք հյուրանոցի ID-ն սենյակից
+//       }]
+//     });
+//
+//     if (!validBooking) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Access denied. Valid completed booking not found for this user."
+//       });
+//     }
+//
+//     // ՔԱՅԼ 2: Ավտոմատ տվյալների ստացում բուքինգից
+//     const hotelId = validBooking.room?.hotel_id;
+//     const roomId = validBooking.room_id; // ⚡ Կլինի կա՛մ թիվ, կա՛մ NULL (եթե սենյակ չկա)
+//     const exactStayDate = dayjs(validBooking.check_in).format("YYYY-MM-DD");
+//
+//     // ՔԱՅԼ 3: Կրկնակի գրանցման արգելափակում (Timezone Safe)
+//     const existingReview = await Reviews.findOne({
+//       where: {
+//         hotel_id: hotelId,
+//         user_id: userId,
+//         [Op.and]: [
+//           sequelize.where(sequelize.fn('DATE', sequelize.col('stay_date')), exactStayDate)
+//         ]
+//       }
+//     });
+//
+//     if (existingReview) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "You have already submitted a review for this specific booking stay."
+//       });
+//     }
+//
+//     // ՔԱՅԼ 4: Օրերի քանակի հաշվարկ
+//     const checkInDate = new Date(validBooking.check_in);
+//     const checkOutDate = new Date(validBooking.check_out);
+//     const totalNights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)) || 1;
+//
+//     // ՔԱՅԼ 5: Ստեղծում ենք կարծիքը և դրա հետ միասին Liked Features-ը
+//     const review = await Reviews.create(
+//       {
+//         score: Number(score),
+//         comment,
+//         traveller_type: traveller_type || "solo",
+//         stay_duration: totalNights,
+//         stay_date: exactStayDate,
+//         rating_category,
+//         verified: true,
+//         user_id: userId,
+//         hotel_id: hotelId,
+//         room_id: roomId, // 🛏️ Եթե բուքինգում null էր, այստեղ էլ null կգրանցվի
+//
+//         liked_features: Array.isArray(liked_features)
+//           ? liked_features.map((f) => ({ feature: f }))
+//           : [],
+//       },
+//       {
+//         include: [{ model: ReviewLiked, as: "liked_features" }],
+//       }
+//     );
+//
+//     return res.status(201).json({
+//       success: true,
+//       message: "Review verified and created successfully!",
+//       data: review,
+//     });
+//
+//   } catch (error) {
+//     console.error("⛔ Create review error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
 
 export const createReview = async (req, res) => {
-  console.log(req.body,999)
+  console.log("📥 RECEIVED BODY:", req.body);
+
   try {
-    const {
-      reviewer_name,
-      score,
-      comment,
-      traveller_type,
-      stay_duration,
-      stay_date,
-      liked_features,
-      hotel_id ,
-    } = req.body;
+    const userId = req.userId || 1;
+    const { booking_id, room_id, score, comment, traveller_type, rating_category, liked_features } = req.body;
 
-
-    const existing = await Reviews.findOne({
+    // 1. Փնտրում ենք հաստատված ամրագրումը բազայից
+    const today = dayjs().format("YYYY-MM-DD");
+    const validBooking = await Booking.findOne({
       where: {
-        hotel_id,
-        // user_id,
-      }
+        id: Number(booking_id),
+        user_id: userId,
+        status: "confirmed",
+        check_out: { [Op.lte]: today }
+      },
+      include: [{ model: Room, as: "room", attributes: ["id", "hotel_id"] }]
     });
 
-    console.log(existing,888)
-    if (existing) {
-      return res.status(409).json({ message: "Already reviewed" });
+    if (!validBooking) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Completed booking registry not found for this user."
+      });
     }
 
+    // Ավտոմատ կարդում ենք հյուրանոցի ID-ն և check_in օրը
+    const hotelId = validBooking.room?.hotel_id;
+    const exactStayDate = dayjs(validBooking.check_in).format("YYYY-MM-DD");
+
+    // 2. ԴԻՆԱՄԻԿ ՍՏՈՒԳՈՒՄ (Կրկնակի գրանցման արգելափակում)
+    const reviewWhere = {
+      hotel_id: hotelId,
+      user_id: userId,
+      [Op.and]: [
+        sequelize.where(sequelize.fn('DATE', sequelize.col('stay_date')), exactStayDate)
+      ]
+    };
+
+    // 🎯 Եթե ֆրոնտենդն ուզում է գնահատել կոնկրետ սենյակը, կրկնությունը ստուգում ենք սենյակի մակարդակով
+    if (room_id) {
+      reviewWhere.room_id = Number(room_id);
+    } else {
+      reviewWhere.room_id = null; // Ստուգում ենք՝ արդյո՞ք արդեն ունի ընդհանուր հյուրանոցի կարծիք այս այցից
+    }
+
+    const existingReview = await Reviews.findOne({ where: reviewWhere });
+
+    if (existingReview) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already submitted a review for this stay."
+      });
+    }
+
+    // 3. Օրերի քանակի հաշվարկ
+    const totalNights = dayjs(validBooking.check_out).diff(dayjs(validBooking.check_in), "day") || 1;
+
+    // 4. ✨ ԳՐԱՆՑՈՒՄ ԲԱԶԱՅՈՒՄ (Հաշվի առնելով ձեր տրամաբանությունը)
     const review = await Reviews.create(
       {
-        reviewer_name,
-        score,
+        score: Number(score),
         comment,
-        traveller_type,
-        stay_duration,
-        stay_date,
+        traveller_type: traveller_type || "solo",
+        stay_duration: totalNights,
+        stay_date: exactStayDate,
+        rating_category,
+        verified: true,
+        user_id: userId,
+        hotel_id: hotelId,
 
-        verified: false,
-        hotel_id,
+        // 🔥 ԱՄԵՆԱԿԱՐԵՎՈՐ ՏՈՂԸ: Եթե տրված է՝ կգրվի թիվ, եթե ոչ՝ NULL
+        room_id: room_id ? Number(room_id) : null,
 
         liked_features: Array.isArray(liked_features)
           ? liked_features.map((f) => ({ feature: f }))
           : [],
       },
-      {
-        include: [
-          {
-            model: ReviewLiked,
-            as: "liked_features",
-          },
-        ],
-      }
+      { include: [{ model: ReviewLiked, as: "liked_features" }] }
     );
 
     return res.status(201).json({
       success: true,
+      message: "Review verified and created successfully!",
       data: review,
     });
+
   } catch (error) {
-    console.error("Create review error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("⛔ Create review error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 
 
+export const getReviews = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 5,
+      hotel_id,
+      room_id,
+      min_score,
+      max_score,
+      traveller_type,
+      sort,
+      search,
+      feature,
+    } = req.query;
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 5;
+    const offset = (pageNum - 1) * limitNum;
+
+    const where = {};
+
+    if (hotel_id && hotel_id !== "") {
+      where.hotel_id = Number(hotel_id);
+    }
+
+    if (room_id && room_id !== "") {
+      where.room_id = Number(room_id);
+    }
+
+    if (feature && feature.trim() !== "" && feature !== "All features") {
+      where.rating_category = feature;
+    }
+
+    if (traveller_type && traveller_type.trim() !== "") {
+      where.traveller_type = traveller_type;
+    }
+
+    if ((min_score && min_score !== "") || (max_score && max_score !== "")) {
+      where.score = {};
+      if (min_score && min_score !== "") where.score[Op.gte] = Number(min_score);
+      if (max_score && max_score !== "") where.score[Op.lte] = Number(max_score);
+    }
+
+    if (search && search.trim() !== "") {
+      where[Op.or] = [
+        { comment: { [Op.like]: `%${search}%` } },
+        { '$user.user_name$': { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    const include = [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "userName", "profilePicture", "country"],
+        required: false
+      }
+    ];
+
+    let order = [["created_at", "DESC"]];
+
+    const sortMap = {
+      score_desc: ["score", "DESC"],
+      score_asc: ["score", "ASC"],
+      oldest: ["created_at", "ASC"],
+      newest: ["created_at", "DESC"],
+    };
+
+    if (sort && sortMap[sort]) {
+      order = [sortMap[sort]];
+    }
+
+    const { rows, count } = await Reviews.findAndCountAll({
+      where,
+      include,
+      limit: limitNum,
+      offset,
+      order,
+      distinct: true,
+    });
+
+    return res.json({
+      success: true,
+      data: rows,
+      pages: {
+        total: count,
+        page: pageNum,
+        pages: Math.ceil(count / limitNum),
+      }
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
 
 
 
@@ -86,33 +487,36 @@ export const createReview = async (req, res) => {
 //       min_score,
 //       max_score,
 //       traveller_type,
-//       feature,
 //       sort,
 //       search,
-//       verified,
+//       feature,
 //     } = req.query;
 //
-//     const pageNum = Number(page);
-//     const limitNum = Number(limit);
+//     const pageNum = Number(page) || 1;
+//     const limitNum = Number(limit) || 5;
 //     const offset = (pageNum - 1) * limitNum;
 //
 //     const where = {};
 //
-//     if (hotel_id) where.hotel_id = hotel_id;
+//     if (hotel_id && hotel_id !== "") {
+//       where.hotel_id = Number(hotel_id);
+//     }
 //
-//     if (min_score || max_score) {
+//     if (feature && feature.trim() !== "" && feature !== "All features") {
+//       where.rating_category = feature;
+//     }
+//
+//     if (traveller_type && traveller_type.trim() !== "") {
+//       where.traveller_type = traveller_type;
+//     }
+//
+//     if ((min_score && min_score !== "") || (max_score && max_score !== "")) {
 //       where.score = {};
-//       if (min_score) where.score[Op.gte] = Number(min_score);
-//       if (max_score) where.score[Op.lte] = Number(max_score);
+//       if (min_score && min_score !== "") where.score[Op.gte] = Number(min_score);
+//       if (max_score && max_score !== "") where.score[Op.lte] = Number(max_score);
 //     }
 //
-//     if (traveller_type) where.traveller_type = traveller_type;
-//
-//     if (verified === "true" || verified === "false") {
-//       where.verified = verified === "true";
-//     }
-//
-//     if (search) {
+//     if (search && search.trim() !== "") {
 //       where[Op.or] = [
 //         { comment: { [Op.like]: `%${search}%` } },
 //         { '$user.user_name$': { [Op.like]: `%${search}%` } }
@@ -121,29 +525,14 @@ export const createReview = async (req, res) => {
 //
 //     const include = [
 //       {
-//         model: ReviewLiked,
-//         as: "liked_features",
-//       },
-//       {
 //         model: User,
 //         as: "user",
-//         attributes: ["id", "userName", "profilePicture"],
-//       },
-//       {
-//         model: Room,
-//         as: "room",
-//         attributes: ["id", "name"],
+//         attributes: ["id", "userName", "profilePicture", "country"],
 //         required: false
 //       }
 //     ];
 //
-//     if (feature) {
-//       include[0].where = { feature };
-//       include[0].required = true;
-//     }
-//
-//     let order = [["createdAt", "DESC"]];
-//
+//     let order = [["created_t", "DESC"]];
 //     const sortMap = {
 //       score_desc: ["score", "DESC"],
 //       score_asc: ["score", "ASC"],
@@ -174,104 +563,13 @@ export const createReview = async (req, res) => {
 //       }
 //     });
 //   } catch (err) {
+//     console.error( err.message);
 //     return res.status(500).json({
 //       success: false,
 //       message: err.message,
 //     });
 //   }
 // };
-
-
-
-
-
-export const getReviews = async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 5,
-      hotel_id,
-      min_score,
-      max_score,
-      traveller_type,
-      sort,
-      search,
-    } = req.query;
-
-    const pageNum = Number(page);
-    const limitNum = Number(limit);
-    const offset = (pageNum - 1) * limitNum;
-
-    const where = {};
-
-    if (hotel_id) where.hotel_id = hotel_id;
-
-    // Սքորի ֆիլտր
-    if (min_score || max_score) {
-      where.score = {};
-      if (min_score) where.score[Op.gte] = Number(min_score);
-      if (max_score) where.score[Op.lte] = Number(max_score);
-    }
-
-    if (traveller_type) where.traveller_type = traveller_type;
-
-    // Որոնում ըստ մեկնաբանության կամ օգտատիրոջ անվան
-    if (search) {
-      where[Op.or] = [
-        { comment: { [Op.like]: `%${search}%` } },
-        { '$user.user_name$': { [Op.like]: `%${search}%` } }
-      ];
-    }
-
-    const include = [
-      {
-        model: User,
-        as: "user",
-        attributes: ["id", "userName", "profilePicture", "country"],
-        required: false
-      }
-    ];
-
-    // Սորտավորում ըստ Sequelize-ի ավտոմատ կառավարվող createdAt դաշտի
-    let order = [["createdAt", "DESC"]];
-
-    const sortMap = {
-      score_desc: ["score", "DESC"],
-      score_asc: ["score", "ASC"],
-      oldest: ["createdAt", "ASC"],
-      newest: ["createdAt", "DESC"],
-    };
-
-    if (sort && sortMap[sort]) {
-      order = [sortMap[sort]];
-    }
-
-    const { rows, count } = await Reviews.findAndCountAll({
-      where,
-      include,
-      limit: limitNum,
-      offset,
-      order,
-      distinct: true,
-    });
-
-    return res.json({
-      success: true,
-      data: rows,
-      pages: {
-        total: count,
-        page: pageNum,
-        pages: Math.ceil(count / limitNum),
-      }
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
-
 
 
 export const getHotelReviews =
@@ -568,7 +866,7 @@ export const getTestimonials = async (req, res) => {
         {
           model: User,
           as: "user",
-          attributes: ["id", "first_name", "last_name"],
+          attributes: ["id", "user_name", "email", "profile_picture"],
         }
       ],
 

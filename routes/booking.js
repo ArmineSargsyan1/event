@@ -1,7 +1,13 @@
 import express from "express";
 import {
   createBooking,
-  cancelBooking, getMyBookings, getBookingById, getBooking, createDraftBooking, getBookingConfirmation, getSuccessToken,
+  cancelBooking,
+  getMyBookings,
+  getBookingById,
+  createDraftBooking,
+  getBookingConfirmation,
+  getSuccessToken,
+  getBookingDetails,
 } from "../controllers/booking.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/booking.schema.js";
@@ -15,16 +21,17 @@ router.post(
   createDraftBooking
 );
 
-// GET BOOKING BY ID
-router.get(
-  "/:id",
+
+router.get("/my",
   // authMiddleware,
-  getBooking
+  getMyBookings
 );
 
-// Create booking
+
 router.post("/", createBooking);
 
+
+router.put("/:bookingId/cancel", cancelBooking);
 
 router.get(
   "/:id/success",
@@ -36,14 +43,21 @@ router.get(
   getBookingConfirmation
 );
 
-
-// Cancel booking
-router.put("/:bookingId/cancel", cancelBooking);
-
-
-router.get("/my",
+router.get(
+  "/:id",
   // authMiddleware,
-  getMyBookings);
+  getBookingDetails
+);
+
+// Create booking
+
+
+
+
+
+
+
+
 
 
 router.get(

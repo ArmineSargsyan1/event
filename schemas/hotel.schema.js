@@ -97,15 +97,6 @@ export default {
         .iso()
         .optional(),
 
-      // checkIn: Joi.date()
-      //   .iso()
-      //   .allow("")
-      //   .optional(),
-      //
-      // checkOut: Joi.date()
-      //   .iso()
-      //   .allow("")
-      //   .optional(),
 
       guests: Joi.number()
         .integer()

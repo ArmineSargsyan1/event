@@ -35,7 +35,7 @@ router.get(
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get( "/:hotelId",
-  // validation(schema.getSingleHotel),
+  validation(schema.getSingleHotel),
   Controller.getHotelById);
 
 

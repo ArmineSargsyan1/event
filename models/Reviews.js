@@ -383,6 +383,11 @@ Reviews.init(
     stay_duration: DataTypes.INTEGER,
     stay_date: DataTypes.DATE,
 
+    rating_category: {
+      type: DataTypes.ENUM("cleanliness", "staff", "facilities", "location", "value"),
+      allowNull: false
+    },
+
     verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

@@ -5,6 +5,14 @@ import {Op, Utils} from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "../models/Room.js";
 import {RoomExtra} from "../models/index.js";
+import dayjs from "dayjs";
+import Hotels from "../models/Hotels.js";
+import HotelPhotos from "../models/HotelPhotos.js";
+import Stripe from "stripe";
+
+
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 
 export const isRoomAvailable = async (room_id, check_in, check_out) => {
@@ -25,7 +33,7 @@ export const isRoomAvailable = async (room_id, check_in, check_out) => {
     },
   });
 
-  return !existing; // true = available
+  return !existing;
 };
 
 
@@ -106,31 +114,260 @@ export const createDraftBooking = async (req, res) => {
   }
 };
 
-export const getBooking = async (req, res) => {
+
+
+
+export const getBookingDetails = async (req, res) => {
   try {
+    const bookingId = req.params.id;
+    const userId = req.userId || 1; // req.user.id
+
     const booking = await Booking.findOne({
       where: {
-        id: req.params.id,
-        user_id: 1
-        // req.user.id,
+        id: bookingId,
+        user_id: userId,
       },
+      include: [
+        {
+          model: Room,
+          as: "room",
+          include: [
+            { model: Hotels, as: "hotel",
+              include: [
+                {
+                  model: HotelPhotos,
+                  as: "images",
+                  where: { is_main: true },
+                }
+              ]
+            }
+          ]
+        },
+        {
+          model: RoomOption,
+          as: "option"
+        },
+      ],
     });
 
     if (!booking) {
       return res.status(404).json({
+        success: false,
         message: "Booking not found",
       });
     }
 
-    return res.json(booking);
+    let cancellationDeadline = null;
+
+    if (booking.option && booking.option.cancellation_type === "free") {
+      const cancelDays = booking.option.free_cancel_days;
+      const cancelTime = booking.option.cancel_time;
+
+      if (cancelTime) {
+        const [hours, minutes] = cancelTime.split(":");
+        cancellationDeadline = dayjs(booking.check_in)
+          .subtract(cancelDays || 0, "day")
+          .hour(parseInt(hours))
+          .minute(parseInt(minutes))
+          .second(0)
+          .format("YYYY-MM-DD HH:mm:ss");
+      }
+    }
+
+    const hotelImage =
+      booking.room.hotel.images?.find(i => i.is_main)?.path ||
+      booking.room.hotel.images?.[0]?.path ||
+      null;
+
+    const cleanBooking = {
+      id: booking.id,
+      createdAt: booking.createdAt,
+      checkIn: booking.check_in,
+      checkOut: booking.check_out,
+      guests: booking.guests,
+      totalPrice: booking.total_price,
+      status: booking.status,
+      paymentStatus: booking.payment_status,
+      paidAt: booking.paid_at,
+      customerName: booking.customer_name,
+      customerPhone: booking.customer_phone,
+      cancellationDeadline: cancellationDeadline,
+
+      refundAmount: booking.refund_amount,
+
+      room: booking.room ? {
+        id: booking.room.id,
+        name: booking.room.name,
+        roomType: booking.room.roomType,
+        bedType: booking.room.bedType,
+        size: booking.room.size,
+        images: hotelImage,
+
+        // 🏨 Հյուրանոցի տվյալները ուղիղ բազայից
+        hotel: booking.room.hotel ? {
+          name: booking.room.hotel.name,
+          address: booking.room.hotel.address,
+          phone: booking.room.hotel.phone,
+          email: booking.room.hotel.email,
+        } : null
+      } : null,
+
+      option: booking.option ? {
+        id: booking.option.id,
+        name: booking.option.name,
+        mealPlan: booking.option.meal_plan,
+        cancellationType: booking.option.cancellation_type,
+      } : null
+    };
+
+    return res.json({
+      success: true,
+      data: cleanBooking
+    });
 
   } catch (error) {
-    console.log(error);
+    console.error("Fetch booking details error:", error);
     return res.status(500).json({
+      success: false,
       message: "Server error",
     });
   }
 };
+
+
+// export const getBookingDetails = async (req, res) => {
+//   try {
+//     const bookingId = req.params.id;
+//     const userId = req.userId || 1; // req.user.id
+//
+//     const booking = await Booking.findOne({
+//       where: {
+//         id: bookingId,
+//         user_id: userId,
+//       },
+//       include: [
+//         {
+//           model: Room,
+//           as: "room",
+//           include: [
+//             { model: Hotels, as: "hotel" }
+//           ]
+//         },
+//         {
+//           model: RoomOption,
+//           as: "option"
+//         },
+//       ],
+//     });
+//
+//     // ❌ Եթե ամրագրումը չկա
+//     if (!booking) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Booking not found",
+//       });
+//     }
+//
+//     // ⏳ Չեղարկման վերջնաժամկետի (Deadline) դինամիկ հաշվարկ
+//     let cancellationDeadline = null;
+//
+//     if (booking.option && booking.option.cancellation_type === "free") {
+//       const cancelDays = booking.option.free_cancel_days || 0;
+//       const cancelTime = booking.option.cancel_time || "23:59";
+//       const [hours, minutes] = cancelTime.split(":");
+//
+//       cancellationDeadline = dayjs(booking.check_in)
+//         .subtract(cancelDays, "day")
+//         .hour(parseInt(hours))
+//         .minute(parseInt(minutes))
+//         .second(0)
+//         .format("YYYY-MM-DD HH:mm:ss");
+//     }
+//
+//     // ✨ ՄԱՔՐՈՒՄ ԵՎ ՓՈԽԱԿԵՐՊՈՒՄ CAMELCASE-Ի (Ուղղված տարբերակ)
+//     const cleanBooking = {
+//       id: booking.id,
+//       createdAt: booking.createdAt,
+//       checkIn: booking.check_in,
+//       checkOut: booking.check_out,
+//       guests: booking.guests,
+//       totalPrice: booking.total_price,
+//       status: booking.status,
+//       paymentStatus: booking.payment_status,
+//       paidAt: booking.paid_at,
+//       customerName: booking.customer_name,
+//       customerPhone: booking.customer_phone,
+//       cancellationDeadline: cancellationDeadline,
+//
+//       // 🛏️ Սենյակի և հյուրանոցի տվյալները
+//       room: booking.room ? {
+//         id: booking.room.id,
+//         name: booking.room.name,
+//         roomType: booking.room.roomType,
+//         bedType: booking.room.bedType,
+//         size: booking.room.size,
+//         images: booking.room.images || ["https://unsplash.com"],
+//
+//         // 🏨 Հյուրանոցի տվյալները
+//         hotel: booking.room.hotel ? {
+//           name: booking.room.hotel.name,
+//           address: booking.room.hotel.address,
+//           phone: booking.room.hotel.phone,
+//           email: booking.room.hotel.email,
+//         } : null
+//       } : null,
+//
+//       // 🏷️ Տարիֆի (Plan) տվյալները՝ ՏԵՂԱՓՈԽՎԱԾ Է ՃԻՇՏ ՏԵՂԸ (Room-ից դուրս)
+//       option: booking.option ? {
+//         id: booking.option.id,
+//         name: booking.option.name,
+//         mealPlan: booking.option.meal_plan,
+//         cancellationType: booking.option.cancellation_type,
+//       } : null
+//     }; // 👈 Կարևոր. Այս փակագիծը բացակայում էր
+//
+//     // 🎯 Վերադարձնում ենք ճիշտ պատասխանը
+//     return res.json({
+//       success: true,
+//       data: cleanBooking
+//     });
+//
+//   } catch (error) {
+//     console.error("⛔ Fetch booking details error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//     });
+//   }
+// };
+
+
+
+// export const getBooking = async (req, res) => {
+//   try {
+//     const booking = await Booking.findOne({
+//       where: {
+//         id: req.params.id,
+//         user_id: 1
+//         // req.user.id,
+//       },
+//     });
+//
+//     if (!booking) {
+//       return res.status(404).json({
+//         message: "Booking not found",
+//       });
+//     }
+//
+//     return res.json(booking);
+//
+//   } catch (error) {
+//     console.log(error);
+//     return res.status(500).json({
+//       message: "Server error",
+//     });
+//   }
+// };
 
 
 
@@ -539,404 +776,71 @@ export const getBookingConfirmation = async (req, res) => {
 };
 
 
-// export const createBooking = async (req, res) => {
-//   console.log(req.body,88888888888)
-//   const { room_id,
-//     rate_plan_id,
-//     check_in,
-//     check_out,
-//     guests,} = req.body
-//
-//   console.log( room_id,
-//     rate_plan_id,
-//     check_in,
-//     check_out,
-//     guests,)
-//
-//   const transaction =
-//     await sequelize.transaction();
-//
-//   try {
-//
-//     const {
-//       room_id,
-//       rate_plan_id,
-//       check_in,
-//       check_out,
-//       guests,
-//     } = req.body;
-//
-//     // =========================
-//     // AUTH USER
-//     // =========================
-//     // const user_id = req.user.id;
-//     const user_id = 1;
-//
-//     // =========================
-//     // BOOKING EXPIRES
-//     // =========================
-//     const expires_at =
-//       new Date(
-//         Date.now() +
-//         15 * 60 * 1000
-//       );
-//
-//     // =========================
-//     // ROOM
-//     // =========================
-//     const room =
-//       await Room.findByPk(
-//         room_id,
-//         {
-//           transaction,
-//           lock:
-//           transaction.LOCK.UPDATE,
-//         }
-//       );
-//
-//     if (!room) {
-//
-//       await transaction.rollback();
-//
-//       return res.status(404).json({
-//         message:
-//           "Room not found",
-//       });
-//     }
-//
-//     // =========================
-//     // GUEST CHECK
-//     // =========================
-//     if (
-//       room.max_guests &&
-//       guests > room.max_guests
-//     ) {
-//
-//       await transaction.rollback();
-//
-//       return res.status(400).json({
-//         message:
-//           "Too many guests",
-//       });
-//     }
-//
-//     // =========================
-//     // EXPIRE OLD BOOKINGS
-//     // =========================
-//     await Booking.update(
-//       {
-//         status: "expired",
-//       },
-//
-//       {
-//         where: {
-//
-//           status: "pending",
-//
-//           expires_at: {
-//             [Op.lt]: new Date(),
-//           },
-//         },
-//
-//         transaction,
-//       }
-//     );
-//
-//     // =========================
-//     // CHECK CONFLICT
-//     // =========================
-//     const conflict =
-//       await Booking.findOne({
-//
-//         where: {
-//
-//           room_id,
-//
-//           status: {
-//             [Op.in]: ["pending", "confirmed",],
-//           },
-//
-//           check_in: {[Op.lt]: check_out,},
-//
-//           check_out: {[Op.gt]: check_in,
-//           },
-//
-//           [Op.or]: [
-//
-//             {
-//               expires_at: null,
-//             },
-//
-//             {
-//               expires_at: {
-//                 [Op.gt]:
-//                   new Date(),
-//               },
-//             },
-//           ],
-//         },
-//
-//         transaction,
-//
-//         lock: transaction.LOCK.UPDATE,
-//       });
-//
-//     if (conflict) {
-//
-//       await transaction.rollback();
-//
-//       return res.status(409).json({
-//         message:
-//           "Room already booked",
-//       });
-//     }
-//
-//     // =========================
-//     // RATE PLAN
-//     // =========================
-//     const ratePlan =
-//       await RoomOption.findOne({
-//
-//         where: {
-//
-//           id: rate_plan_id,
-//
-//           // room_id,
-//
-//           status: "active",
-//         },
-//
-//         transaction,
-//
-//         lock:
-//         transaction.LOCK.UPDATE,
-//       });
-//
-//     if (!ratePlan) {
-//
-//       await transaction.rollback();
-//
-//       return res.status(404).json({
-//         message:
-//           "Rate plan not found",
-//       });
-//     }
-//
-//     // =========================
-//     // CALCULATE PRICE
-//     // =========================
-//     const priceData =
-//       FileHelper.calculateBookingPrice(
-//         ratePlan,
-//         check_in,
-//         check_out,
-//         guests
-//       );
-//
-//     // =========================
-//     // CREATE BOOKING
-//     // =========================
-//     const booking =
-//       await Booking.create(
-//         {
-//
-//           user_id,
-//
-//           room_id,
-//
-//           option_id: rate_plan_id,
-//
-//           check_in,
-//
-//           check_out,
-//
-//           guests,
-//
-//           total_price:
-//           priceData.total,
-//
-//           status:
-//             "pending",
-//
-//           payment_status:
-//             "pending",
-//
-//           expires_at,
-//
-//           lock_token:
-//             crypto.randomUUID(),
-//         },
-//
-//         {
-//           transaction,
-//         }
-//       );
-//
-//     // =========================
-//     // COMMIT
-//     // =========================
-//     await transaction.commit();
-//
-//     // =========================
-//     // RETURN BOOKING ID
-//     // =========================
-//     return res.status(201).json({
-//
-//       success: true,
-//
-//       booking_id:
-//       booking.id,
-//
-//       booking,
-//     });
-//
-//   } catch (error) {
-//
-//     await transaction.rollback();
-//
-//     console.log(error);
-//
-//     return res.status(500).json({
-//
-//       success: false,
-//
-//       message:
-//         "Booking creation failed",
-//     });
-//   }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
 export const cancelBooking = async (req, res) => {
-
   try {
-
     const { bookingId } = req.params;
 
     // =========================
     // FIND BOOKING
     // =========================
-    const booking =
-      await Booking.findByPk(
-        bookingId,
-        {
-          include: [
-            {
-              model: RoomOption,
-              as: "option",
-            },
-          ],
-        }
-      );
+    const booking = await Booking.findByPk(bookingId, {
+      include: [{ model: RoomOption, as: "option" }],
+    });
 
     if (!booking) {
-
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
-      });
+      return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // =========================
-    // OWNER CHECK
-    // =========================
-    if (
-      booking.user_id !== 1
-      // req.user.id
-    ) {
-
-      return res.status(403).json({
-        success: false,
-        message: "Forbidden",
-      });
+    // OWNER CHECK & STATUS CHECKS
+    if (booking.user_id !== 1) {
+      return res.status(403).json({ success: false, message: "Forbidden" });
     }
-
-    // =========================
-    // ALREADY CANCELLED
-    // =========================
-    if (
-      booking.status === "cancelled"
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        message:
-          "Booking already cancelled",
-      });
+    if (booking.status === "cancelled") {
+      return res.status(400).json({ success: false, message: "Booking already cancelled" });
     }
-
-    // =========================
-    // EXPIRED BOOKINGS
-    // =========================
-    if (
-      booking.status === "expired"
-    ) {
-
-      return res.status(400).json({
-        success: false,
-        message:
-          "Expired booking cannot be cancelled",
-      });
+    if (booking.status === "expired") {
+      return res.status(400).json({ success: false, message: "Expired booking cannot be cancelled" });
     }
 
     // =========================
     // REFUND CALCULATION
     // =========================
-    const refund =
-      FileHelper.calculateRefund(
-        booking.option,
-        booking.check_in,
-        new Date()
-      );
-
-    const refundAmount =
-      (
-        booking.total_price *
-        refund.refundPercent
-      ) / 100;
+    const refund = FileHelper.calculateRefund(booking.option, booking.check_in, new Date());
+    const refundAmount = (booking.total_price * refund.refundPercent) / 100;
 
     // =========================
-    // PAYMENT STATUS
+    // 🔥 AUTOMATIC STRIPE REFUND ENGINE
     // =========================
-    let paymentStatus =
-      booking.payment_status;
+    if (booking.payment_status === "paid" && refundAmount > 0) {
 
-    if (
-      booking.payment_status ===
-      "paid"
-    ) {
+      const paymentIntentId = booking.stripe_session_id;
 
-      paymentStatus =
-        refundAmount > 0
-          ? "refunded"
-          : "paid";
+      if (!paymentIntentId || !paymentIntentId.startsWith('pi_')) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot automate refund: A valid Stripe Payment Intent ID (pi_...) was not found in the record."
+        });
+      }
+
+      await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        amount: Math.round(refundAmount * 100),
+        reason: 'requested_by_customer'
+      });
     }
 
     // =========================
-    // UPDATE BOOKING
+    // UPDATE PAYMENT & BOOKING STATUS
     // =========================
-    booking.status =
-      "cancelled";
+    let paymentStatus = booking.payment_status;
+    if (booking.payment_status === "paid") {
+      paymentStatus = refundAmount > 0 ? "refunded" : "paid";
+    }
 
-    booking.cancelled_at =
-      new Date();
-
-    booking.refund_amount =
-      refundAmount;
-
-    booking.payment_status =
-      paymentStatus;
+    booking.status = "cancelled";
+    booking.cancelled_at = new Date();
+    booking.refund_amount = refundAmount;
+    booking.payment_status = paymentStatus;
 
     await booking.save();
 
@@ -944,92 +848,22 @@ export const cancelBooking = async (req, res) => {
     // RESPONSE
     // =========================
     return res.json({
-
       success: true,
-
-      message:
-        "Booking cancelled successfully",
-
+      message: "Booking cancelled and refund processed successfully",
       refund,
-
       refundAmount,
-
       booking,
     });
 
   } catch (e) {
-
-    console.error(e);
-
+    console.error("Stripe/DB Refund Error:", e);
     return res.status(500).json({
-
       success: false,
-
-      message:
-        "Cancel failed",
+      message: e.message || "Automatic cancellation failed",
     });
   }
 };
 
-
-// export const cancelBooking = async (req, res) => {
-//   console.log(req.params.bookingId,88888)
-//   try {
-//     const { bookingId } = req.params;
-//
-//
-//
-//     // 1. գտնում ենք booking-ը
-//     const booking = await Booking.findByPk(bookingId, {
-//       include: [
-//         {
-//           model: RoomOption,
-//           as: "option",
-//         },
-//       ],
-//     });
-//
-//     if (!booking) {
-//       return res.status(404).json({ message: "Booking not found" });
-//     }
-//
-//     if (
-//       booking.user_id !== 1
-//       // req.user.id
-//     ) {
-//
-//       return res.status(403).json({
-//         message: "Forbidden",
-//       });
-//     }
-//
-//     // 2. հաշվում ենք refund-ը
-//     const refund = FileHelper.calculateRefund(
-//       booking.option,
-//       booking.check_in,
-//       new Date()
-//     );
-//
-//     // 3. հաշվարկ գումար
-//     const refundAmount =
-//       (booking.total_price * refund.refundPercent) / 100;
-//
-//     // 4. update booking
-//     booking.status = "cancelled";
-//     booking.refund_amount = refundAmount;
-//
-//     await booking.save();
-//
-//     res.json({
-//       success: true,
-//       refund,
-//       refundAmount,
-//     });
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ message: "Cancel failed" });
-//   }
-// };
 
 
 
@@ -1073,8 +907,7 @@ export const getBookingById =
         });
       }
 
-      // TEMP AUTH
-      // հետո կլինի req.user.id
+
       if (
         booking.user_id !== 1
       ) {
@@ -1110,16 +943,18 @@ export const getBookingById =
   };
 
 
+
+
+
 export const getMyBookings = async (req, res) => {
   try {
-    // const userId = req.user.id;
-    const userId = 1;
+    const userId = req.userId || 1;
 
     const {
       page = 1,
       limit = 10,
       status,
-      type, // upcoming | past
+      type,
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -1128,41 +963,102 @@ export const getMyBookings = async (req, res) => {
       user_id: userId,
     };
 
-    // filter ըստ status
-    if (status) {
-      where.status = status;
-    }
-
-    // filter ըստ ժամանակի
     const now = new Date();
+    const todayDate = dayjs().format("YYYY-MM-DD");
 
-    if (type === "upcoming") {
-      where.check_in = { [Op.gt]: now };
-    }
+    if (status === "cancelled") {
+      where.status = "cancelled";
+    } else if (status === "expired") {
+      where[Op.or] = [
+        { status: "expired" },
+        { status: "pending", expires_at: { [Op.lte]: now } }
+      ];
+    } else {
+      if (status) {
+        if (status === "pending") {
+          where.status = "pending";
+          where.expires_at = { [Op.gt]: now };
+        } else {
+          where.status = status;
+        }
+      }
 
-    if (type === "past") {
-      where.check_out = { [Op.lt]: now };
+      if (type === "upcoming") {
+        where.check_out = { [Op.gte]: todayDate };
+
+        if (!status) {
+          where[Op.not] = [
+            { status: "pending", expires_at: { [Op.lte]: now } }
+          ];
+        }
+      }
+
+      if (type === "past") {
+        where.check_out = { [Op.lt]: todayDate };
+      }
     }
 
     const { rows, count } = await Booking.findAndCountAll({
       where,
       include: [
-        {
-          model: Room,
-          as: "room"
-        },
-        {
-          model: RoomOption,
-          as: "option",
-        },
+        { model: Room, as: "room" },
+        { model: RoomOption, as: "option" },
       ],
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [["check_in", "DESC"]],
     });
 
+    const cleanRows = rows.map((booking) => {
+
+      let cancellationDeadline = null;
+
+      if (booking.option && booking.option.cancellation_type === "free") {
+        const cancelDays = booking.option.free_cancel_days || 0;
+        const cancelTime = booking.option.cancel_time || "23:59";
+
+        const [hours, minutes] = cancelTime.split(":");
+        cancellationDeadline = dayjs(booking.check_in)
+          .subtract(cancelDays, "day")
+          .hour(parseInt(hours))
+          .minute(parseInt(minutes))
+          .second(0)
+          .format("YYYY-MM-DD HH:mm:ss");
+      }
+
+      return {
+        id: booking.id,
+        hotelId: booking.room.hotel_id,
+        checkIn: booking.check_in,
+        checkOut: booking.check_out,
+        guests: booking.guests,
+        totalPrice: booking.total_price,
+        status: booking.status,
+        paymentStatus: booking.payment_status,
+        createdAt: booking.createdAt,
+        paidAt: booking.paid_at,
+        cancelledAt: booking.cancelled_at,
+        expiresAt: booking.expires_at,
+        cancellationDeadline: cancellationDeadline,
+        room: booking.room ? {
+          id: booking.room.id,
+          name: booking.room.name,
+          roomType: booking.room.roomType,
+          bedType: booking.room.bedType,
+          size: booking.room.size,
+        } : null,
+        option: booking.option ? {
+          id: booking.option.id,
+          name: booking.option.name,
+          cancellationType: booking.option.cancellation_type,
+          mealPlan: booking.option.meal_plan,
+        } : null,
+      };
+    });
+
     return res.json({
-      data: rows,
+      success: true,
+      data: cleanRows,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -1171,10 +1067,7 @@ export const getMyBookings = async (req, res) => {
     });
 
   } catch (e) {
-    console.error(e);
-
-    return res.status(500).json({
-      message: "Failed to fetch bookings",
-    });
+    console.error("⛔ Fetch bookings error:", e);
+    return res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 };

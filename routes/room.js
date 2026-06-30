@@ -1,7 +1,6 @@
 import express from "express";
 import * as Controller from "../controllers/room.js";
 import createCloudinaryUpload from "../middlewares/upload.js";
-import {getRoomById, getSimilarRooms} from "../controllers/room.js";
 import authorize from "../middlewares/authMiddlewere.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/hotel.schema.js";
