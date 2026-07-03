@@ -11,7 +11,7 @@ const uploadUser = upload('users');
 
 router.post(
   '/registration',
-  uploadUser.single('profilePicture'),
+  // uploadUser.single('profilePicture'),
   validation(schema.registration),
   controller.registration
 );
@@ -37,8 +37,5 @@ router.post('/reset-password', validation(schema.resetPassword), controller.rese
 
 
 
-router.get('/views/registration', (req, res) => res.render('registration'));
-router.get('/views/login', (req, res) => res.render('login'));
-router.get('/views/profile', (req, res) => res.render('profile'));
 
 export default router;

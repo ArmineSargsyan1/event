@@ -28,10 +28,14 @@ router.get("/my",
 );
 
 
-router.post("/", createBooking);
+router.post("/",
+  // authMiddleware,
+  createBooking);
 
 
-router.put("/:bookingId/cancel", cancelBooking);
+router.put("/:bookingId/cancel",
+  // authMiddleware,
+  cancelBooking);
 
 router.get(
   "/:id/success",
@@ -49,7 +53,6 @@ router.get(
   getBookingDetails
 );
 
-// Create booking
 
 
 

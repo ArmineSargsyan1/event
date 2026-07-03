@@ -17,8 +17,9 @@ const cleanFile = (file) => {
 export default {
 
   async registration(req, res, next) {
+    console.log(req.body,89)
     try {
-      const {userName, email, password} = req.body;
+      const {fullName, email, phoneNumber, password} = req.body;
 
       const existingUser = await User.findOne({where: {email}});
       if (existingUser) {
@@ -32,21 +33,28 @@ export default {
       const hashedPassword = hashPassword(password);
 
       const user = await User.create({
-        userName,
+        userName: fullName,
         email,
         password: hashedPassword,
-        profilePicture,
+        phoneNumber,
+        profilePicture: null,
       });
 
 
-      const activationLink = `http://localhost:3000/users/activate?token=${user.activationToken}`;
+      // const activationLink = `http://localhost:5000/users/activate?token=${user.activationToken}`;
+
+      // Կոդը ավտոմատ կհարմարվի և՛ localhost-ին, և՛ Render-ին
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+      const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
+
 
       await sendMail({
         to: email,
         subject: 'Activate Your Account',
         template: 'activate',
         templateData: {
-          userName,
+          userName: fullName,
           activationLink
         }
       });
@@ -85,6 +93,7 @@ export default {
     }
   },
 
+
   async login(req, res, next) {
     try {
       const {email, password} = req.body;
@@ -116,6 +125,7 @@ export default {
       next(err);
     }
   },
+
 
   async profile(req, res, next) {
     try {
@@ -152,7 +162,7 @@ export default {
       user.resetToken = resetToken;
       await user.save();
 
-      const resetLink = `http://localhost:3000/users/forgot-password?token=${resetToken}`;
+      const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
 
       await sendMail({
         to: email,
@@ -163,7 +173,7 @@ export default {
 
       return res.status(200).json({
         success: true,
-        message: 'If this email exists, a reset link has been sent.'
+        message: 'A password reset link has been successfully sent to your email address.'
       });
 
     } catch (err) {
@@ -174,26 +184,37 @@ export default {
 
   async resetPassword(req, res, next) {
     const {token} = req.query;
-    const {newPassword, confirmPassword} = req.body;
+    console.log(token,98)
+    const {newPassword} = req.body;
 
-    if (!token) return res.status(400).send('Missing token');
+
+    if (!token) return res.status(400).send('The password reset link is missing or has expired.' );
 
     let decoded;
     try {
       decoded = jwt.verify(token, AUTH_SECRET);
     } catch (err) {
+      next(err)
+    }
+
+    // const user = await User.findOne({where: {id: decoded.id, resetToken: token}});
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
       return res.status(400).send('Invalid or expired token');
     }
 
-    const user = await User.findOne({where: {id: decoded.id, resetToken: token}});
     if (!user) return res.status(400).send('Invalid or expired token');
 
     user.password = md5(md5(newPassword) + USER_SECRET);
     user.resetToken = null;
     await user.save();
 
-    res.send('Password has been reset successfully! You can now login.');
-  },
+    return res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully! You can now login.'
+    });
+
+    },
 
 
   async uploadProfilePicture(req, res, next) {

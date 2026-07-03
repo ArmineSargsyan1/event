@@ -1080,10 +1080,14 @@ export const getMyBookings = async (req, res) => {
         }
       }
 
-      where[Op.or] = [
-        { check_out: { [Op.lt]: todayDate } },
-        { status: { [Op.in]: ["cancelled", "expired"] } }
-      ];
+      if (type === "past") {
+        delete where.status;
+
+        where[Op.or] = [
+          { check_out: { [Op.lt]: todayDate } },
+          { status: { [Op.in]: ["cancelled", "expired"] } }
+        ];
+      }
     }
 
     const { rows, count } = await Booking.findAndCountAll({
@@ -1098,7 +1102,6 @@ export const getMyBookings = async (req, res) => {
     });
 
     const cleanRows = rows.map((booking) => {
-
       let cancellationDeadline = null;
 
       if (booking.snapshot_cancellation_policy === "free") {
@@ -1116,7 +1119,7 @@ export const getMyBookings = async (req, res) => {
 
       return {
         id: booking.id,
-        hotelId: booking.room.hotel_id,
+        hotelId: booking.room?.hotel_id || null,
         checkIn: booking.check_in,
         checkOut: booking.check_out,
         guests: booking.guests,
@@ -1141,7 +1144,6 @@ export const getMyBookings = async (req, res) => {
           cancellationType: booking.snapshot_cancellation_policy,
           mealPlan: booking.snapshot_meal_plan,
         },
-
         extras: booking.bookedExtras ? booking.bookedExtras.map(e => ({
           id: e.id,
           name: e.name,

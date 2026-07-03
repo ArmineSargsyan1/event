@@ -14,6 +14,7 @@ import booking from "./booking.js";
 import payment from "./payment.js";
 import favorites from "./favorites.js";
 import newsletter from "./newsletter.js";
+import nearby from "./nearby.js";
 // import owner from "./owner.js";
 
 // app.use('/flights', flights);
@@ -43,6 +44,7 @@ router.use('/admin', admin);
 router.use('/bookings', booking);
 router.use('/favorites', favorites);
 router.use('/payments', payment);
+router.use('/nearby', nearby);
 // router.use('/owner', owner);
 
 export default router;

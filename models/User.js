@@ -133,6 +133,15 @@ User.init(
       validate: {len: [6, 255]}
     },
 
+    phoneNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: null,
+      validate: {
+        len: [5, 20]
+      }
+    },
+
     profilePicture: {
       type: DataTypes.STRING(500),
       allowNull: true,

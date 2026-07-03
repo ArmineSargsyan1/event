@@ -24,7 +24,8 @@ import * as Models from "./models/index.js";
       Models.Booking,
       Models.BookingExtra,
       Models.StripeEventLog,
-
+      Models.Attraction,
+      Models.Landmarks,
     ];
 
 
