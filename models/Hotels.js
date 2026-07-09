@@ -10,7 +10,7 @@ import Favorite from "./Favorites.js";
 import User from "./User.js";
 
 class Hotels extends Model {
-  static associate() {
+  static associate(models) {
     Hotels.hasMany(Room, {
       foreignKey: "hotel_id",
       onDelete: "CASCADE",
@@ -54,6 +54,15 @@ class Hotels extends Model {
       as: "owner",
       onDelete: "RESTRICT"
     });
+
+    if (models.Notification) {
+      Hotels.hasMany(models.Notification, {
+        foreignKey: "hotelId",
+        as: "notifications",
+        onDelete: "CASCADE"
+      });
+    }
+
   }
 }
 
@@ -153,8 +162,6 @@ Hotels.init(
 
 
   },
-
-
 
   {
     sequelize,

@@ -30,11 +30,9 @@ export default {
 
 
   resetPassword: {
-    // query: Joi.object({
-    //   token: Joi.string().required(),
-    // }),
     body: Joi.object({
       newPassword: Joi.string().min(8).required(),
+      token: Joi.string().required()
     })
   },
 }

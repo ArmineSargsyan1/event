@@ -1,7 +1,6 @@
-import { DataTypes, Model } from "sequelize";
+import {DataTypes, Model} from "sequelize";
 
-import sequelize
-  from "../clients/db.sequelize.mysql.js";
+import sequelize from "../clients/db.sequelize.mysql.js";
 
 import User from "./User.js";
 import Hotels from "./Hotels.js";

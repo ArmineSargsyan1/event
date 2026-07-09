@@ -32,13 +32,12 @@ RoomOption.init(
       allowNull: false,
     },
 
-    // base price per night
     price: {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
 
-    // 🍽 meal plan
+
     meal_plan: {
       type: DataTypes.ENUM(
         "none",
@@ -50,7 +49,6 @@ RoomOption.init(
       defaultValue: "none",
     },
 
-    // cancellation type
     cancellation_type: {
       type: DataTypes.ENUM(
         "free",
@@ -61,19 +59,16 @@ RoomOption.init(
     },
 
 
-    // ⏳ how many days before check-in can cancel free
     free_cancel_days: {
       type: DataTypes.INTEGER,
       defaultValue: 1,
     },
 
-    // cutoff time (e.g. 23:59)
     cancel_time: {
       type: DataTypes.STRING,
       defaultValue: "23:59",
     },
 
-    // season pricing
     season_start: {
       type: DataTypes.DATEONLY,
       allowNull: true,
@@ -84,7 +79,6 @@ RoomOption.init(
       allowNull: true,
     },
 
-    //  price modifier (%)
     price_modifier: {
       type: DataTypes.FLOAT,
       defaultValue: 0,
@@ -100,7 +94,6 @@ RoomOption.init(
       allowNull: true,
     },
 
-    // pay rules
     pay_later: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -111,7 +104,6 @@ RoomOption.init(
       defaultValue: true,
     },
 
-    //  active/inactive plan
     status: {
       type: DataTypes.ENUM("active", "inactive"),
       defaultValue: "active",

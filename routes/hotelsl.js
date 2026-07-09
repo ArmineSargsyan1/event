@@ -7,14 +7,11 @@ import schema from "../schemas/hotel.schema.js";
 import auth from "../middlewares/authMiddlewere.js";
 
 
-
 const router = express.Router();
 
 router.get("/",
   validation(schema.getHotels),
   Controller.getHotels);
-
-
 
 
 router.get(
@@ -34,7 +31,7 @@ router.get(
 
 
 /* ---------------- SINGLE HOTEL ---------------- */
-router.get( "/:hotelId",
+router.get("/:hotelId",
   validation(schema.getSingleHotel),
   Controller.getHotelById);
 

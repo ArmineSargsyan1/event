@@ -54,15 +54,6 @@ router.get(
 );
 
 
-
-
-
-
-
-
-
-
-
 router.get(
   "/:id",
   getBookingById

@@ -6,11 +6,15 @@ import Users from '../models/User.js';
 const {AUTH_SECRET} = process.env;
 
 export default async function (req, res, next) {
-  const token = req.headers?.authorization;
-
+  let token = req.headers?.authorization;
+  console.log(token,999)
   if (!token) {
     next(new HttpErrors(401, 'No token provided'));
     return;
+  }
+
+  if (token.startsWith('Bearer ')) {
+    token = token.slice(7).trim();
   }
 
   let user = null;
@@ -20,7 +24,7 @@ export default async function (req, res, next) {
 
     user = await Users.findByPk(data.id);
   } catch (err) {
-    ///
+    console.error("JWT Error:", err.message);
   }
 
   if (!user) {

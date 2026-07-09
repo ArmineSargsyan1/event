@@ -26,9 +26,9 @@ RoomExtra.init(
 
     type: {
       type: DataTypes.ENUM(
-        "service",     // airport, spa
-        "food",        // dinner add-on
-        "comfort"      // extra bed
+        "service",
+        "food",
+        "comfort"
       ),
       defaultValue: "service",
     },

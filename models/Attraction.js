@@ -3,7 +3,6 @@ import sequelize from "../clients/db.sequelize.mysql.js";
 
 class Attraction extends Model {
   static associate(models) {
-    // Հետագայում այստեղ կարող եք ավելացնել կապեր (օրինակ՝ Reviews կամ Bookings)
   }
 }
 

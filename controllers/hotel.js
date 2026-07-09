@@ -30,9 +30,6 @@ const HOTEL_TYPE_RULES = {
   family: ["pool", "restaurant"],
 };
 
-// ======================
-// HELPERS
-// ======================
 
 const getAmenityKeys = (hotel) =>
   (hotel.Amenities || []).map((a) => a.key);
@@ -55,11 +52,6 @@ const getAvgRating = (hotel) => {
   return hotel.rating_sum / hotel.review_count;
 };
 
-// const getAvgRating = (hotel) => {
-//   return hotel.review_count > 0
-//     ? hotel.rating_sum / hotel.review_count
-//     : 0;
-// };
 
 
 const mapHotel = (hotel, userId = null) => {
@@ -86,7 +78,7 @@ const mapHotel = (hotel, userId = null) => {
 
 
 
-
+// sa ampayman poxelu e
 export const getHotels = async (req, res, next) => {
   try {
     const {
@@ -99,7 +91,7 @@ export const getHotels = async (req, res, next) => {
       type,
       stars,
       guestRating,
-      minRating, // 👈 Պահված է Ձեր հին դաշտը
+      minRating,
       minPrice,
       maxPrice,
       sort,
@@ -109,9 +101,6 @@ export const getHotels = async (req, res, next) => {
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
-    // ==========================================
-    // 🏊‍♂️ 1. AMENITIES FILTER (ՊԱՀՎԱԾ Է ԱՆՓՈՓՈԽ)
-    // ==========================================
     const parsedAmenities = amenities?.length > 0
       ? String(amenities).split(",").map(Number)
       : [];
@@ -128,10 +117,7 @@ export const getHotels = async (req, res, next) => {
       hotelIds = rows.map((r) => r.hotel_id);
     }
 
-    // ==========================================
-    // 🔍 2. WHERE CLAUSE (ԲՈԼՈՐ ՖԻԼՏՐԵՐԸ ՊԱՀՎԱԾ ԵՆ)
-    // ==========================================
-    const allowedPropertyClasses = ["hotel", "apartment", "resort", "villa"]; // 👈 Ձեր ստուգումը
+    const allowedPropertyClasses = ["hotel", "apartment", "resort", "villa"];
 
     const where = {
       ...(hotelIds && { id: { [Op.in]: hotelIds } }),
@@ -140,10 +126,8 @@ export const getHotels = async (req, res, next) => {
       ...(property_class && allowedPropertyClasses.includes(property_class) && { property_class }),
       ...(type && { hotel_category: type }),
 
-      // Ձեր հին minRating ֆիլտրը, եթե այն գնում է ուղիղ բազա
       ...(minRating && { rating: { [Op.gte]: Number(minRating) } }),
 
-      // 💲 Ձեր Գնային ֆիլտրերը (Price Filters)
       ...((minPrice || maxPrice) && {
         price_from: {
           ...(minPrice && { [Op.gte]: Number(minPrice) }),
@@ -152,38 +136,29 @@ export const getHotels = async (req, res, next) => {
       }),
     };
 
-    // ==========================================
-    // 🏨 3. GET HOTELS (with Review Stats Scope)
-    // ==========================================
     const hotels = await Hotels.scope("withReviewStats").findAll({
       where,
       include: [
         {
           model: HotelPhotos,
           as: "images",
-          attributes: ["id", "path", "is_main", "sort_order"] // 👈 Ձեր հին ատրիբուտները
+          attributes: ["id", "path", "is_main", "sort_order"]
         },
         {
           model: Amenity,
-          as: "Amenities", // Համոզվեք, որ համապատասխանում է Ձեր model-ի association-ին
+          as: "Amenities",
           through: { attributes: [] }
         }
       ],
       subQuery: false,
     });
 
-    // ==========================================
-    // ❤️ 4. FAVORITES CHECK
-    // ==========================================
     let userFavorites = [];
     if (userId) {
       const favs = await Favorites.findAll({ where: { user_id: userId }, attributes: ["hotel_id"] });
       userFavorites = favs.map(f => f.hotel_id);
     }
 
-    // ==========================================
-    // 💬 5. REVIEW LIKED FEATURES BULK FETCH
-    // ==========================================
     const hotelReviewStatsMap = {};
 
     if (hotels.length > 0) {
@@ -210,9 +185,6 @@ export const getHotels = async (req, res, next) => {
       });
     }
 
-    // ==========================================
-    // ✨ 6. ENRICH (Հարստացում ճիշտ տվյալներով)
-    // ==========================================
     let enriched = hotels.map((hotel) => {
       const avgScore = Number(hotel.getDataValue("dynamic_rating") || 0);
       const totalReviews = Number(hotel.getDataValue("dynamic_review_count") || 0);
@@ -232,17 +204,16 @@ export const getHotels = async (req, res, next) => {
         lat: hotel.lat,
         lon: hotel.lon,
         views: hotel.views || 0,
-        price_from: hotel.price_from || 50, // 👈 Պահված է Ձեր հին անունը
+        price_from: hotel.price_from || 50,
         currency: hotel.currency || "USD",
         featured: hotel.featured,
         images: hotel.images || [],
-        Amenities: hotel.Amenities || [], // 👈 Պահված է Ձեր հին անունը
-        starsComputed: calculatedStars, // 👈 Պահված է Ձեր հին անունը
-        review_count: totalReviews, // 👈 Պահված է Ձեր հին անունը
+        Amenities: hotel.Amenities || [],
+        starsComputed: calculatedStars,
+        review_count: totalReviews,
         rating_sum: hotel.rating_sum,
-        usersWhoFavorited: userFavorites.includes(hotel.id) ? [{ id: userId }] : [], // 👈 Պահված է Ձեր հին կառուցվածքը
+        usersWhoFavorited: userFavorites.includes(hotel.id) ? [{ id: userId }] : [],
 
-        // 🎯 ԱՎԵԼԱՑՐԻՆՔ ԼՐԱՑՈՒՑԻՉ. Ճիշտ ReviewStats` ինչպես getHotelById-ում է
         reviewStats: {
           total: totalReviews,
           avgScore: Number(avgScore.toFixed(1)),
@@ -252,9 +223,6 @@ export const getHotels = async (req, res, next) => {
       };
     });
 
-    // ==========================================
-    // 🎛️ 7. GUEST RATING & STARS FILTERS (ՊԱՀՎԱԾ ԵՆ)
-    // ==========================================
     if (guestRating) {
       const min = Number(guestRating);
       enriched = enriched.filter((h) => h.reviewStats.avgScore >= min);
@@ -265,9 +233,6 @@ export const getHotels = async (req, res, next) => {
       enriched = enriched.filter((h) => Math.floor(h.starsComputed) === starNum);
     }
 
-    // ==========================================
-    // 🔃 8. SORTING (ՊԱՀՎԱԾ Է ՁԵՐ ՈՃՈՎ)
-    // ==========================================
     enriched.sort((a, b) => {
       if (sort === "low") return a.price_from - b.price_from;
       if (sort === "high") return b.price_from - a.price_from;
@@ -279,22 +244,16 @@ export const getHotels = async (req, res, next) => {
       return b.reviewStats.avgScore - a.reviewStats.avgScore;
     });
 
-    // ==========================================
-    // 🔢 9. PAGINATION (ՊԱՀՎԱԾ Է)
-    // ==========================================
     const offset = (pageNum - 1) * limitNum;
     const paginated = enriched.slice(offset, offset + limitNum);
 
-    // ==========================================
-    // 🗄️ 10. CLEAN RESPONSE (Մաքուր Ձեր Ֆրոնտի տեսքով)
-    // ==========================================
     const cleanHotels = paginated.map((hotel) => ({
       id: hotel.id,
       name: hotel.name,
       city: hotel.city,
       country: hotel.country,
       description: hotel.description,
-      price: hotel.price_from, // 👈 Ձեր ֆրոնտի սպասած "price" դաշտը
+      price: hotel.price_from,
       rating: hotel.reviewStats.avgScore > 0 ? hotel.reviewStats.avgScore : null,
       stars: hotel.starsComputed,
       reviewCount: Number(hotel.review_count),
@@ -305,14 +264,9 @@ export const getHotels = async (req, res, next) => {
       lat: hotel.lat,
       lon: hotel.lon,
       favorite: hotel.usersWhoFavorited?.length > 0,
-
-      // 🚀 ԼՐԱՑՈՒՑԻՉ. Միացրինք նաև նոր reviewStats-ը
       reviewStats: hotel.reviewStats
     }));
 
-    // ==========================================
-    // 🗄️ 11. FACETS (ՊԱՀՎԱԾ Է ԱՆՓՈՓՈԽ)
-    // ==========================================
     const facets = await Amenity.findAll({
       attributes: [
         "id", "name", "category",
@@ -330,9 +284,6 @@ export const getHotels = async (req, res, next) => {
       });
     },777777);
 
-    // ==========================================
-    // 🚀 12. RESPONSE (ՊԱՀՎԱԾ Է ՁԵՐ ՈՃՈՎ)
-    // ==========================================
     return res.status(200).json({
       status: "success",
       data: cleanHotels,
@@ -349,427 +300,6 @@ export const getHotels = async (req, res, next) => {
     next(error);
   }
 };
-
-
-// export const getHotels = async (req, res, next) => {
-//   try {
-//
-//     const {
-//       page = 1,
-//       limit = 10,
-//       search,
-//       city,
-//       property_class,
-//       amenities,
-//       type,
-//       stars,
-//       guestRating,
-//       minRating,
-//       minPrice,
-//       maxPrice,
-//       sort,
-//     } = req.query;
-//
-//     const userId = 1;
-//     // const userId = req.user?.id;
-//
-//     const pageNum = Number(page);
-//     const limitNum = Number(limit);
-//
-//     // ======================
-//     // AMENITIES FILTER
-//     // ======================
-//     const parsedAmenities =
-//       amenities?.length > 0
-//         ? String(amenities)
-//           .split(",")
-//           .map(Number)
-//         : [];
-//
-//     let hotelIds = null;
-//
-//     if (parsedAmenities.length > 0) {
-//
-//       const rows =
-//         await HotelAmenities.findAll({
-//
-//           attributes: ["hotel_id"],
-//
-//           where: {
-//             amenity_id: {
-//               [Op.in]: parsedAmenities,
-//             },
-//           },
-//
-//           group: ["hotel_id"],
-//
-//           having: Sequelize.literal(
-//             `COUNT(DISTINCT amenity_id) = ${parsedAmenities.length}`
-//           ),
-//
-//         });
-//
-//       hotelIds = rows.map(
-//         (r) => r.hotel_id
-//       );
-//     }
-//
-//     // ======================
-//     // WHERE
-//     // ======================
-//     const where = {
-//
-//       ...(hotelIds && {
-//         id: {
-//           [Op.in]: hotelIds,
-//         },
-//       }),
-//
-//       ...(search && {
-//         name: {
-//           [Op.like]: `%${search}%`,
-//         },
-//       }),
-//
-//       ...(city && {city}),
-//
-//       ...(property_class &&
-//         allowedPropertyClasses.includes(
-//           property_class
-//         ) && {
-//           property_class,
-//         }),
-//
-//       ...(type && {
-//         hotel_category: type,
-//       }),
-//
-//       ...(minRating && {
-//         rating: {
-//           [Op.gte]: Number(minRating),
-//         },
-//       }),
-//
-//       ...(minPrice || maxPrice) && {
-//
-//         price_from: {
-//           ...(minPrice && {
-//             [Op.gte]: Number(minPrice),
-//           }),
-//
-//           ...(maxPrice && {
-//             [Op.lte]: Number(maxPrice),
-//           }),
-//
-//         },
-//
-//       },
-//
-//     };
-//
-//     // ======================
-//     // GET HOTELS
-//     // ======================
-//     const {rows} =
-//       await Hotels.findAndCountAll({
-//
-//         where,
-//
-//         include: [
-//
-//           {
-//             model: HotelPhotos,
-//             as: "images",
-//             attributes: [
-//               "id",
-//               "path",
-//               "is_main",
-//               "sort_order",
-//             ],
-//           },
-//
-//           {
-//             model: Amenity,
-//             through: {
-//               attributes: [],
-//             },
-//           },
-//
-//           //  Reviews
-//           {
-//             model: Reviews,
-//             as: "Reviews",
-//             attributes: [],
-//             required: false,
-//           },
-//
-//           //  Favorites
-//           {
-//             model: User,
-//             as: "usersWhoFavorited",
-//
-//             attributes: ["id"],
-//
-//             through: {
-//               attributes: [],
-//             },
-//
-//             where: userId
-//               ? {id: userId}
-//               : undefined,
-//
-//             required: false,
-//           },
-//
-//         ],
-//
-//         attributes: {
-//
-//           include: [
-//
-//             //  Review count
-//             [
-//               Sequelize.fn(
-//                 "COUNT",
-//                 Sequelize.col("Reviews.id")
-//               ),
-//               "review_count",
-//             ],
-//
-//           ],
-//
-//         },
-//
-//         group: [
-//           "Hotels.id",
-//           "images.id",
-//           "Amenities.id",
-//           "usersWhoFavorited.id",
-//         ],
-//
-//         subQuery: false,
-//
-//         distinct: true,
-//
-//         order: [["rating", "DESC"]],
-//
-//       });
-//
-//     // ======================
-//     // ENRICH
-//     // ======================
-//     let enriched =
-//       rows.map((hotel) => {
-//
-//         const plain = hotel.toJSON();
-//
-//         const avgRating =
-//           plain.review_count > 0
-//             ? plain.rating_sum /
-//             plain.review_count
-//             : null;
-//
-//         return {
-//
-//           ...plain,
-//
-//           avgRating,
-//
-//           typeScore:
-//             scoreHotelByType(
-//               plain,
-//               type
-//             ),
-//
-//           starsComputed:
-//             FileHelper.getHotelStars({
-//
-//               ...plain,
-//
-//               rating:
-//                 avgRating ?? 0,
-//
-//             }),
-//
-//         };
-//       });
-//
-//     // ======================
-//     // GUEST RATING FILTER
-//     // ======================
-//     if (guestRating) {
-//
-//       const min =
-//         Number(guestRating);
-//
-//       enriched =
-//         enriched.filter((h) => {
-//
-//           return (
-//             h.avgRating !== null &&
-//             h.avgRating >= min
-//           );
-//
-//         });
-//     }
-//
-//     // ======================
-//     // STARS FILTER
-//     // ======================
-//     if (stars) {
-//
-//       const starNum =
-//         Number(stars);
-//
-//       enriched =
-//         enriched.filter((h) => {
-//
-//           return (
-//             Math.floor(
-//               h.starsComputed
-//             ) === starNum
-//           );
-//
-//         });
-//     }
-//
-//     // ======================
-//     // SORT
-//     // ======================
-//     enriched.sort((a, b) => {
-//
-//       if (sort === "low") {
-//         return (
-//           a.price_from -
-//           b.price_from
-//         );
-//       }
-//
-//       if (sort === "high") {
-//         return (
-//           b.price_from -
-//           a.price_from
-//         );
-//       }
-//
-//       if (type) {
-//
-//         const diff =
-//           b.typeScore -
-//           a.typeScore;
-//
-//         if (diff !== 0)
-//           return diff;
-//       }
-//
-//       return (
-//         (b.avgRating || 0) -
-//         (a.avgRating || 0)
-//       );
-//
-//     });
-//
-//     // ======================
-//     // PAGINATION
-//     // ======================
-//     const offset =
-//       (pageNum - 1) * limitNum;
-//
-//     const paginated =
-//       enriched.slice(
-//         offset,
-//         offset + limitNum
-//       );
-//
-//     // ======================
-//     // CLEAN RESPONSE
-//     // ======================
-//     const cleanHotels =
-//       paginated.map((hotel) => ({
-//         id: hotel.id,
-//         name: hotel.name,
-//         city: hotel.city,
-//         country: hotel.country,
-//         description: hotel.description,
-//         price: hotel.price_from,
-//         rating: hotel.avgRating !== null
-//           ? Number(
-//             hotel.avgRating.toFixed(1)
-//           )
-//           : null,
-//         stars: hotel.starsComputed,
-//         reviewCount: Number(hotel.review_count),
-//         images: hotel.images,
-//         amenities: hotel.Amenities,
-//         property_class: hotel.property_class,
-//         currency: hotel.currency,
-//         lat: hotel.lat,
-//         lon: hotel.lon,
-//         favorite:
-//           hotel
-//             .usersWhoFavorited
-//             ?.length > 0,
-//
-//       }));
-//
-//     // ======================
-//     // FACETS
-//     // ======================
-//     const facets =
-//       await Amenity.findAll({
-//
-//         attributes: [
-//
-//           "id",
-//           "name",
-//           "category",
-//
-//           [
-//             Sequelize.fn(
-//               "COUNT",
-//               Sequelize.col(
-//                 "Hotels.id"
-//               )
-//             ),
-//             "count",
-//           ],
-//
-//         ],
-//
-//         include: [
-//
-//           {
-//             model: Hotels,
-//             attributes: [],
-//             through: {
-//               attributes: [],
-//             },
-//           },
-//
-//         ],
-//
-//         group: ["Amenity.id"],
-//
-//       });
-//
-//     // ======================
-//     // RESPONSE
-//     // ======================
-//
-//     res.status(200).json({
-//       status: "success",
-//       data: cleanHotels,
-//       facets,
-//       pagination: {
-//         total: enriched.length,
-//         page: pageNum,
-//         pages: Math.ceil(enriched.length / limitNum),
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 
 export const getTopRatedHotels = async (req, res) => {
@@ -916,35 +446,12 @@ export const getSponsoredHotels = async (req, res, next) => {
           },
 
       ],
-      // subQuery: false,
-      // include: [
-      //   {
-      //     model: HotelPhotos,
-      //     as: "images",
-      //     attributes: ["id", "path", "is_main", "sort_order"],
-      //   },
-      //   {
-      //     model: Amenity,
-      //     through: { attributes: [] },
-      //   },
-      //   {
-      //     model: User,
-      //     as: "usersWhoFavorited",
-      //     attributes: ["id"],
-      //     through: { attributes: [] },
-      //     where: userId ? { id: userId } : undefined,
-      //     required: false,
-      //   },
-      // ],
-      // subQuery: false,
     });
 
     const data = hotels.map((h) => {
       const base = mapHotel(h, userId);
-
       return {
         ...base,
-
         featured: h.featured,
         featured_until: h.featured_until,
       };

@@ -1,6 +1,8 @@
 import path from 'path';
 import fs from 'fs';
 import dayjs from "dayjs";
+import {Op, Sequelize} from "sequelize";
+import Message from "../models/Message.js";
 
 export default class FileHelper {
 
@@ -53,9 +55,6 @@ export default class FileHelper {
 
     return stars;
   };
-
-
-
 
 
   static calculateRefund (option, checkInDate, cancelDate) {
@@ -245,6 +244,82 @@ export default class FileHelper {
       total,
     };
   }
+
+
+
+  static getPostAttributes () {
+    return [
+      'id',
+      'userId',
+      'mediaUrl',
+      'mediaType',
+      'caption',
+      'location',
+      'createdAt',
+      'updatedAt',
+      [
+        Sequelize.literal(`(
+                SELECT COUNT(*) 
+                FROM post_likes AS likes
+                WHERE likes.postId = \`Post\`.\`id\`
+            )`),
+        'likesCount'
+      ],
+      [
+        Sequelize.literal(`(
+                SELECT COUNT(*) 
+                FROM post_comments AS comments
+                WHERE comments.postId = \`Post\`.\`id\`
+            )`),
+        'commentsCount'
+      ]
+    ];
+  };
+
+
+
+
+
+
+
+static getMessageAttributes () {
+  return [
+    'id',
+    'senderId',
+    'receiverId',
+    'text',          // քո `Message.create`-ում `text` էր դաշտի անունը
+    'isRead',
+    'createdAt'
+    // Այստեղ կարող ես ավելացնել mediaUrl կամ այլ դաշտեր, եթե ունես
+  ];
+};
+
+static async markMessagesAsRead (contactId, myId)  {
+  return await Message.update({isRead: true},
+    {
+      where: {
+        senderId: contactId,
+        receiverId: myId,
+        isRead: false,
+      }
+    })
+};
+
+static async fetchChatHistory (myId, contactId) {
+  return await Message.findAll({
+    where: {
+      [Op.or]: [
+        { senderId: myId, receiverId: contactId, deletedBySender: false },
+        { senderId: contactId, receiverId: myId, deletedByReceiver: false }
+      ]
+    },
+    attributes: this.getMessageAttributes(),
+    order: [['createdAt', 'ASC']]
+  })
+}
+
+
+
 
 
 }

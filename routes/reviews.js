@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/create",
-  // auth,
+   auth,
   validation(schema.createReview),
   ReviewsController.createReview
 );

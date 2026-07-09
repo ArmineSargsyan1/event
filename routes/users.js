@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import {Router} from 'express';
 import controller from '../controllers/users.js';
 import upload from "../middlewares/upload.js";
 import authorize from "../middlewares/authMiddlewere.js";
@@ -16,8 +16,10 @@ router.post(
   controller.registration
 );
 
-router.post('/login', validation(schema.login), controller.login);
-router.get('/profile', authorize, controller.profile);
+router.post(
+  '/login',
+  validation(schema.login),
+  controller.login);
 
 router.post(
   '/profile-picture',
@@ -27,15 +29,34 @@ router.post(
   controller.uploadProfilePicture
 );
 
-router.get('/activate', controller.activate);
+router.get(
+  '/activate',
+  controller.activate);
 
 router.post('/forgot-password',
   validation(schema.forgotPassword),
   controller.forgotPassword);
 
-router.post('/reset-password', validation(schema.resetPassword), controller.resetPassword);
+router.post(
+  '/reset-password',
+  validation(schema.resetPassword),
+  controller.resetPassword);
+
+router.put('/change-password', authorize, controller.changePassword);
+
+// Liana
+router.get(
+  '/profile',
+  authorize,
+  controller.profile
+);
+
+router.get('/profile/:userId',
+  authorize,
+  controller.getFullProfile);
 
 
+router.get('/explore', authorize, controller.searchExplore);
 
 
 export default router;

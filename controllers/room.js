@@ -34,7 +34,7 @@ export const createRoom = async (req, res) => {
       extras = [],
     } = req.body;
 
-    // ✅ parse JSON
+
     if (typeof amenities === "string") amenities = JSON.parse(amenities);
     if (typeof options === "string") options = JSON.parse(options);
     if (typeof extras === "string") extras = JSON.parse(extras);
@@ -73,7 +73,6 @@ export const createRoom = async (req, res) => {
     // 3. OPTIONS
     // ======================
 
-
     if (options.length) {
       await RoomOption.bulkCreate(
         options.map((o) => ({
@@ -92,7 +91,6 @@ export const createRoom = async (req, res) => {
         { transaction: t }
       );
     }
-
 
     // ======================
     // 4. EXTRAS
@@ -156,7 +154,6 @@ export const createRoom = async (req, res) => {
    UPDATE ROOM (PATCH STYLE)
 ========================================================= */
 
-
 export const updateRoom = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -175,25 +172,17 @@ export const updateRoom = async (req, res) => {
       extras = [],
     } = req.body;
 
-    // ======================
-    // PARSE JSON (important)
-    // ======================
+
     if (typeof amenities === "string") amenities = JSON.parse(amenities);
     if (typeof options === "string") options = JSON.parse(options);
     if (typeof extras === "string") extras = JSON.parse(extras);
 
-    // ======================
-    // FIND ROOM
-    // ======================
     const room = await Room.findByPk(id);
     if (!room) {
       await t.rollback();
       return res.status(404).json({ message: "Room not found" });
     }
 
-    // ======================
-    // UPDATE ROOM BASIC
-    // ======================
     await room.update(
       {
         name,
@@ -206,9 +195,6 @@ export const updateRoom = async (req, res) => {
       { transaction: t }
     );
 
-    // ======================
-    // AMENITIES (M2M)
-    // ======================
     if (Array.isArray(amenities)) {
       const am = await Amenity.findAll({
         where: { id: amenities },
@@ -218,9 +204,6 @@ export const updateRoom = async (req, res) => {
       await room.setAmenities(am, { transaction: t });
     }
 
-    // ======================
-    // OPTIONS (REPLACE)
-    // ======================
     if (Array.isArray(options)) {
       await RoomOption.destroy({
         where: { room_id: id },
@@ -230,7 +213,7 @@ export const updateRoom = async (req, res) => {
       if (options.length) {
         await RoomOption.bulkCreate(
           options.map((o) => ({
-            name: o.name, // 🔥 mandatory field FIX
+            name: o.name,
             price: Number(o.price),
 
             meal_plan: o.meal_plan || "none",
@@ -248,9 +231,6 @@ export const updateRoom = async (req, res) => {
       }
     }
 
-    // ======================
-    // EXTRAS (REPLACE)
-    // ======================
     if (Array.isArray(extras)) {
       await RoomExtra.destroy({
         where: { room_id: id },
@@ -260,7 +240,7 @@ export const updateRoom = async (req, res) => {
       if (extras.length) {
         await RoomExtra.bulkCreate(
           extras.map((e) => ({
-            name: e.name, // 🔥 mandatory fix
+            name: e.name,
             price: Number(e.price),
             type: e.type || "service",
             room_id: id,
@@ -270,14 +250,8 @@ export const updateRoom = async (req, res) => {
       }
     }
 
-    // ======================
-    // COMMIT
-    // ======================
     await t.commit();
 
-    // ======================
-    // RETURN UPDATED ROOM
-    // ======================
     const updated = await Room.findByPk(id, {
       include: [
         { model: Amenity, as: "amenities", through: { attributes: [] } },
@@ -303,9 +277,7 @@ export const updateRoom = async (req, res) => {
   }
 };
 
-/* =========================================================
-   DELETE (SOFT DELETE)
-========================================================= */
+
 export const deleteRoom = async (req, res) => {
   try {
     const { id } = req.params;
@@ -313,7 +285,7 @@ export const deleteRoom = async (req, res) => {
     const room = await Room.findByPk(id);
     if (!room) return res.status(404).json({ message: "Not found" });
 
-    await room.destroy(); // paranoid soft delete
+    await room.destroy();
 
     res.json({ success: true });
   } catch (e) {
@@ -327,7 +299,7 @@ export const restoreRoom = async (req, res) => {
     const { id } = req.params;
 
     const room = await Room.findByPk(id, {
-      paranoid: false, // 🔥 պարտադիր deleted record գտնելու համար
+      paranoid: false,
     });
 
     if (!room) {
@@ -343,9 +315,6 @@ export const restoreRoom = async (req, res) => {
   }
 };
 
-/* =========================================================
-   BULK ARCHIVE
-========================================================= */
 export const bulkArchiveRooms = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -364,9 +333,6 @@ export const bulkArchiveRooms = async (req, res) => {
 /* =========================================================
    GET ROOMS (USER + FILTER + GEO + PAGINATION)
 ========================================================= */
-
-
-
 const isRoomAvailable = async (roomId, checkIn, checkOut) => {
   const conflict = await Booking.findOne({
     where: {
@@ -388,11 +354,9 @@ const calcRoomOptionPrice = (option, nights) => {
   const base = Number(option.price || 0);
   let price = base;
 
-  // 1. static modifier (always applies)
   const modifier = Number(option.price_modifier || 0);
   price = price + (price * modifier) / 100;
 
-  // 2. time-based discount
   const now = new Date();
   const start = option.discount_start ? new Date(option.discount_start) : null;
   const end = option.discount_end ? new Date(option.discount_end) : null;
@@ -432,18 +396,12 @@ export const getRooms = async (req, res) => {
     const pageInt = Math.max(parseInt(page) || 1, 1);
     const offset = (pageInt - 1) * limitInt;
 
-    // ======================
-    // NIGHTS
-    // ======================
     const nights = check_in && check_out
       ? dayjs(check_out).diff(dayjs(check_in), "day")
       : 1;
 
     let order = [["id", "ASC"]];
 
-    // ======================
-    // ROOM FILTER
-    // ======================
     const whereRoom = {
       status: "active",
       ...(hotel_id && { hotel_id: Number(hotel_id) }),
@@ -451,9 +409,7 @@ export const getRooms = async (req, res) => {
       ...(bed_type && { bed_type }),
     };
 
-    // ======================
-    // OPTION FILTER
-    // ======================
+
     const whereOption = { status: "active" };
 
     if (minPrice) {
@@ -463,9 +419,6 @@ export const getRooms = async (req, res) => {
       whereOption.price = { ...whereOption.price, [Op.lte]: Number(maxPrice) };
     }
 
-    // ======================
-    // FETCH ROOMS
-    // ======================
     const rooms = await Room.findAll({
       where: whereRoom,
       include: [
@@ -495,17 +448,12 @@ export const getRooms = async (req, res) => {
       order,
     });
 
-    // ======================
-    // FORMAT
-    // ======================
     const formattedRooms = [];
 
     for (const room of rooms) {
       const r = room.toJSON();
 
-      // ======================
-      // AVAILABILITY
-      // ======================
+
       let available = true;
       if (check_in && check_out) {
         available = await isRoomAvailable(r.id, check_in, check_out);
@@ -515,9 +463,6 @@ export const getRooms = async (req, res) => {
         continue;
       }
 
-      // ======================
-      // OPTIONS
-      // ======================
       const options = (r.options || []).map((opt) => {
         const priced = calcRoomOptionPrice(opt, nights);
         const freeCancellationUntil = check_in
@@ -530,16 +475,11 @@ export const getRooms = async (req, res) => {
         };
       });
 
-      // ======================
-      // LOWEST PRICE
-      // ======================
       const lowestPrice = options.length > 0
         ? Math.min(...options.map((o) => o.total_price))
         : 0;
 
-      // ======================
-      // GROUP AMENITIES
-      // ======================
+
       const groupedAmenities = {};
       (r.amenities || []).forEach((a) => {
         const key = a.category || "Other";
@@ -549,9 +489,6 @@ export const getRooms = async (req, res) => {
         groupedAmenities[key].push({ id: a.id, name: a.name, key: a.key });
       });
 
-      // ======================
-      // EXTRAS
-      // ======================
       const extras = (r.extras || []).map((e) => ({
         id: e.id,
         name: e.name,
@@ -559,9 +496,6 @@ export const getRooms = async (req, res) => {
         price: e.price,
       }));
 
-      // ======================
-      // PUSH
-      // ======================
       formattedRooms.push({
         id: r.id,
         hotel_id: r.hotel_id,
@@ -588,9 +522,6 @@ export const getRooms = async (req, res) => {
       formattedRooms.sort((a, b) => b.lowest_price - a.lowest_price);
     }
 
-    // ======================
-    // RESPONSE
-    // ======================
     return res.json({
       success: true,
       page: pageInt,
@@ -673,9 +604,6 @@ export const getSimilarRooms = async (req, res, next) => {
       return res.status(200).json({ status: "success", data: [] });
     }
 
-    // ========================================================
-    // 🧹 CLEAN RESPONSE
-    // ========================================================
     const cleanRooms = rooms.map((room) => {
       const plain = room.toJSON();
       const hotelData = plain.hotel || {};
@@ -683,10 +611,8 @@ export const getSimilarRooms = async (req, res, next) => {
       const roomPhotos = plain.images || [];
       const roomAmenities = plain.amenities || [];
 
-      // 1. Գլխավոր նկարի հայտնաբերում
       const mainImage = roomPhotos.length > 0 ? roomPhotos[0].path : "default-room.jpg";
 
-      // 2. Ամենաէժան գնի հաշվարկ
       const pricesArray = roomOptions.map(opt => opt.price);
       const lowestPrice = pricesArray.length > 0 ? Math.min(...pricesArray) : 0;
 
@@ -721,17 +647,11 @@ export const getRoomById = async (req, res) => {
   try {
     const { check_in, check_out } = req.query;
 
-    // ==========================================
-    // ⏳ NIGHTS
-    // ==========================================
     const nights =
       check_in && check_out
         ? dayjs(check_out).diff(dayjs(check_in), "day")
         : 1;
 
-    // ==========================================
-    // 🛏️ ROOM FETCH
-    // ==========================================
     const room = await Room.findByPk(req.params.id, {
       include: [
         { model: Hotels, as: "hotel" },
@@ -763,15 +683,12 @@ export const getRoomById = async (req, res) => {
 
     const r = room.toJSON();
 
-    // ==========================================
-    // 📅 AVAILABILITY
-    // ==========================================
     const available =
       check_in && check_out
         ? await isRoomAvailable(r.id, check_in, check_out)
         : true;
 
-    // 💳 OPTIONS (SINGLE SOURCE OF TRUTH)
+
     // ==========================================
     const options = (r.options || []).map((opt) => {
       const priced = calcRoomOptionPrice(opt, nights);
@@ -787,17 +704,14 @@ export const getRoomById = async (req, res) => {
           ? now.isAfter(dayjs(discountStart)) && now.isBefore(dayjs(discountEnd))
           : true;
 
-      // Վերջնական ակտիվ դրոշակը
       const hasActiveDiscount = hasModifier && isDiscountDateValid;
 
       const basePricePerNight = Number(opt.price || 0);
       const baseTotalPrice = basePricePerNight * nights;
 
-      // 💡 ՈՒՂՂՎԱԾ Է. Վերցնում ենք ձեր ֆունկցիայի հաշվարկած ճիշտ տոկոսային գինը (96)
       const pricedPricePerNight = priced.pricePerNight || priced.price_per_night || basePricePerNight;
       const pricedTotalPrice = priced.totalPrice || priced.total_price || baseTotalPrice;
 
-      // Եթե զեղչը ակտիվ է, օգտագործում ենք 96-ը, հակառակ դեպքում՝ 120-ը
       const finalPricePerNight = hasActiveDiscount ? pricedPricePerNight : basePricePerNight;
       const finalTotalPrice = hasActiveDiscount ? pricedTotalPrice : baseTotalPrice;
 
@@ -807,7 +721,6 @@ export const getRoomById = async (req, res) => {
         name: opt.name,
         mealPlan: opt.mealPlan || opt.meal_plan,
 
-        // Հին օրիգինալ գները (React-ում վրան գծիկ քաշելու համար)
         originalPricePerNight: basePricePerNight,
         originalTotalPrice: baseTotalPrice,
 
@@ -819,7 +732,6 @@ export const getRoomById = async (req, res) => {
         freeCancelDays: opt.freeCancelDays || opt.free_cancel_days,
         cancelTime: opt.cancelTime || opt.cancel_time || "23:59",
 
-        // Վերջնական ճիշտ գները React-ի համար
         pricePerNight: finalPricePerNight,
         totalPrice: finalTotalPrice,
 
@@ -827,17 +739,12 @@ export const getRoomById = async (req, res) => {
       };
     });
 
-    // ==========================================
-    // 💰 LOWEST PRICE
-    // ==========================================
+
     const lowestPrice =
       options.length > 0
         ? Math.min(...options.map((o) => o.total_price))
         : 0;
 
-    // ==========================================
-    // 🛠️ AMENITIES GROUPING
-    // ==========================================
     const groupedAmenities = (r.amenities || []).reduce((acc, a) => {
       const key = a.category || "Other";
 
@@ -852,9 +759,6 @@ export const getRoomById = async (req, res) => {
       return acc;
     }, {});
 
-    // ==========================================
-    // 📦 EXTRAS
-    // ==========================================
     const extras = (r.extras || []).map((e) => ({
       id: e.id,
       name: e.name,
@@ -862,9 +766,7 @@ export const getRoomById = async (req, res) => {
       price: Number(e.price || 0),
     }));
 
-    // ==========================================
-    // 🚀 RESPONSE
-    // ==========================================
+
     return res.json({
       success: true,
       data: {
@@ -926,11 +828,6 @@ export const getRoomGallery = async (req, res) => {
 
 
 
-/* =========================================================
-   UPLOAD IMAGES (CLOUDINARY READY)
-========================================================= */
-
-
 export const uploadRoomImages = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -943,7 +840,6 @@ export const uploadRoomImages = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "No files uploaded" });
     }
 
-    // 1. Գտնում ենք սենյակը
     const room = await Room.findByPk(id);
     if (!room) {
       return res.status(404).json({ success: false, message: "Room not found" });
@@ -954,7 +850,6 @@ export const uploadRoomImages = async (req, res, next) => {
       return res.status(404).json({ success: false, message: "Hotel not found" });
     }
 
-    // 3. Իրավունքների ստուգում
     const isHotelOwner = hotel.user_id === authUserId;
     const isSuperAdmin = authUserRole === "superadmin";
 

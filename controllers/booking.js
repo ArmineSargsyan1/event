@@ -53,7 +53,6 @@ export const calculateBookingPrice = (
 
   let pricePerNight = ratePlan.price;
 
-  // 📅 season logic
   const now = new Date(check_in);
 
   if (
@@ -379,169 +378,6 @@ export const getBookingDetails = async (req, res) => {
 // };
 
 
-
-// export const createBooking = async (req, res) => {
-//   console.log(req.body, 88888888888);
-//
-//   const transaction = await sequelize.transaction();
-//
-//   try {
-//     console.log("CREATE PAYMENT SESSION");
-//     const {
-//       room_id,
-//       rate_plan_id,
-//       check_in,
-//       check_out,
-//       guests,
-//       customer_name,
-//       customer_phone,
-//     } = req.body;
-//
-//     // =========================
-//     // AUTH USER
-//     // =========================
-//     const user_id = 1;
-//
-//     // =========================
-//
-//     // =========================
-//     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
-//
-//     // =========================
-//     // ROOM
-//     // =========================
-//     const room = await Room.findByPk(room_id, {
-//       transaction,
-//       lock: transaction.LOCK.UPDATE,
-//     });
-//
-//     if (!room) {
-//       await transaction.rollback();
-//       return res.status(404).json({ message: "Room not found" });
-//     }
-//
-//     // =========================
-//     // GUEST CHECK
-//     // =========================
-//     if (room.max_guests && guests > room.max_guests) {
-//       await transaction.rollback();
-//       return res.status(400).json({ message: "Too many guests" });
-//     }
-//
-//     // =========================
-//     // EXPIRE OLD BOOKINGS
-//     // =========================
-//     await Booking.update(
-//       { status: "expired" },
-//       {
-//         where: {
-//           status: "pending",
-//           expires_at: { [Op.lt]: new Date() },
-//         },
-//         transaction,
-//       }
-//     );
-//
-//     // =========================
-//     // CHECK CONFLICT
-//     // =========================
-//     const conflict = await Booking.findOne({
-//       where: {
-//         room_id,
-//         status: { [Op.in]: ["pending", "confirmed"] },
-//         check_in: { [Op.lt]: check_out },
-//         check_out: { [Op.gt]: check_in },
-//         [Op.or]: [
-//           { expires_at: null },
-//           { expires_at: { [Op.gt]: new Date() } },
-//         ],
-//       },
-//       transaction,
-//       lock: transaction.LOCK.UPDATE,
-//     });
-//
-//     if (conflict) {
-//       await transaction.rollback();
-//       return res.status(409).json({ message: "Room already booked" });
-//     }
-//
-//     // =========================
-//     // RATE PLAN
-//     // =========================
-//     console.log("RATE PLAN ID =", rate_plan_id);
-//     const ratePlan = await RoomOption.findOne({
-//       where: {
-//         id: rate_plan_id,
-//         status: "active",
-//       },
-//       transaction,
-//       lock: transaction.LOCK.UPDATE,
-//     });
-//
-//     console.log("RATE PLAN =", ratePlan);
-//
-//     if (!ratePlan) {
-//       await transaction.rollback();
-//       return res.status(404).json({ message: "Rate plan not found" });
-//     }
-//
-//     // =========================
-//     // CALCULATE PRICE
-//     // =========================
-//     const priceData = FileHelper.calculateBookingPrice(
-//       ratePlan,
-//       check_in,
-//       check_out,
-//       guests
-//     );
-//
-//     // =========================
-//     // CREATE BOOKING
-//     // =========================
-//     const booking = await Booking.create(
-//       {
-//         user_id,
-//         room_id,
-//         option_id: rate_plan_id,
-//         customer_name,
-//         customer_phone,
-//         check_in,
-//         check_out,
-//         guests,
-//         total_price: priceData.total,
-//         status: "pending",
-//         payment_status: "pending",
-//         expires_at,
-//         lock_token: crypto.randomUUID(),
-//       },
-//       { transaction }
-//     );
-//
-//     // =========================
-//     // COMMIT
-//     // =========================
-//     await transaction.commit();
-//
-//     // =========================
-//     // RETURN BOOKING ID
-//     // =========================
-//     return res.status(201).json({
-//       success: true,
-//       booking_id: booking.id,
-//       booking,
-//     });
-//
-//   } catch (error) {
-//     await transaction.rollback();
-//     console.log(error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Booking creation failed",
-//     });
-//   }
-// };
-
-
 export const createBooking = async (req, res) => {
   console.log(req.body, 88888888888);
 
@@ -560,17 +396,11 @@ export const createBooking = async (req, res) => {
       selected_extras
     } = req.body;
 
-    // =========================
-    // AUTH USER
-    // =========================
+
     const user_id = 1;
 
-    // =========================
     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
 
-    // =========================
-    // ROOM
-    // =========================
     const room = await Room.findByPk(room_id, {
       transaction,
       lock: transaction.LOCK.UPDATE,
@@ -581,17 +411,13 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    // =========================
-    // GUEST CHECK
-    // =========================
+
     if (room.max_guests && guests > room.max_guests) {
       await transaction.rollback();
       return res.status(400).json({ message: "Too many guests" });
     }
 
-    // =========================
-    // EXPIRE OLD BOOKINGS
-    // =========================
+
     await Booking.update(
       { status: "expired" },
       {
@@ -603,9 +429,6 @@ export const createBooking = async (req, res) => {
       }
     );
 
-    // =========================
-    // CHECK CONFLICT
-    // =========================
 
     const conflict = await Booking.findOne({
       where: {
@@ -643,9 +466,6 @@ export const createBooking = async (req, res) => {
       return res.status(409).json({ message: "Room already booked" });
     }
 
-    // =========================
-    // RATE PLAN
-    // =========================
     console.log("RATE PLAN ID =", rate_plan_id);
     const ratePlan = await RoomOption.findOne({
       where: {
@@ -663,9 +483,6 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ message: "Rate plan not found" });
     }
 
-    // =========================
-    // CALCULATE BASE PRICE
-    // =========================
     const priceData = FileHelper.calculateBookingPrice(
       ratePlan,
       check_in,
@@ -674,20 +491,6 @@ export const createBooking = async (req, res) => {
     );
 
     let finalTotalPrice = Number(priceData.total);
-
-    // if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
-    //   const extras = await RoomExtra.findAll({
-    //     where: {
-    //       id: { [Op.in]: selected_extras }
-    //     },
-    //     transaction
-    //   });
-    //
-    //   // Ցիկլով անցնում ենք և բոլորի գները գումարում ընդհանուր հաշվին
-    //   const extrasSum = extras.reduce((sum, item) => sum + Number(item.price || 0), 0);
-    //   finalTotalPrice += extrasSum;
-    // }
-    // ==========================================
 
     let extras = [];
     if (selected_extras && Array.isArray(selected_extras) && selected_extras.length > 0) {
@@ -702,9 +505,6 @@ export const createBooking = async (req, res) => {
       finalTotalPrice += extrasSum;
     }
 
-    // =========================
-    // CREATE BOOKING
-    // =========================
     const booking = await Booking.create(
       {
         user_id,
@@ -744,14 +544,8 @@ export const createBooking = async (req, res) => {
       await BookingExtra.bulkCreate(snapshotPayloads, { transaction });
     }
 
-    // =========================
-    // COMMIT
-    // =========================
     await transaction.commit();
 
-    // =========================
-    // RETURN BOOKING ID
-    // =========================
     return res.status(201).json({
       success: true,
       booking_id: booking.id,
@@ -793,25 +587,11 @@ export const getSuccessToken = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("⛔ Success token route error:", error);
+    console.error(" Success token route error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-
-// export const getSuccessToken = async (req, res) => {
-//   const { id } = req.params;
-//
-//   const booking = await Booking.findByPk(id);
-//
-//   if (!booking || booking.status !== "confirmed") {
-//     return res.status(403).json({ message: "Not allowed" });
-//   }
-//
-//   return res.json({
-//     token: booking.success_token,
-//   });
-// };
 
 export const getBookingConfirmation = async (req, res) => {
   try {
@@ -852,9 +632,6 @@ export const cancelBooking = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    // =========================
-    // FIND BOOKING
-    // =========================
     const booking = await Booking.findByPk(bookingId, {
       include: [{ model: RoomOption, as: "option" }],
     });
@@ -863,7 +640,6 @@ export const cancelBooking = async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // OWNER CHECK & STATUS CHECKS
     if (booking.user_id !== 1) {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
@@ -881,16 +657,10 @@ export const cancelBooking = async (req, res) => {
       cancel_time: booking.snapshot_cancel_time,
     };
 
-    // =========================
-    // REFUND CALCULATION
-    // =========================
     const refund = FileHelper.calculateRefund(optionSnapshotForRefund, booking.check_in, new Date());
     const refundPercent = refund?.refundPercent ?? 0;
     const refundAmount = (booking.total_price * refundPercent) / 100;
 
-    // =========================
-    // 🔥 AUTOMATIC STRIPE REFUND ENGINE
-    // =========================
     if (booking.payment_status === "paid" && refundAmount > 0) {
 
       const paymentIntentId = booking.stripe_session_id;
@@ -909,9 +679,6 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    // =========================
-    // UPDATE PAYMENT & BOOKING STATUS
-    // =========================
     let paymentStatus = booking.payment_status;
     if (booking.payment_status === "paid") {
       paymentStatus = refundAmount > 0 ? "refunded" : "paid";
@@ -924,9 +691,6 @@ export const cancelBooking = async (req, res) => {
 
     await booking.save();
 
-    // =========================
-    // RESPONSE
-    // =========================
     return res.json({
       success: true,
       message: "Booking cancelled and refund processed successfully",
@@ -1163,7 +927,7 @@ export const getMyBookings = async (req, res) => {
     });
 
   } catch (e) {
-    console.error("⛔ Fetch bookings error:", e);
+    console.error(" Fetch bookings error:", e);
     return res.status(500).json({ success: false, message: "Failed to fetch bookings" });
   }
 };

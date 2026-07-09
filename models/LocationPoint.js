@@ -16,11 +16,11 @@ LocationPoint.init(
   {
     name: {
       type: DataTypes.STRING,
-      allowNull: false // օրինակ՝ "City Center"
+      allowNull: false
     },
     distance: {
       type: DataTypes.STRING,
-      allowNull: true // օրինակ՝ "500 m"
+      allowNull: true
     },
   },
   {

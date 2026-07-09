@@ -145,7 +145,7 @@ Booking.init(
       type: DataTypes.DATE,
     },
 
-    // 🔐 SUCCESS PAGE SECURITY
+    // SUCCESS PAGE SECURITY
     success_token: {
       type: DataTypes.STRING,
     },

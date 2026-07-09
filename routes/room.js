@@ -7,7 +7,6 @@ import schema from "../schemas/hotel.schema.js";
 
 const upload = createCloudinaryUpload('rooms');
 
-
 const router = express.Router();
 
 /* =========================================================
@@ -37,7 +36,6 @@ router.get(
 
 /* =========================================================
    UPDATE ROOM (PARTIAL UPDATE)
-   👉 PATCH is correct here
 ========================================================= */
 router.patch("/:id", Controller.updateRoom);
 

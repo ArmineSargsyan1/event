@@ -26,7 +26,7 @@ const uploadHotelPhoto = createCloudinaryUpload('hotels');
 
 
 /* =========================
-   📌 GET ROUTES
+    GET ROUTES
 ========================= */
 
 // list + filters + pagination
@@ -48,7 +48,7 @@ router.get("/hotels/stats", Controller.getAdminHotelStats);
 
 
 /* =========================
-   📌 POST / CREATE
+    POST / CREATE
 ========================= */
 router.post("/hotels",
   validation(schema.createHotel),
@@ -58,7 +58,7 @@ router.post("/hotels",
 
 
 /* =========================
-   📌 PUT / UPDATE
+    PUT / UPDATE
 ========================= */
 router.put("/hotels/:id",
   validation(schema.updateHotel),
@@ -66,7 +66,7 @@ router.put("/hotels/:id",
 
 
 /* =========================
-   📌 DELETE
+    DELETE
 ========================= */
 router.delete("/hotels/:id", Controller.deleteHotel);
 
@@ -83,7 +83,7 @@ router.get("/hotels/inactive", Controller.getInactiveHotels);
 router.post(
   "/hotels/gallery",
   // adminAuth,
-  uploadHotelPhoto.array("photos", 20), // max 20 files
+  uploadHotelPhoto.array("photos", 5),
   Controller.syncHotelGallery
 );
 

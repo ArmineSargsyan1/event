@@ -5,14 +5,10 @@ import Amenity from "../models/Amenity.js";
 
 
 export const createFavorite = async (req, res) => {
-  console.log(req.body,22)
   try {
+    const userId = req.userId;
 
-    const userId = 1
-      // req.user.id;
-
-    const { hotelId } =
-      req.body;
+    const { hotelId } = req.body;
 
     const exists =
       await Favorite.findOne({

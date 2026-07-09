@@ -2,10 +2,7 @@ import {Router} from 'express';
 
 
 import users from "./users.js";
-import flights from "./flights.js";
-import chat from "./chat.js";
 import room from "./room.js";
-import app from "../app.js";
 import hotels from "./hotelsl.js";
 import reviews from "./reviews.js";
 import admin from "./admin.js";
@@ -15,10 +12,13 @@ import payment from "./payment.js";
 import favorites from "./favorites.js";
 import newsletter from "./newsletter.js";
 import nearby from "./nearby.js";
+import posts from "./posts.js";
+import notification from "./notification.js";
+import  follows from "./follows.js";
+import messages from "./messages.js";
 // import owner from "./owner.js";
 
 // app.use('/flights', flights);
-// app.use('/packages', packagesRoute);/
 
 
 const router = Router();
@@ -46,5 +46,11 @@ router.use('/favorites', favorites);
 router.use('/payments', payment);
 router.use('/nearby', nearby);
 // router.use('/owner', owner);
+
+//social
+router.use('/posts', posts);
+router.use('/notifications',notification);
+router.use('/followers', follows);
+router.use('/messages', messages);
 
 export default router;

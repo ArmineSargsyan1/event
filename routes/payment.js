@@ -1,18 +1,17 @@
 import express from "express";
-
+import authorize from "../middlewares/authMiddlewere.js";
 import * as paymentController from "../controllers/payment.js";
 
 
-
-const router =
-  express.Router();
+const router = express.Router();
 
 // =========================
 // TEST PAGES
 // =========================
 router.get(
   "/",
-  (req, res) =>
+  authorize,
+(req, res) =>
     res.render(
       "payment",
       {
@@ -23,6 +22,7 @@ router.get(
 
 router.get(
   "/payment-success",
+  authorize,
   (req, res) =>
     res.render(
       "payment",
@@ -34,6 +34,7 @@ router.get(
 
 router.get(
   "/payment-cancel",
+  authorize,
   (req, res) =>
     res.render(
       "payment",
@@ -48,9 +49,9 @@ router.get(
 // =========================
 router.post(
   "/create-booking-session",
+  authorize,
   paymentController.createBookingSession
 );
-
 
 
 export default router;

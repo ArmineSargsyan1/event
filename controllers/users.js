@@ -5,6 +5,12 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
 import {sendMail} from '../services/mail.js';
+import Post from "../models/Post.js";
+import {Op, Utils} from "sequelize";
+import FileHelper from "../services/Utils.js";
+import {Follower} from "../models/index.js";
+import Story from "../models/Story.js";
+import sequelize from "../clients/db.sequelize.mysql.js";
 
 const {AUTH_SECRET, JWT_EXPIRES_IN, USER_SECRET} = process.env;
 
@@ -17,7 +23,7 @@ const cleanFile = (file) => {
 export default {
 
   async registration(req, res, next) {
-    console.log(req.body,89)
+    console.log(req.body, 89)
     try {
       const {fullName, email, phoneNumber, password} = req.body;
 
@@ -26,9 +32,10 @@ export default {
         cleanFile(req.file);
         return res.status(409).json({success: false, error: 'Email already registered'});
       }
-      const profilePicture = req.file
-        ? path.normalize(req.file.path).replace(/\\/g, '/')
-        : null;
+
+      // const profilePicture = req.file
+      //   ? path.normalize(req.file.path).replace(/\\/g, '/')
+      //   : null;
 
       const hashedPassword = hashPassword(password);
 
@@ -37,17 +44,15 @@ export default {
         email,
         password: hashedPassword,
         phoneNumber,
-        profilePicture: null,
+        lastStoryTimestamp: new Date(),
       });
 
 
       // const activationLink = `http://localhost:5000/users/activate?token=${user.activationToken}`;
 
-      // Կոդը ավտոմատ կհարմարվի և՛ localhost-ին, և՛ Render-ին
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
       const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
-
 
       await sendMail({
         to: email,
@@ -70,8 +75,7 @@ export default {
       });
 
     } catch (error) {
-      console.log(error,888)
-      cleanFile(req.file);
+      // cleanFile(req.file);
       next(error);
     }
   },
@@ -105,7 +109,7 @@ export default {
       }
 
       if (!user.isActive) {
-        return res.status(403).json({success: false, error: 'Activate your account first'});
+        return res.status(403).json({success: false, error: 'Please activate your account via email first'});
       }
 
       const token = jwt.sign(
@@ -119,7 +123,12 @@ export default {
           attributes: {exclude: ['password', 'activationToken', 'resetToken', 'resetTokenExp']}
         });
 
-      return res.status(200).json({success: true, message: 'Login successful', token, data: userData});
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        data: userData
+      });
 
     } catch (err) {
       next(err);
@@ -129,17 +138,126 @@ export default {
 
   async profile(req, res, next) {
     try {
-      const user = await User.findByPk(req.userId,
-        {
-          attributes: {exclude: ['password', 'activationToken', 'resetToken', 'resetTokenExp']}
-        });
-      if (!user) return res.status(404).json({success: false, error: 'User not found'});
+      const userId = req.userId;
 
-      return res.json({success: true, user});
+      const [user, stories, followersCount, followingCount, postsCount] = await Promise.all([
+        User.findByPk(userId, {attributes: ['id', 'userName', 'email', 'profilePicture', 'bio', 'isPrivate']}),
+        Story.findAll({where: {userId, expiresAt: {[Op.gt]: new Date()}}}),
+        Follower.count({where: {followingId: userId}}),
+        Follower.count({where: {followerId: userId}}),
+        Post.count({where: {userId}})
+      ]);
+
+      if (!user) return res.status(404).json({success: false, message: 'No user found.'});
+
+      return res.status(200).json({
+        success: true,
+        user,
+        stories,
+        followersCount,
+        followingCount,
+        postsCount,
+        isAccessible: true
+      });
     } catch (err) {
       next(err);
     }
   },
+
+  async getFullProfile(req, res, next) {
+    try {
+      const {userId} = req.params;
+      const myId = req.userId;
+      const targetId = parseInt(userId, 10);
+
+      const profile = await User.findByPk(targetId, {
+        attributes: ['id', 'userName', 'email', 'profilePicture', 'bio', 'isPrivate']
+      });
+
+      if (!profile) {
+        return res.status(404).json({success: false, message: 'No user found.'});
+      }
+
+      const [followersCount, followingCount, isFollowing, postsCount] = await Promise.all([
+        Follower.count({where: {followingId: targetId}}),
+        Follower.count({where: {followerId: targetId}}),
+        myId ? Follower.findOne({where: {followerId: myId, followingId: targetId}}) : null,
+        Post.count({where: {userId: targetId}})
+      ]);
+
+      const hasAccess = !profile.isPrivate || myId === targetId || !!isFollowing;
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          ...profile.toJSON(),
+          postsCount,
+          followersCount,
+          followingCount,
+          isFollowing: !!isFollowing,
+          isAccessible: hasAccess
+        }
+      });
+
+    } catch (err) {
+      next(err);
+    }
+  },
+
+
+  async searchExplore(req, res, next) {
+    try {
+      const {query} = req.query;
+      const myId = req.userId;
+
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 12;
+      const offset = (page - 1) * limit;
+
+      if (!query || query.trim() === '') {
+        const totalPosts = await Post.count();
+
+        const explorePosts = await Post.findAll({
+          attributes: ['id', 'mediaUrl', 'mediaType', 'caption', 'createdAt'],
+          order: [[sequelize.fn('RAND')]],
+          limit: limit,
+          offset: offset
+        });
+
+        return res.status(200).json({
+          success: true,
+          type: 'explore',
+          data: explorePosts,
+          pagination: {
+            currentPage: page,
+            limit: limit,
+            totalItems: totalPosts,
+            totalPages: Math.ceil(totalPosts / limit),
+            hasNextPage: page * limit < totalPosts
+          }
+        });
+      }
+
+      const users = await User.findAll({
+        where: {
+          id: {[Op.ne]: myId},
+          userName: {[Op.like]: `%${query.trim()}%`}
+        },
+        attributes: ['id', 'userName', 'profilePicture'],
+        limit: limit,
+        offset: offset
+      });
+
+      return res.status(200).json({
+        success: true,
+        type: 'users',
+        data: users
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
 
   async forgotPassword(req, res, next) {
     try {
@@ -183,39 +301,72 @@ export default {
 
 
   async resetPassword(req, res, next) {
-    const {token} = req.query;
-    console.log(token,98)
-    const {newPassword} = req.body;
-
-
-    if (!token) return res.status(400).send('The password reset link is missing or has expired.' );
-
-    let decoded;
+    console.log(req.body, 98);
     try {
-      decoded = jwt.verify(token, AUTH_SECRET);
+      const {newPassword} = req.body;
+
+      const token = req.body.token || req.query.token;
+
+      console.log(token)
+
+      if (!token) {
+        return res.status(400).send('The password reset link is missing or has expired.');
+      }
+
+      let decoded;
+      try {
+        // decoded = jwt.verify(token, AUTH_SECRET);
+        decoded = jwt.verify(token, AUTH_SECRET, {ignoreExpiration: true});
+      } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+          return res.status(401).send('The password reset link has expired. Please request a new one.');
+        }
+        return res.status(401).send('Invalid reset token.');
+      }
+
+      const user = await User.findByPk(decoded.id);
+      if (!user) {
+        return res.status(400).send('Invalid or expired token');
+      }
+
+      user.password = md5(md5(newPassword) + USER_SECRET);
+      user.resetToken = null;
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Password has been reset successfully! You can now login.'
+      });
+
     } catch (err) {
-      next(err)
+      next(err);
     }
+  },
 
-    // const user = await User.findOne({where: {id: decoded.id, resetToken: token}});
-    const user = await User.findByPk(decoded.id);
-    if (!user) {
-      return res.status(400).send('Invalid or expired token');
+
+  async changePassword(req, res, next) {
+    try {
+      const {oldPassword, newPassword} = req.body;
+      const userId = req.userId;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({success: false, message: "User not found"});
+      }
+
+      if (user.password !== hashPassword(oldPassword)) {
+        return res.status(400).json({success: false, message: "The old password is incorrect"});
+      }
+
+      user.password = hashPassword(newPassword);
+      await user.save();
+
+      return res.status(200).json({success: true, message: "Password changed successfully."});
+
+    } catch (error) {
+      next(error);
     }
-
-    if (!user) return res.status(400).send('Invalid or expired token');
-
-    user.password = md5(md5(newPassword) + USER_SECRET);
-    user.resetToken = null;
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Password has been reset successfully! You can now login.'
-    });
-
-    },
-
+  },
 
   async uploadProfilePicture(req, res, next) {
     try {
@@ -246,3 +397,7 @@ export default {
     }
   }
 };
+
+
+
+
