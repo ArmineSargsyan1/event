@@ -216,14 +216,16 @@ export const stripeBookingWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  res.json({ received: true });
+
   if (event.type !== "payment_intent.succeeded" && event.type !== "payment_intent.payment_failed") {
-    return res.json({ received: true });
+    return;
   }
 
   const paymentIntent = event.data.object;
   const bookingId = paymentIntent.metadata?.booking_id;
 
-  if (!bookingId) return res.json({ received: true });
+  if (!bookingId) return;
 
   let wt = null;
 
@@ -237,7 +239,7 @@ export const stripeBookingWebhook = async (req, res) => {
 
     if (!booking) {
       await wt.rollback();
-      return res.json({ received: true });
+      return;
     }
 
     if (event.type === "payment_intent.succeeded") {
@@ -250,7 +252,6 @@ export const stripeBookingWebhook = async (req, res) => {
         booking.success_token_expires = new Date(Date.now() + 10 * 60 * 1000);
 
         await booking.save({ transaction: wt });
-
 
         try {
           const currentUserId = booking.user_id || booking.userId;
@@ -296,7 +297,6 @@ export const stripeBookingWebhook = async (req, res) => {
         } catch (mailErr) {
           console.error(" Nodemailer failed but database transaction saved:", mailErr);
         }
-
       }
     }
 
@@ -307,15 +307,16 @@ export const stripeBookingWebhook = async (req, res) => {
     }
 
     await wt.commit();
-    return res.json({ received: true });
 
   } catch (error) {
     console.error("⛔ Webhook processing error:", error);
     if (wt && !wt.finished) {
-      await wt.rollback();
+      try {
+        await wt.rollback();
+      } catch (rbErr) {
+        console.error("Rollback failed:", rbErr.message);
+      }
     }
-    return res.json({ received: true });
   }
 };
-
 
