@@ -18,7 +18,6 @@ import  follows from "./follows.js";
 import messages from "./messages.js";
 // import owner from "./owner.js";
 
-// app.use('/flights', flights);
 
 
 const router = Router();
@@ -30,8 +29,6 @@ router.get('/', (req, res) => {
 
 
 router.use('/users', users);
-router.use('/round-trip', flights);
-
 
 
 router.use('/room', room);

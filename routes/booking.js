@@ -11,6 +11,8 @@ import {
 } from "../controllers/booking.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/booking.schema.js";
+import auth from "../middlewares/authMiddlewere.js";
+
 
 const router = express.Router();
 
@@ -23,13 +25,13 @@ router.post(
 
 
 router.get("/my",
-  // authMiddleware,
+  auth,
   getMyBookings
 );
 
 
 router.post("/",
-  // authMiddleware,
+  auth,
   createBooking);
 
 

@@ -18,7 +18,7 @@ export const createBookingSession = async (req, res) => {
 
   try {
     const { bookingId } = req.body;
-    const userId = 1;
+    const userId = req.userId;
 
     t = await sequelize.transaction();
 

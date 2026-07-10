@@ -397,7 +397,7 @@ export const createBooking = async (req, res) => {
     } = req.body;
 
 
-    const user_id = 1;
+    const user_id = req.userId;
 
     const expires_at = new Date(Date.now() + 15 * 60 * 1000);
 
