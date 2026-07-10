@@ -231,11 +231,6 @@ export const stripeBookingWebhook = async (req, res) => {
     wt = await sequelize.transaction();
 
     const booking = await Booking.findByPk(bookingId, {
-      include: [{
-        model: Room,
-        as: "room",
-        include: [{ model: Hotels, as: "hotel", attributes: ['name', 'image'] }]
-      }],
       transaction: wt,
       lock: wt.LOCK.UPDATE
     });
@@ -256,43 +251,32 @@ export const stripeBookingWebhook = async (req, res) => {
 
         await booking.save({ transaction: wt });
 
-        let hotelName = booking.room?.hotel?.name || "Hotel";
-        let hotelImage = booking.room?.hotel?.image || null;
 
-        const currentUserId = booking.user_id;
+        try {
+          const currentUserId = booking.user_id || booking.userId;
 
-        if (currentUserId) {
-          try {
+          if (currentUserId) {
             const bookingNotification = await Notification.create({
-              userId: currentUserId, // Համոզվեք բազայում սա userId է, թե user_id
-              type: 'BOOKING_CONFIRMED',
-              postId: null,
-              message: `Your reservation at **${hotelName}** has been successfully confirmed! 🎉`,
-              isRead: false
+              userId: currentUserId,
+              type: 'booking',
+              message: `Your reservation #${booking.id} has been successfully confirmed! 🎉`,
+              isRead: 0
             }, { transaction: wt });
 
-            try {
+            if (typeof Socket !== 'undefined' && Socket.emit) {
               await Socket.emit(
                 `user_${currentUserId}`,
                 {
                   event: 'new_notification',
-                  data: {
-                    ...bookingNotification.toJSON(),
-                    hotel: {
-                      name: hotelName,
-                      image: hotelImage
-                    }
-                  }
+                  data: bookingNotification.toJSON()
                 },
                 'new_message'
               );
-              console.log(`📡 Real-time Booking Notification sent to User: ${currentUserId}`);
-            } catch (socketError) {
-              console.error(" Socket emit failed in Stripe Webhook:", socketError);
+              console.log(`📡 Real-time Socket notification sent to User: ${currentUserId}`);
             }
-          } catch (notifErr) {
-            console.error(" Failed to save notification to DB:", notifErr);
           }
+        } catch (socketErr) {
+          console.error("⚠️ Notification/Socket failed, but Booking is SAFE:", socketErr.message);
         }
 
         try {
@@ -308,10 +292,11 @@ export const stripeBookingWebhook = async (req, res) => {
               totalPrice: booking.total_price
             }
           });
-          console.log(`Voucher email successfully dispatched to customer.`);
+          console.log(` Voucher email successfully dispatched to customer.`);
         } catch (mailErr) {
-          console.error("Nodemailer failed but database transaction saved:", mailErr);
+          console.error(" Nodemailer failed but database transaction saved:", mailErr);
         }
+
       }
     }
 
@@ -325,11 +310,12 @@ export const stripeBookingWebhook = async (req, res) => {
     return res.json({ received: true });
 
   } catch (error) {
-    console.error(" Webhook processing error (CATCH BLOCK WORKING):", error);
+    console.error("⛔ Webhook processing error:", error);
     if (wt && !wt.finished) {
       await wt.rollback();
     }
     return res.json({ received: true });
   }
 };
+
 
