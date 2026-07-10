@@ -6,7 +6,13 @@ class PostCommentReply extends Model {
     PostCommentReply.belongsTo(models.PostComment, { foreignKey: 'commentId', as: 'parentComment', onDelete: 'CASCADE' });
     PostCommentReply.belongsTo(models.User, { foreignKey: 'userId', as: 'author' });
 
-    PostCommentReply.hasMany(models.CommentLike, { foreignKey: 'commentId', as: 'likes', onDelete: 'CASCADE' });
+    PostCommentReply.hasMany(models.CommentLike, {
+      foreignKey: 'commentId',
+      as: 'likes',
+      constraints: false,
+      scope: { commentType: 'REPLY' },
+      onDelete: 'CASCADE'
+    });
   }
 }
 

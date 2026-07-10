@@ -18,10 +18,9 @@ export default async function (req, res, next) {
   }
 
   let user = null;
-
   try {
     const data = jwt.verify(token, AUTH_SECRET);
-
+    console.log(data)
     user = await Users.findByPk(data.id);
   } catch (err) {
     console.error("JWT Error:", err.message);

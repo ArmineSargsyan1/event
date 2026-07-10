@@ -8,9 +8,14 @@ class PostComment extends Model {
   static associate(models) {
     PostComment.belongsTo(models.Post, { foreignKey: 'postId', as: 'post' });
     PostComment.belongsTo(models.User, { foreignKey: 'userId', as: 'author' });
-    PostComment.hasMany(models.CommentLike, { foreignKey: 'commentId', as: 'likes', onDelete: 'CASCADE' });
+    PostComment.hasMany(models.CommentLike, {
+      foreignKey: 'commentId',
+      as: 'likes',
+      constraints: false,
+      scope: { commentType: 'COMMENT' },
+      onDelete: 'CASCADE'
+    });
 
-    // ՈՒՂՂՎԱԾ Է ԱՅՍՏԵՂ. Կապում ենք նոր առանձին մոդելի հետ
     PostComment.hasMany(models.PostCommentReply, { foreignKey: 'commentId', as: 'replies', onDelete: 'CASCADE' });
   }
 }

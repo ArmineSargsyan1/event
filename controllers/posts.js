@@ -728,7 +728,8 @@ export const toggleCommentLike = async (req, res, next) => {
       targetPostId = mainComment ? (mainComment.post_id || mainComment.postId) : null;
     }
 
-    const existingLike = await CommentLike.findOne({ where: { commentId, userId } });
+    // const existingLike = await CommentLike.findOne({ where: { commentId, userId } });
+    const existingLike = await CommentLike.findOne({ where: { commentId, userId, commentType } });
 
     if (existingLike) {
       await existingLike.destroy();
@@ -743,7 +744,7 @@ export const toggleCommentLike = async (req, res, next) => {
         });
       }
 
-      const likesCount = await CommentLike.count({ where: { commentId } });
+      const likesCount = await CommentLike.count({ where: { commentId, commentType } });
 
       return res.status(200).json({
         success: true,
@@ -792,7 +793,7 @@ export const toggleCommentLike = async (req, res, next) => {
       console.error("Socket error in toggleCommentLike:", socketError);
     }
 
-    const likesCount = await CommentLike.count({ where: { commentId } });
+    const likesCount = await CommentLike.count({ where: { commentId, commentType } });
 
     return res.status(201).json({
       success: true,

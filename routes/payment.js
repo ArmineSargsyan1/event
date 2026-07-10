@@ -10,7 +10,6 @@ const router = express.Router();
 // =========================
 router.get(
   "/",
-  authorize,
 (req, res) =>
     res.render(
       "payment",
@@ -22,7 +21,6 @@ router.get(
 
 router.get(
   "/payment-success",
-  authorize,
   (req, res) =>
     res.render(
       "payment",
@@ -34,7 +32,6 @@ router.get(
 
 router.get(
   "/payment-cancel",
-  authorize,
   (req, res) =>
     res.render(
       "payment",

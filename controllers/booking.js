@@ -640,7 +640,7 @@ export const cancelBooking = async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    if (booking.user_id !== 1) {
+    if (booking.user_id !== req.userId) {
       return res.status(403).json({ success: false, message: "Forbidden" });
     }
     if (booking.status === "cancelled") {
