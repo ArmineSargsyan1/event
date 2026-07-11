@@ -22,65 +22,6 @@ const cleanFile = (file) => {
 
 export default {
 
-  // async registration(req, res, next) {
-  //   console.log(req.body, 89)
-  //   try {
-  //     const {fullName, email, phoneNumber, password} = req.body;
-  //
-  //     const existingUser = await User.findOne({where: {email}});
-  //     if (existingUser) {
-  //       cleanFile(req.file);
-  //       return res.status(409).json({success: false, error: 'Email already registered'});
-  //     }
-  //
-  //     // const profilePicture = req.file
-  //     //   ? path.normalize(req.file.path).replace(/\\/g, '/')
-  //     //   : null;
-  //
-  //     const hashedPassword = hashPassword(password);
-  //
-  //     const user = await User.create({
-  //       userName: fullName,
-  //       email,
-  //       password: hashedPassword,
-  //       phoneNumber,
-  //       lastStoryTimestamp: new Date(),
-  //     });
-  //
-  //
-  //     // const activationLink = `http://localhost:5000/users/activate?token=${user.activationToken}`;
-  //
-  //     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  //
-  //     const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
-  //
-  //     await sendMail({
-  //       to: email,
-  //       subject: 'Activate Your Account',
-  //       template: 'activate',
-  //       templateData: {
-  //         userName: fullName,
-  //         activationLink
-  //       }
-  //     });
-  //
-  //     const newUser = await User.findByPk(user.id, {
-  //       attributes: {exclude: ['password']}
-  //     });
-  //
-  //     return res.status(201).json({
-  //       success: true,
-  //       message: 'User registered successfully. Check email to activate account.',
-  //       user: newUser
-  //     });
-  //
-  //   } catch (error) {
-  //     // cleanFile(req.file);
-  //     next(error);
-  //   }
-  // },
-
-
   async registration(req, res, next) {
     console.log(req.body, 89)
     try {
@@ -92,6 +33,10 @@ export default {
         return res.status(409).json({success: false, error: 'Email already registered'});
       }
 
+      // const profilePicture = req.file
+      //   ? path.normalize(req.file.path).replace(/\\/g, '/')
+      //   : null;
+
       const hashedPassword = hashPassword(password);
 
       const user = await User.create({
@@ -102,13 +47,14 @@ export default {
         lastStoryTimestamp: new Date(),
       });
 
+
+      // const activationLink = `http://localhost:5000/users/activate?token=${user.activationToken}`;
+
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
       const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
 
-      console.log(`\n🚀 [TESTING]  USER ID ${user.id} for:`);
-      console.log(`${activationLink}\n`);
-
-      sendMail({
+      await sendMail({
         to: email,
         subject: 'Activate Your Account',
         template: 'activate',
@@ -116,7 +62,7 @@ export default {
           userName: fullName,
           activationLink
         }
-      }).catch(err => console.error("⚠️ Nodemailer blocked by Render, link printed above:", err.message));
+      });
 
       const newUser = await User.findByPk(user.id, {
         attributes: {exclude: ['password']}
@@ -129,9 +75,63 @@ export default {
       });
 
     } catch (error) {
+      // cleanFile(req.file);
       next(error);
     }
   },
+
+
+  // async registration(req, res, next) {
+  //   console.log(req.body, 89)
+  //   try {
+  //     const {fullName, email, phoneNumber, password} = req.body;
+  //
+  //     const existingUser = await User.findOne({where: {email}});
+  //     if (existingUser) {
+  //       cleanFile(req.file);
+  //       return res.status(409).json({success: false, error: 'Email already registered'});
+  //     }
+  //
+  //     const hashedPassword = hashPassword(password);
+  //
+  //     const user = await User.create({
+  //       userName: fullName,
+  //       email,
+  //       password: hashedPassword,
+  //       phoneNumber,
+  //       lastStoryTimestamp: new Date(),
+  //     });
+  //
+  //     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  //     const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
+  //
+  //     console.log(`\n🚀 [TESTING]  USER ID ${user.id} for:`);
+  //     console.log(`${activationLink}\n`);
+  //
+  //     sendMail({
+  //       to: email,
+  //       subject: 'Activate Your Account',
+  //       template: 'activate',
+  //       templateData: {
+  //         userName: fullName,
+  //         activationLink
+  //       }
+  //     }).catch(err => console.error("⚠️ Nodemailer blocked by Render, link printed above:", err.message));
+  //
+  //     const newUser = await User.findByPk(user.id, {
+  //       attributes: {exclude: ['password']}
+  //     });
+  //
+  //     return res.status(201).json({
+  //       success: true,
+  //       message: 'User registered successfully. Check email to activate account.',
+  //       user: newUser
+  //     });
+  //
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // },
 
 
   async activate(req, res, next) {
