@@ -55,7 +55,6 @@ app.post('/rooms/:id/images', uploadRoomImages.array('images', 10), async (req, 
       return res.status(400).json({message: "No images uploaded"});
     }
 
-    // Վերբեռնել DB-ում
     const photoRecords = await Promise.all(files.map(file =>
       Photo.create({path: file.path, roomId})
     ));

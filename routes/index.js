@@ -22,14 +22,7 @@ import messages from "./messages.js";
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.redirect('/users/views/profile');
-});
-
-
-
 router.use('/users', users);
-
 
 router.use('/room', room);
 router.use('/amenity', amenity);
