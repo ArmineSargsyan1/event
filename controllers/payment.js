@@ -259,8 +259,9 @@ export const stripeBookingWebhook = async (req, res) => {
           if (currentUserId) {
             const bookingNotification = await Notification.create({
               userId: currentUserId,
-              type: 'booking',
-              message: `Your reservation #${booking.id} has been successfully confirmed! 🎉`,
+              type: 'Booking',
+              hotelId: booking.hotel_id || booking.hotelId, // 👈 ԱՎԵԼԱՑՆՈՒՄ ԵՆՔ HOTEL ID-Ն
+              text: `Your reservation #${booking.id} has been successfully confirmed! 🎉`,
               isRead: 0
             }, { transaction: wt });
 
