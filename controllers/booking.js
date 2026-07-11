@@ -1,7 +1,7 @@
 import RoomOption from "../models/RoomOption.js";
 import Booking from "../models/Booking.js";
 import FileHelper from "../services/Utils.js";
-import {Op, Utils} from "sequelize";
+import {Op,} from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
 import Room from "../models/Room.js";
 import {RoomExtra} from "../models/index.js";
@@ -10,6 +10,7 @@ import Hotels from "../models/Hotels.js";
 import HotelPhotos from "../models/HotelPhotos.js";
 import Stripe from "stripe";
 import BookingExtra from "../models/BookingExtra.js";
+import Socket from "../services/Socket.js";
 
 
 
@@ -120,7 +121,7 @@ export const createDraftBooking = async (req, res) => {
 export const getBookingDetails = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const userId = req.userId || 1; // req.user.id
+    const userId = req.userId;
 
     const booking = await Booking.findOne({
       where: {
@@ -379,7 +380,6 @@ export const getBookingDetails = async (req, res) => {
 
 
 export const createBooking = async (req, res) => {
-  console.log(req.body, 88888888888);
 
   const transaction = await sequelize.transaction();
 
@@ -650,7 +650,6 @@ export const cancelBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: "Expired booking cannot be cancelled" });
     }
 
-
     const optionSnapshotForRefund = {
       cancellation_type: booking.snapshot_cancellation_policy,
       free_cancel_days: booking.snapshot_free_cancel_days,
@@ -662,7 +661,6 @@ export const cancelBooking = async (req, res) => {
     const refundAmount = (booking.total_price * refundPercent) / 100;
 
     if (booking.payment_status === "paid" && refundAmount > 0) {
-
       const paymentIntentId = booking.stripe_session_id;
 
       if (!paymentIntentId || !paymentIntentId.startsWith('pi_')) {
@@ -691,6 +689,26 @@ export const cancelBooking = async (req, res) => {
 
     await booking.save();
 
+    try {
+      if (Socket && Socket.io) {
+        await Socket.emit(
+          `user_${booking.user_id}`,
+          {
+            bookingId: booking.id,
+            status: booking.status,
+            refundAmount: refundAmount,
+            message: `Your booking #${booking.id} has been successfully cancelled.`
+          },
+          'booking_cancelled'
+        );
+        console.log(`📡 Real-time cancellation socket event sent to User: ${booking.user_id}`);
+      } else {
+        console.warn("⚠️ Socket class or Socket.io is not initialized yet.");
+      }
+    } catch (socketErr) {
+      console.error("⚠️ Socket emit failed, but DB changes are safe:", socketErr.message);
+    }
+
     return res.json({
       success: true,
       message: "Booking cancelled and refund processed successfully",
@@ -707,6 +725,87 @@ export const cancelBooking = async (req, res) => {
     });
   }
 };
+
+
+// export const cancelBooking = async (req, res) => {
+//   try {
+//     const { bookingId } = req.params;
+//
+//     const booking = await Booking.findByPk(bookingId, {
+//       include: [{ model: RoomOption, as: "option" }],
+//     });
+//
+//     if (!booking) {
+//       return res.status(404).json({ success: false, message: "Booking not found" });
+//     }
+//
+//     if (booking.user_id !== req.userId) {
+//       return res.status(403).json({ success: false, message: "Forbidden" });
+//     }
+//     if (booking.status === "cancelled") {
+//       return res.status(400).json({ success: false, message: "Booking already cancelled" });
+//     }
+//     if (booking.status === "expired") {
+//       return res.status(400).json({ success: false, message: "Expired booking cannot be cancelled" });
+//     }
+//
+//
+//     const optionSnapshotForRefund = {
+//       cancellation_type: booking.snapshot_cancellation_policy,
+//       free_cancel_days: booking.snapshot_free_cancel_days,
+//       cancel_time: booking.snapshot_cancel_time,
+//     };
+//
+//     const refund = FileHelper.calculateRefund(optionSnapshotForRefund, booking.check_in, new Date());
+//     const refundPercent = refund?.refundPercent ?? 0;
+//     const refundAmount = (booking.total_price * refundPercent) / 100;
+//
+//     if (booking.payment_status === "paid" && refundAmount > 0) {
+//
+//       const paymentIntentId = booking.stripe_session_id;
+//
+//       if (!paymentIntentId || !paymentIntentId.startsWith('pi_')) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Cannot automate refund: A valid Stripe Payment Intent ID (pi_...) was not found in the record."
+//         });
+//       }
+//
+//       await stripe.refunds.create({
+//         payment_intent: paymentIntentId,
+//         amount: Math.round(refundAmount * 100),
+//         reason: 'requested_by_customer'
+//       });
+//     }
+//
+//     let paymentStatus = booking.payment_status;
+//     if (booking.payment_status === "paid") {
+//       paymentStatus = refundAmount > 0 ? "refunded" : "paid";
+//     }
+//
+//     booking.status = "cancelled";
+//     booking.cancelled_at = new Date();
+//     booking.refund_amount = refundAmount;
+//     booking.payment_status = paymentStatus;
+//
+//     await booking.save();
+//
+//     return res.json({
+//       success: true,
+//       message: "Booking cancelled and refund processed successfully",
+//       refund,
+//       refundAmount,
+//       booking,
+//     });
+//
+//   } catch (e) {
+//     console.error("Stripe/DB Refund Error:", e);
+//     return res.status(500).json({
+//       success: false,
+//       message: e.message || "Automatic cancellation failed",
+//     });
+//   }
+// };
 
 
 

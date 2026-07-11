@@ -253,6 +253,9 @@ export const stripeBookingWebhook = async (req, res) => {
 
         await booking.save({ transaction: wt });
 
+        const formattedBookingId = String(booking.id).padStart(8, '0');
+        const bookingCode = `#GPH-${formattedBookingId}`;
+
         try {
           const currentUserId = booking.user_id || booking.userId;
 
@@ -260,7 +263,7 @@ export const stripeBookingWebhook = async (req, res) => {
             const bookingNotification = await Notification.create({
               userId: currentUserId,
               type: 'BOOKING_CONFIRMED',
-              message: `Your reservation #${booking.id} has been successfully confirmed! 🎉`,
+              message: `Your reservation ${bookingCode} has been successfully confirmed! 🎉`,
               hotelId: booking.hotel_id || booking.hotelId,
               isRead: 0
             }, { transaction: wt });
@@ -273,7 +276,7 @@ export const stripeBookingWebhook = async (req, res) => {
                   event: 'new_notification',
                   data: bookingNotification.toJSON()
                 },
-                'new_message'
+                'new_notification'
               );
               console.log(`📡 Real-time Socket notification sent to User: ${currentUserId}`);
             }
