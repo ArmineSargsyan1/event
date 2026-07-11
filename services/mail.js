@@ -1,12 +1,13 @@
-import path from 'path';
-import ejs from 'ejs';
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-import dns from "node:dns/promises";
-dotenv.config();
-
-const { EMAIL, EMAIL_PASSWORD, EMAIL_HOST} = process.env;
-
+// import path from 'path';
+// import ejs from 'ejs';
+// import nodemailer from 'nodemailer';
+// import dotenv from 'dotenv';
+//
+// dotenv.config();
+//
+// const { EMAIL, EMAIL_PASSWORD, EMAIL_HOST} = process.env;
+//
+//
 // const transporter = nodemailer.createTransport({
 //   service: 'gmail',
 //   auth: {
@@ -14,49 +15,62 @@ const { EMAIL, EMAIL_PASSWORD, EMAIL_HOST} = process.env;
 //     pass: EMAIL_PASSWORD,
 //   },
 // });
+//
+// export const sendMail = async ({to, subject, template, templateData = {}, attachments = []}) => {
+//
+//   try {
+//     const templatePath = path.resolve('views/email', `${template}.ejs`);
+//
+//     const html = await ejs.renderFile(templatePath, templateData);
+//
+//     const mailOptions = {
+//       from: EMAIL,
+//       to,
+//       subject,
+//       html,
+//       attachments,
+//     };
+//
+//     const info = await transporter.sendMail(mailOptions);
+//     return info;
+//   } catch (error) {
+//     console.log(error)
+//     throw error;
+//   }
+// };
 
-console.log(await dns.lookup("smtp.gmail.com", { all: true }));
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: EMAIL,
-    pass: EMAIL_PASSWORD,
-  },
-});
-console.log({
-  EMAIL,
-  hasPassword: !!EMAIL_PASSWORD,
-});
 
-try {
-  await transporter.verify();
-  console.log("✅ SMTP VERIFIED");
-} catch (err) {
-  console.error("❌ SMTP VERIFY ERROR:", err);
-}
+
+import axios from "axios";
+import path from "path";
 
 export const sendMail = async ({to, subject, template, templateData = {}, attachments = []}) => {
-
+  console.log("📧 sendMail CALLED via Brevo API");
   try {
     const templatePath = path.resolve('views/email', `${template}.ejs`);
-
     const html = await ejs.renderFile(templatePath, templateData);
 
-    const mailOptions = {
-      from: EMAIL,
-      to,
-      subject,
-      html,
-      attachments,
-    };
+    console.log("📧 BEFORE SEND (HTTP API REQUEST)");
 
-    const info = await transporter.sendMail(mailOptions);
-    return info;
+    // 🚀 Ուղարկում ենք Brevo HTTP API-ով (Շրջանցում է Render-ի բոլոր SMTP արգելքները)
+    const response = await axios.post('https://brevo.com', {
+      sender: { name: "Event App", email: "armine9086@gmail.com" }, // Ձեր իրական Gmail-ը
+      to: [{ email: to }],
+      subject: subject,
+      htmlContent: html
+    }, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY, // Ձեր API Key-ը Render-ից
+        'content-type': 'application/json'
+      }
+    });
+
+    console.log("📧 AFTER SEND (API SUCCESS):", response.data);
+    return response.data;
   } catch (error) {
-    console.log(error)
+    // Տպում ենք Brevo-ի իրական սխալը, եթե այդպիսին լինի
+    console.log("❌ Brevo API Error:", error.response?.data || error.message);
     throw error;
   }
 };
