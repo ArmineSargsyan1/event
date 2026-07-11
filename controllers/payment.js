@@ -8,7 +8,7 @@ import crypto from "crypto";
 import {sendMail} from "../services/mail.js";
 import Hotels from "../models/Hotels.js";
 import Socket from "../services/Socket.js";
-
+import Notification from "../models/Notification.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 
