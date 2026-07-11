@@ -59,6 +59,7 @@ const transporter = nodemailer.createTransport({
     user: EMAIL,
     pass: EMAIL_PASSWORD,
   },
+  family: 4
 });
 export const sendMail = async ({to, subject, template, templateData = {}, attachments = []}) => {
   try {
