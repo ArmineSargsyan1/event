@@ -3,11 +3,12 @@ import HttpErrors from "http-errors";
 
 import Users from '../models/User.js';
 
-const {AUTH_SECRET} = process.env;
+
 
 export default async function (req, res, next) {
   let token = req.headers?.authorization;
   console.log(token,999)
+
   if (!token) {
     next(new HttpErrors(401, 'No token provided'));
     return;
@@ -19,7 +20,7 @@ export default async function (req, res, next) {
 
   let user = null;
   try {
-    const data = jwt.verify(token, AUTH_SECRET);
+    const data = jwt.verify(token, process.env.AUTH_SECRET);
     console.log(data)
     user = await Users.findByPk(data.id);
   } catch (err) {
