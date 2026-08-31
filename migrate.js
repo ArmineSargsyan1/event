@@ -7,10 +7,14 @@ import * as Models from "./models/index.js";
       Models.User,
       Models.Newsletter,
       Models.Hotels,
+      Models.Room,
+      Models.Restaurant,
+
+      Models.Reservation,
+
       Models.HotelPhotos,
       Models.Amenity,
       Models.HotelAmenity,
-      Models.Room,
       Models.RoomOption,
       Models.Accessibility,
       Models.RoomExtra,
@@ -44,8 +48,6 @@ import * as Models from "./models/index.js";
       Models.Message,
       Models.Notification,
 
-
-      Models.Restaurant,
       Models.RestaurantImage,
       Models.RestaurantFavorite,
       Models.RestaurantReview,
@@ -54,7 +56,6 @@ import * as Models from "./models/index.js";
       Models.MenuItem,
       Models.Order,
       Models.OrderItem,
-      Models.Reservation,
     ];
 
 
