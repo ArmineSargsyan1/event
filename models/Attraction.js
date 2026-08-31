@@ -22,7 +22,8 @@ Attraction.init(
     slug: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
+      // unique: true,
+      unique: 'uk_attractions_slug'
     },
 
     category: {

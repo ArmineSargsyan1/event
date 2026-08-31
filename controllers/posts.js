@@ -1,5 +1,4 @@
 import sequelize from "../clients/db.sequelize.mysql.js";
-// import PostComment from "../models/PostComment.js";
 import User from "../models/User.js";
 import FileHelper from "../services/Utils.js";
 import Post from "../models/Post.js";
@@ -11,11 +10,131 @@ import Socket from "../services/Socket.js";
 import CommentLike from "../models/CommentLike.js";
 import PostCommentReply from "../models/PostCommentReply.js";
 import Message from "../models/Message.js";
+import Reservation from "../models/Reservation.js";
+import Hotels from "../models/Hotels.js";
+import Restaurant from "../models/Restaurant.js";
+import Booking from "../models/Booking.js";
+import Room from "../models/Room.js";
+import {cloudinary} from "../middlewares/upload.js";
+import axios from "axios";
+
+
+
+export const getMyVisitedPlaces = async (req, res, next) => {
+  try {
+    const confirmedBookings = await Booking.findAll({
+      where: {
+        user_id: req.userId,
+        status: 'confirmed'
+      },
+      include: [
+        {
+          model: Room,
+          as: 'room',
+          attributes: ['id', 'hotel_id'],
+          include: [
+            { model: Hotels, as: 'hotel', attributes: ['id', 'name'] }
+          ]
+        }
+      ]
+    });
+
+    const confirmedReservations = await Reservation.findAll({
+      where: {
+        user_id: req.userId,
+        status: 'confirmed'
+      },
+      include: [
+        { model: Restaurant, as: 'restaurant', attributes: ['id', 'name'] }
+      ]
+    });
+
+    const visitedHotels = [];
+    const visitedRestaurants = [];
+
+    confirmedBookings.forEach(b => {
+      const hotelObj = b.room?.hotel;
+      if (hotelObj && !visitedHotels.some(h => h.id === hotelObj.id)) {
+        visitedHotels.push(hotelObj);
+      }
+    });
+
+    confirmedReservations.forEach(r => {
+      if (r.restaurant && !visitedRestaurants.some(res => res.id === r.restaurant.id)) {
+        visitedRestaurants.push(r.restaurant);
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      hotels: visitedHotels,
+      restaurants: visitedRestaurants
+    });
+  } catch (error) {
+    console.error("Error in getMyVisitedPlaces:", error);
+    next(error);
+  }
+};
+
+
+
+export const searchMusic = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(404).send({ error: 'Search query is missing.' });
+    }
+
+    const response = await axios.get(`https://api.deezer.com/search?q=${query}`);
+
+    const tracks = response.data.data.map(track => ({
+      deezerId: track.id,
+      title: track.title,
+      artist: track.artist.name,
+      cover: track.album.cover_medium,
+      preview: track.preview,
+    }));
+
+    return res.status(200).json(tracks);
+
+  } catch (error) {
+    return res.status(500).send({ error: error.message || error });
+  }
+};
+
+
+
+export const getFreshTrackPreview = async (req, res) => {
+  try {
+    const trackId = req.params.id;
+
+    if (!trackId) {
+      return res.status(400).json({ error: "Track ID is required." });
+    }
+
+    const response = await axios.get(`https://api.deezer.com/track/${trackId}`);
+
+    if (!response.data || !response.data.preview) {
+      return res.status(444).json({ error: "Track preview url not found on Deezer." });
+    }
+
+    return res.status(200).json({ preview: response.data.preview });
+
+  } catch (error) {
+    console.error("Error fetching fresh Deezer token:", error.message);
+    return res.status(500).json({ error: "Failed to fetch dynamic music source." });
+  }
+};
+
+
+
+
 
 export const createPost = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
-    let { caption, location, latitude, longitude, mentions, musicTrack } = req.body;
+    let { caption, location, latitude, longitude, mentions, musicTrack, hotelId, restaurantId } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: "Image or video is required." });
@@ -52,6 +171,8 @@ export const createPost = async (req, res, next) => {
 
     const post = await Post.create({
       userId: req.userId,
+      hotelId: hotelId ? parseInt(hotelId, 10) : null,
+      restaurantId: restaurantId ? parseInt(restaurantId, 10) : null,
       mediaUrl,
       mediaType,
       caption,
@@ -89,8 +210,8 @@ export const createPost = async (req, res, next) => {
 
 export const getAllPosts = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Post.findAndCountAll({
@@ -102,10 +223,21 @@ export const getAllPosts = async (req, res, next) => {
           model: User,
           as: "author",
           attributes: ['id', 'userName', 'profilePicture']
+        },
+        {
+          model: Hotels,
+          as: "hotel",
+          attributes: ['id', 'name']
+        },
+        {
+          model: Restaurant,
+          as: "restaurant",
+          attributes: ['id', 'name']
         }
       ],
       order: [['createdAt', 'DESC']],
-      distinct: true
+      distinct: true,
+      subQuery: false
     });
 
     const totalPages = Math.ceil(count / limit);
@@ -126,6 +258,7 @@ export const getAllPosts = async (req, res, next) => {
 };
 
 
+
 export const getUserPosts = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -143,6 +276,16 @@ export const getUserPosts = async (req, res, next) => {
           model: User,
           as: "author",
           attributes: ['id', 'userName', 'profilePicture']
+        },
+        {
+          model: Hotels,
+          as: "hotel",
+          attributes: ['id', 'name']
+        },
+        {
+          model: Restaurant,
+          as: "restaurant",
+          attributes: ['id', 'name']
         }
       ],
       order: [['createdAt', 'DESC']],
@@ -179,6 +322,28 @@ export const getPost = async (req, res, next) => {
           model: User,
           as: "author",
           attributes: ['id', 'userName', 'profilePicture']
+        },
+        {
+          model: PostTag,
+          as: "tags",
+          attributes: ['id', 'x', 'y', 'taggedUserId'],
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ['id', 'userName', 'profilePicture']
+            }
+          ]
+        },
+        {
+          model: Hotels,
+          as: "hotel",
+          attributes: ['id', 'name']
+        },
+        {
+          model: Restaurant,
+          as: "restaurant",
+          attributes: ['id', 'name']
         },
         {
           model: PostLike,
@@ -242,7 +407,7 @@ export const getPost = async (req, res, next) => {
         comment.likesCount = comment.likes ? comment.likes.length : 0;
 
         if (comment.replies && comment.replies.length > 0) {
-          repliesCount += comment.replies.length; // 👈 Գումարում ենք ռեպլայների քանակը
+          repliesCount += comment.replies.length;
           comment.replies.forEach(reply => {
             reply.isLiked = reply.likes ? reply.likes.some(l => l.userId === currentUserId) : false;
             reply.likesCount = reply.likes ? reply.likes.length : 0;
@@ -264,102 +429,178 @@ export const getPost = async (req, res, next) => {
 };
 
 
-// export const getPostComments = async (req, res, next) => {
-//   try {
-//     const { postId } = req.params;
-//
-//     const comments = await PostComment.findAll({
-//       where: { postId },
-//       include: [
-//         {
-//           model: User,
-//           as: 'author',
-//           attributes: ['id', 'userName', 'profilePicture']
-//         }
-//       ],
-//       order: [['createdAt', 'ASC']]
-//     });
-//
-//     res.status(200).json({
-//       success: true,
-//       data: comments
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+
+export const getMyTaggedPosts = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = 12;
+    const offset = (page - 1) * limit;
+
+    const { count, rows: taggedRecords } = await PostTag.findAndCountAll({
+      where: { taggedUserId: userId },
+      limit: limit,
+      offset: offset,
+      distinct: true,
+      include: [
+        {
+          model: Post,
+          include: [
+            {
+              model: User,
+              as: "author",
+              attributes: ["id", "userName", "profilePicture"]
+            }
+          ]
+        }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
+
+    const posts = taggedRecords
+      .filter(record => record.Post !== null && record.Post !== undefined)
+      .map(record => record.Post);
+
+    const hasMore = offset + taggedRecords.length < count;
+
+    return res.status(200).json({
+      success: true,
+      data: posts,
+      pagination: {
+        hasMore: hasMore,
+        totalItems: count,
+        currentPage: page
+      }
+    });
+  } catch (error) {
+    console.error("Error in getMyTaggedPosts controller:", error);
+    next(error);
+  }
+};
 
 
-// export const updatePost = async (req, res, next) => {
-//   try {
-//     const { id } = req.params;
-//     const { caption, location } = req.body;
-//
-//     const post = await Post.findOne({ where: { id, userId: req.userId } });
-//
-//     if (!post) {
-//       return res.status(403).json({ error: 'Permission denied or post does not exist.' });
-//     }
-//
-//     await post.update({ caption, location });
-//
-//     const updatedPost = await Post.findByPk(id, {
-//       attributes: FileHelper.getPostAttributes()
-//     });
-//
-//     res.json({
-//       success: true,
-//       message: 'post updated successfully.',
-//       post: updatedPost
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+export const getPlacePosts = async (req, res, next) => {
+  try {
+    const { hotelId, restaurantId } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const offset = (page - 1) * limit;
 
-// export const deletePost = async (req, res, next) => {
-//   try {
-//     const { id } = req.params;
-//
-//     // Գտնում ենք պոստը և համոզվում, որ հենց այս օգտատիրոջն է պատկանում
-//     const post = await Post.findOne({ where: { id, userId: req.userId } });
-//
-//     if (!post) {
-//       return res.status(403).json({ error: 'Permission denied or post does not exist.' });
-//     }
-//
-//     // 🔥 ՈՒՂՂՎԱԾ Է CLOUDINARY-Ի ՀԱՄԱՐ
-//     if (post.mediaUrl && post.mediaUrl.startsWith('http')) {
-//       try {
-//         // 1. Հղումից առանձնացնում ենք public_id-ն (օրինակ՝ "posts/posts_123456_uuid")
-//         // Այս կոդը հեռացնում է մինչև թղթապանակի անունը եղած հասցեն և վերջի ֆորմատը (.jpg, .mp4)
-//         const urlParts = post.mediaUrl.split('/');
-//         const folderName = urlParts[urlParts.length - 2]; // "posts"
-//         const fileNameWithExt = urlParts[urlParts.length - 1]; // "posts_123456_uuid.jpg"
-//         const fileName = fileNameWithExt.split('.')[0]; // "posts_123456_uuid"
-//
-//         const publicId = `${folderName}/${fileName}`; // "posts/posts_123456_uuid"
-//
-//         // 2. Ջնջում ենք ֆայլը Cloudinary-ից (հաշվի առնելով resource_type-ը)
-//         const isVideo = post.mediaType === 'video';
-//         await cloudinary.uploader.destroy(publicId, {
-//           resource_type: isVideo ? 'video' : 'image'
-//         });
-//
-//         console.log(`Successfully deleted from Cloudinary: ${publicId}`);
-//       } catch (cloudinaryError) {
-//         console.error("Failed to delete media from Cloudinary:", cloudinaryError);
-//       }
-//     }
-//
-//     // Ջնջում ենք պոստը տվյալների բազայից
-//     await post.destroy();
-//
-//     res.json({ success: true, message: 'Post successfully deleted' });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    const whereClause = {};
+    if (hotelId) whereClause.hotelId = hotelId;
+    if (restaurantId) whereClause.restaurantId = restaurantId;
+
+    if (!hotelId && !restaurantId) {
+      return res.status(200).json({ success: true, posts: [], pagination: {} });
+    }
+
+    const { count, rows } = await Post.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      include: [
+        {
+          model: User,
+          as: "author",
+          attributes: ['id', 'userName', 'profilePicture']
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      distinct: true
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.status(200).json({
+      success: true,
+      posts: rows,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalPosts: count,
+        hasMore: page < totalPages
+      }
+    });
+  } catch (error) {
+    console.error(error.stack);
+    next(error);
+    next(error);
+  }
+};
+
+
+export const updatePost = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { caption, location } = req.body;
+
+    const post = await Post.findOne({ where: { id, userId: req.userId } });
+
+    if (!post) {
+      return res.status(403).json({ error: 'Permission denied or post does not exist.' });
+    }
+
+    await post.update({ caption, location });
+
+    const updatedPost = await Post.findByPk(id, {
+      attributes: FileHelper.getPostAttributes()
+    });
+
+    res.json({
+      success: true,
+      message: 'post updated successfully.',
+      post: updatedPost
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const deletePost = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const post = await Post.findOne({ where: { id, userId: req.userId } });
+
+    if (!post) {
+      return res.status(403).json({ error: 'Permission denied or post does not exist.' });
+    }
+
+    if (post.mediaUrl && post.mediaUrl.includes('cloudinary.com')) {
+      try {
+        const regex = /\/v\d+\/(.+)\.[a-z0-9]+$/i;
+        const match = post.mediaUrl.match(regex);
+
+        if (match && match[1]) {
+          const publicId = match[1];
+          const isVideo = post.mediaType === 'video';
+
+          console.log(`[Cloudinary Delete] DB URL: ${post.mediaUrl}`);
+          console.log(`[Cloudinary Delete] Extracted Public ID: ${publicId}`);
+
+          await cloudinary.uploader.destroy(publicId, {
+            resource_type: isVideo ? 'video' : 'image'
+          });
+
+          console.log(`Successfully deleted from Cloudinary: ${publicId}`);
+        } else {
+          console.warn(`Could not parse Cloudinary publicId from URL: ${post.mediaUrl}`);
+        }
+      } catch (cloudinaryError) {
+        console.error("Failed to delete media from Cloudinary:", cloudinaryError);
+      }
+    }
+
+    await post.destroy();
+
+    res.json({ success: true, message: 'Post successfully deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 export const toggleLike = async (req, res, next) => {
@@ -438,8 +679,7 @@ export const addPostTags = async (req, res, next) => {
 
     res.status(201).json({ success: true, data: createdTags });
   } catch (error) {
-    console.error("---- MySQL ERROR MESSAGE:", error.parent?.sqlMessage);
-    console.error("-----SQL QUERY:", error.parent?.sql);
+
     next(error);
   }
 };
@@ -702,6 +942,7 @@ export const replyComment = async (req, res, next) => {
 export const toggleCommentLike = async (req, res, next) => {
   try {
     const { commentId } = req.params;
+
     // const userId = req.userId;
     const userId = 20;
 
@@ -728,7 +969,6 @@ export const toggleCommentLike = async (req, res, next) => {
       targetPostId = mainComment ? (mainComment.post_id || mainComment.postId) : null;
     }
 
-    // const existingLike = await CommentLike.findOne({ where: { commentId, userId } });
     const existingLike = await CommentLike.findOne({ where: { commentId, userId, commentType } });
 
     if (existingLike) {
@@ -809,18 +1049,15 @@ export const toggleCommentLike = async (req, res, next) => {
 };
 
 
-
-
-
 export const sharePost = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    // const { receiverId, comment } = req.body;
-    // const senderId = req.userId;
+    const { receiverId, comment } = req.body;
+    const senderId = req.userId;
 
-    const senderId = 20;
-    const  receiverId  = 8;
-    const { comment } = req.body;
+    // const senderId = 20;
+    // const  receiverId  = 8;
+    // const { comment } = req.body;
 
     const shareMessage = await Message.create({
       senderId,

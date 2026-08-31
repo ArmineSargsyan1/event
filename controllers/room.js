@@ -1,334 +1,14 @@
-import sequelize from "../clients/db.sequelize.mysql.js";
-import { Op, fn, col, literal, Sequelize  } from "sequelize";
-
+import { Op, fn, col} from "sequelize";
 import Room from "../models/Room.js";
 import Amenity from "../models/Amenity.js";
 import RoomOption from "../models/RoomOption.js";
 import RoomExtra from "../models/RoomExtra.js";
-import Photo from "../models/Photo.js";
 import Hotels from "../models/Hotels.js";
 import Booking from "../models/Booking.js";
 import dayjs from "dayjs";
 import HotelPhotos from "../models/HotelPhotos.js";
 
 
-
-/* =========================================================
-   CREATE ROOM
-========================================================= */
-
-export const createRoom = async (req, res) => {
-  const t = await sequelize.transaction();
-
-  try {
-    let {
-      hotel_id,
-      name,
-      size,
-      bed_type,
-      max_guests,
-      price,
-      status = "active",
-      amenities = [],
-      options = [],
-      extras = [],
-    } = req.body;
-
-
-    if (typeof amenities === "string") amenities = JSON.parse(amenities);
-    if (typeof options === "string") options = JSON.parse(options);
-    if (typeof extras === "string") extras = JSON.parse(extras);
-
-    // ======================
-    // 1. CREATE ROOM
-    // ======================
-    const room = await Room.create(
-      {
-        hotel_id: Number(hotel_id),
-        name,
-        size: Number(size),
-        bed_type,
-        max_guests: Number(max_guests),
-        price: Number(price),
-        status,
-      },
-      { transaction: t }
-    );
-
-    const roomId = room.id;
-
-    // ======================
-    // 2. AMENITIES
-    // ======================
-    if (amenities.length) {
-      const am = await Amenity.findAll({
-        where: { id: amenities },
-        transaction: t,
-      });
-
-      await room.setAmenities(am, { transaction: t });
-    }
-
-    // ======================
-    // 3. OPTIONS
-    // ======================
-
-    if (options.length) {
-      await RoomOption.bulkCreate(
-        options.map((o) => ({
-          name: o.name,
-          price: Number(o.price),
-
-          meal_plan: o.meal_plan || "none",
-          cancellation_type: o.cancellation_type || "partial",
-          free_cancel_days: o.free_cancel_days ?? 1,
-
-          pay_later: o.pay_later ?? false,
-          prepayment_required: o.prepayment_required ?? true,
-
-          room_id: roomId,
-        })),
-        { transaction: t }
-      );
-    }
-
-    // ======================
-    // 4. EXTRAS
-    // ======================
-    if (extras.length) {
-      await RoomExtra.bulkCreate(
-        extras.map((e) => ({
-          name: e.name,
-          price: Number(e.price),
-          type: e.type || "service",
-          room_id: roomId,
-        })),
-        { transaction: t }
-      );
-    }
-
-    // ======================
-    // 5. PHOTOS
-    // ======================
-    if (req.files?.length) {
-      await Photo.bulkCreate(
-        req.files.map((file) => ({
-          room_id: roomId,
-          path: file.path,
-        })),
-        { transaction: t }
-      );
-    }
-
-    await t.commit();
-
-    // ======================
-    // 6. RETURN FULL ROOM
-    // ======================
-    const fullRoom = await Room.findByPk(roomId, {
-      include: [
-        { model: Amenity, as: "amenities", through: { attributes: [] } },
-        { model: RoomOption, as: "options" },
-        { model: RoomExtra, as: "extras" },
-        { model: Photo, as: "images" },
-      ],
-    });
-
-    res.json({
-      success: true,
-      room: fullRoom,
-    });
-  } catch (e) {
-    await t.rollback();
-
-    console.error("CREATE ROOM ERROR:", e);
-
-    res.status(500).json({
-      message: "Create failed",
-      error: e.message,
-    });
-  }
-};
-
-/* =========================================================
-   UPDATE ROOM (PATCH STYLE)
-========================================================= */
-
-export const updateRoom = async (req, res) => {
-  const t = await sequelize.transaction();
-
-  try {
-    const { id } = req.params;
-
-    let {
-      name,
-      size,
-      bed_type,
-      max_guests,
-      price,
-      status,
-      amenities = [],
-      options = [],
-      extras = [],
-    } = req.body;
-
-
-    if (typeof amenities === "string") amenities = JSON.parse(amenities);
-    if (typeof options === "string") options = JSON.parse(options);
-    if (typeof extras === "string") extras = JSON.parse(extras);
-
-    const room = await Room.findByPk(id);
-    if (!room) {
-      await t.rollback();
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    await room.update(
-      {
-        name,
-        size: size ? Number(size) : undefined,
-        bed_type,
-        max_guests: max_guests ? Number(max_guests) : undefined,
-        price: price ? Number(price) : undefined,
-        status,
-      },
-      { transaction: t }
-    );
-
-    if (Array.isArray(amenities)) {
-      const am = await Amenity.findAll({
-        where: { id: amenities },
-        transaction: t,
-      });
-
-      await room.setAmenities(am, { transaction: t });
-    }
-
-    if (Array.isArray(options)) {
-      await RoomOption.destroy({
-        where: { room_id: id },
-        transaction: t,
-      });
-
-      if (options.length) {
-        await RoomOption.bulkCreate(
-          options.map((o) => ({
-            name: o.name,
-            price: Number(o.price),
-
-            meal_plan: o.meal_plan || "none",
-            cancellation_type: o.cancellation_type || "free",
-            free_cancel_days: o.free_cancel_days ?? 1,
-            cancel_time: o.cancel_time || "23:59",
-
-            pay_later: o.pay_later ?? false,
-            prepayment_required: o.prepayment_required ?? true,
-
-            room_id: id,
-          })),
-          { transaction: t }
-        );
-      }
-    }
-
-    if (Array.isArray(extras)) {
-      await RoomExtra.destroy({
-        where: { room_id: id },
-        transaction: t,
-      });
-
-      if (extras.length) {
-        await RoomExtra.bulkCreate(
-          extras.map((e) => ({
-            name: e.name,
-            price: Number(e.price),
-            type: e.type || "service",
-            room_id: id,
-          })),
-          { transaction: t }
-        );
-      }
-    }
-
-    await t.commit();
-
-    const updated = await Room.findByPk(id, {
-      include: [
-        { model: Amenity, as: "amenities", through: { attributes: [] } },
-        { model: RoomOption, as: "options" },
-        { model: RoomExtra, as: "extras" },
-        { model: Photo, as: "images" },
-      ],
-    });
-
-    return res.json({
-      success: true,
-      room: updated,
-    });
-  } catch (e) {
-    await t.rollback();
-
-    console.error("UPDATE ROOM ERROR:", e);
-
-    return res.status(500).json({
-      message: "Update failed",
-      error: e.message,
-    });
-  }
-};
-
-
-export const deleteRoom = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const room = await Room.findByPk(id);
-    if (!room) return res.status(404).json({ message: "Not found" });
-
-    await room.destroy();
-
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ message: "Delete failed" });
-  }
-};
-
-
-export const restoreRoom = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const room = await Room.findByPk(id, {
-      paranoid: false,
-    });
-
-    if (!room) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    await room.restore();
-
-    return res.json({ success: true });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ message: "Restore failed" });
-  }
-};
-
-export const bulkArchiveRooms = async (req, res) => {
-  try {
-    const { ids } = req.body;
-
-    await Room.update(
-      { status: "archived" },
-      { where: { id: ids } }
-    );
-
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ message: "Bulk archive failed" });
-  }
-};
 
 /* =========================================================
    GET ROOMS (USER + FILTER + GEO + PAGINATION)
@@ -500,6 +180,7 @@ export const getRooms = async (req, res) => {
         id: r.id,
         hotel_id: r.hotel_id,
         name: r.name,
+        type: r.roomType,
         size: r.size,
         bed_type: r.bed_type,
         max_guests: r.max_guests,
@@ -514,8 +195,6 @@ export const getRooms = async (req, res) => {
       });
     }
 
-    // ======================
-    // ======================
     if (sort === "price_asc") {
       formattedRooms.sort((a, b) => a.lowest_price - b.lowest_price);
     } else if (sort === "price_desc") {
@@ -610,12 +289,9 @@ export const getSimilarRooms = async (req, res, next) => {
       const roomOptions = plain.options || [];
       const roomPhotos = plain.images || [];
       const roomAmenities = plain.amenities || [];
-
       const mainImage = roomPhotos.length > 0 ? roomPhotos[0].path : "default-room.jpg";
-
       const pricesArray = roomOptions.map(opt => opt.price);
       const lowestPrice = pricesArray.length > 0 ? Math.min(...pricesArray) : 0;
-
       const foundBathroom = roomAmenities[0];
       const bathsCount = foundBathroom ? foundBathroom.name : "1 Bath";
 
@@ -689,7 +365,6 @@ export const getRoomById = async (req, res) => {
         : true;
 
 
-    // ==========================================
     const options = (r.options || []).map((opt) => {
       const priced = calcRoomOptionPrice(opt, nights);
 
@@ -828,72 +503,30 @@ export const getRoomGallery = async (req, res) => {
 
 
 
-export const uploadRoomImages = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { category } = req.body;
-    const authUserId = req.userId;
-    const authUserRole = req.user?.role;
 
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No files uploaded" });
-    }
 
-    const room = await Room.findByPk(id);
-    if (!room) {
-      return res.status(404).json({ success: false, message: "Room not found" });
-    }
 
-    const hotel = await Hotels.findByPk(room.hotel_id);
-    if (!hotel) {
-      return res.status(404).json({ success: false, message: "Hotel not found" });
-    }
 
-    const isHotelOwner = hotel.user_id === authUserId;
-    const isSuperAdmin = authUserRole === "superadmin";
 
-    if (!isHotelOwner && !isSuperAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. You are not the admin of this hotel."
-      });
-    }
 
-    const images = req.files.map((file) => ({
-      room_id: Number(id),
-      hotel_id: room.hotel_id,
-      path: file.path,
-      public_id: file.filename || null,
-      category: category || "Bedrooms",
-      uploaded_by: authUserId || null
-    }));
 
-    await HotelPhotos.bulkCreate(images);
 
-    return res.json({ success: true, images });
-  } catch (e) {
-    next(e)
-  }
-};
 
-//sa verjinn er
-// export const uploadRoomImages = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//
-//     const images = req.files.map((file) => ({
-//       room_id: id,
-//       path: file.path,
-//     }));
-//
-//     await Photo.bulkCreate(images);
-//
-//     res.json({ success: true, images });
-//   } catch (e) {
-//     res.status(500).json({ message: "Upload failed" });
-//   }
-// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* =========================================================
    ADMIN DASHBOARD STATS
@@ -949,6 +582,54 @@ export const getRoomDashboardStats = async (req, res) => {
   }
 };
 
+export const uploadRoomImages = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { category } = req.body;
+    const authUserId = req.userId;
+    const authUserRole = req.user?.role;
+
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No files uploaded" });
+    }
+
+    const room = await Room.findByPk(id);
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Room not found" });
+    }
+
+    const hotel = await Hotels.findByPk(room.hotel_id);
+    if (!hotel) {
+      return res.status(404).json({ success: false, message: "Hotel not found" });
+    }
+
+    const isHotelOwner = hotel.user_id === authUserId;
+    const isSuperAdmin = authUserRole === "superadmin";
+
+    if (!isHotelOwner && !isSuperAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You are not the admin of this hotel."
+      });
+    }
+
+    const images = req.files.map((file) => ({
+      room_id: Number(id),
+      hotel_id: room.hotel_id,
+      path: file.path,
+      public_id: file.filename || null,
+      category: category || "Bedrooms",
+      uploaded_by: authUserId || null
+    }));
+
+    await HotelPhotos.bulkCreate(images);
+
+    return res.json({ success: true, images });
+  } catch (e) {
+    next(e)
+  }
+};
 
 
 
@@ -1036,5 +717,315 @@ export const getRoomDashboardStats = async (req, res) => {
 //     res.json(rooms);
 //   } catch (e) {
 //     res.status(500).json({ message: "Fetch failed" });
+//   }
+// };
+
+
+
+
+// export const createRoom = async (req, res) => {
+//   const t = await sequelize.transaction();
+//
+//   try {
+//     let {
+//       hotel_id,
+//       name,
+//       size,
+//       bed_type,
+//       max_guests,
+//       price,
+//       status = "active",
+//       amenities = [],
+//       options = [],
+//       extras = [],
+//     } = req.body;
+//
+//
+//     if (typeof amenities === "string") amenities = JSON.parse(amenities);
+//     if (typeof options === "string") options = JSON.parse(options);
+//     if (typeof extras === "string") extras = JSON.parse(extras);
+//
+//
+//     const room = await Room.create(
+//       {
+//         hotel_id: Number(hotel_id),
+//         name,
+//         size: Number(size),
+//         bed_type,
+//         max_guests: Number(max_guests),
+//         price: Number(price),
+//         status,
+//       },
+//       { transaction: t }
+//     );
+//
+//     const roomId = room.id;
+//
+//     // ======================
+//     // 2. AMENITIES
+//     // ======================
+//     if (amenities.length) {
+//       const am = await Amenity.findAll({
+//         where: { id: amenities },
+//         transaction: t,
+//       });
+//
+//       await room.setAmenities(am, { transaction: t });
+//     }
+//
+//     // ======================
+//     // 3. OPTIONS
+//     // ======================
+//
+//     if (options.length) {
+//       await RoomOption.bulkCreate(
+//         options.map((o) => ({
+//           name: o.name,
+//           price: Number(o.price),
+//
+//           meal_plan: o.meal_plan || "none",
+//           cancellation_type: o.cancellation_type || "partial",
+//           free_cancel_days: o.free_cancel_days ?? 1,
+//
+//           pay_later: o.pay_later ?? false,
+//           prepayment_required: o.prepayment_required ?? true,
+//
+//           room_id: roomId,
+//         })),
+//         { transaction: t }
+//       );
+//     }
+//
+//     // ======================
+//     // 4. EXTRAS
+//     // ======================
+//     if (extras.length) {
+//       await RoomExtra.bulkCreate(
+//         extras.map((e) => ({
+//           name: e.name,
+//           price: Number(e.price),
+//           type: e.type || "service",
+//           room_id: roomId,
+//         })),
+//         { transaction: t }
+//       );
+//     }
+//
+//     // ======================
+//     // 5. PHOTOS
+//     // ======================
+//     if (req.files?.length) {
+//       await Photo.bulkCreate(
+//         req.files.map((file) => ({
+//           room_id: roomId,
+//           path: file.path,
+//         })),
+//         { transaction: t }
+//       );
+//     }
+//
+//     await t.commit();
+//
+//     // ======================
+//     // 6. RETURN FULL ROOM
+//     // ======================
+//     const fullRoom = await Room.findByPk(roomId, {
+//       include: [
+//         { model: Amenity, as: "amenities", through: { attributes: [] } },
+//         { model: RoomOption, as: "options" },
+//         { model: RoomExtra, as: "extras" },
+//         { model: Photo, as: "images" },
+//       ],
+//     });
+//
+//     res.json({
+//       success: true,
+//       room: fullRoom,
+//     });
+//   } catch (e) {
+//     await t.rollback();
+//
+//     console.error("CREATE ROOM ERROR:", e);
+//
+//     res.status(500).json({
+//       message: "Create failed",
+//       error: e.message,
+//     });
+//   }
+// };
+//
+// export const updateRoom = async (req, res) => {
+//   const t = await sequelize.transaction();
+//
+//   try {
+//     const { id } = req.params;
+//
+//     let {
+//       name,
+//       size,
+//       bed_type,
+//       max_guests,
+//       price,
+//       status,
+//       amenities = [],
+//       options = [],
+//       extras = [],
+//     } = req.body;
+//
+//
+//     if (typeof amenities === "string") amenities = JSON.parse(amenities);
+//     if (typeof options === "string") options = JSON.parse(options);
+//     if (typeof extras === "string") extras = JSON.parse(extras);
+//
+//     const room = await Room.findByPk(id);
+//     if (!room) {
+//       await t.rollback();
+//       return res.status(404).json({ message: "Room not found" });
+//     }
+//
+//     await room.update(
+//       {
+//         name,
+//         size: size ? Number(size) : undefined,
+//         bed_type,
+//         max_guests: max_guests ? Number(max_guests) : undefined,
+//         price: price ? Number(price) : undefined,
+//         status,
+//       },
+//       { transaction: t }
+//     );
+//
+//     if (Array.isArray(amenities)) {
+//       const am = await Amenity.findAll({
+//         where: { id: amenities },
+//         transaction: t,
+//       });
+//
+//       await room.setAmenities(am, { transaction: t });
+//     }
+//
+//     if (Array.isArray(options)) {
+//       await RoomOption.destroy({
+//         where: { room_id: id },
+//         transaction: t,
+//       });
+//
+//       if (options.length) {
+//         await RoomOption.bulkCreate(
+//           options.map((o) => ({
+//             name: o.name,
+//             price: Number(o.price),
+//
+//             meal_plan: o.meal_plan || "none",
+//             cancellation_type: o.cancellation_type || "free",
+//             free_cancel_days: o.free_cancel_days ?? 1,
+//             cancel_time: o.cancel_time || "23:59",
+//
+//             pay_later: o.pay_later ?? false,
+//             prepayment_required: o.prepayment_required ?? true,
+//
+//             room_id: id,
+//           })),
+//           { transaction: t }
+//         );
+//       }
+//     }
+//
+//     if (Array.isArray(extras)) {
+//       await RoomExtra.destroy({
+//         where: { room_id: id },
+//         transaction: t,
+//       });
+//
+//       if (extras.length) {
+//         await RoomExtra.bulkCreate(
+//           extras.map((e) => ({
+//             name: e.name,
+//             price: Number(e.price),
+//             type: e.type || "service",
+//             room_id: id,
+//           })),
+//           { transaction: t }
+//         );
+//       }
+//     }
+//
+//     await t.commit();
+//
+//     const updated = await Room.findByPk(id, {
+//       include: [
+//         { model: Amenity, as: "amenities", through: { attributes: [] } },
+//         { model: RoomOption, as: "options" },
+//         { model: RoomExtra, as: "extras" },
+//         { model: Photo, as: "images" },
+//       ],
+//     });
+//
+//     return res.json({
+//       success: true,
+//       room: updated,
+//     });
+//   } catch (e) {
+//     await t.rollback();
+//
+//     console.error("UPDATE ROOM ERROR:", e);
+//
+//     return res.status(500).json({
+//       message: "Update failed",
+//       error: e.message,
+//     });
+//   }
+// };
+//
+//
+// export const deleteRoom = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//
+//     const room = await Room.findByPk(id);
+//     if (!room) return res.status(404).json({ message: "Not found" });
+//
+//     await room.destroy();
+//
+//     res.json({ success: true });
+//   } catch (e) {
+//     res.status(500).json({ message: "Delete failed" });
+//   }
+// };
+//
+//
+// export const restoreRoom = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//
+//     const room = await Room.findByPk(id, {
+//       paranoid: false,
+//     });
+//
+//     if (!room) {
+//       return res.status(404).json({ message: "Room not found" });
+//     }
+//
+//     await room.restore();
+//
+//     return res.json({ success: true });
+//   } catch (e) {
+//     console.error(e);
+//     return res.status(500).json({ message: "Restore failed" });
+//   }
+// };
+//
+// export const bulkArchiveRooms = async (req, res) => {
+//   try {
+//     const { ids } = req.body;
+//
+//     await Room.update(
+//       { status: "archived" },
+//       { where: { id: ids } }
+//     );
+//
+//     res.json({ success: true });
+//   } catch (e) {
+//     res.status(500).json({ message: "Bulk archive failed" });
 //   }
 // };

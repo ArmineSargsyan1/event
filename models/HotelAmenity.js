@@ -1,8 +1,9 @@
+import { DataTypes, Model } from "sequelize";
 import sequelize from "../clients/db.sequelize.mysql.js";
-import { DataTypes } from "sequelize";
 
-const HotelAmenities = sequelize.define(
-  "HotelAmenities",
+class HotelAmenities extends Model {}
+
+HotelAmenities.init(
   {
     hotel_id: {
       type: DataTypes.INTEGER,
@@ -14,6 +15,7 @@ const HotelAmenities = sequelize.define(
     },
   },
   {
+    sequelize,
     tableName: "hotel_amenities",
     timestamps: false,
   }

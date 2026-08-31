@@ -51,4 +51,16 @@ router.post(
 );
 
 
+
+
+
+///restaurant
+router.post(
+  "/create-restaurant-session",
+  authorize,
+  paymentController.createRestaurantOrder
+);
+
+router.post("/webhook-restaurant", express.raw({ type: "application/json" }), paymentController.stripeRestaurantWebhook);
+
 export default router;

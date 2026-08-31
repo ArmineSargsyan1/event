@@ -2,11 +2,14 @@ import {Op} from "sequelize";
 import Message from "../models/Message.js";
 import Socket from "../services/Socket.js";
 import User from "../models/User.js";
+import Post from "../models/Post.js";
+import Room from "../models/Room.js";
+import HotelPhotos from "../models/HotelPhotos.js";
 
 
 export const sendMessage = async (req, res, next) => {
   try {
-    const { receiverId, text, sharedPostId } = req.body;
+    const { receiverId, text, sharedPostId, sharedRoomId } = req.body;
     const myId = req.userId;
 
     const newMessage = await Message.create({
@@ -14,6 +17,7 @@ export const sendMessage = async (req, res, next) => {
       receiverId,
       text,
       sharedPostId: sharedPostId || null,
+      sharedRoomId: sharedRoomId || null,
       isRead: false,
       deletedBySender: false,
       deletedByReceiver: false
@@ -72,16 +76,12 @@ export const sendMessage = async (req, res, next) => {
   }
 };
 
-
-
 export const getMessages = async (req, res) => {
   try {
     const { contactId } = req.params;
-    // const  contactId = 8
     const { page = 1, limit = 20 } = req.query;
     const myId = req.userId;
-    // const myId = 20;
-    console.log(contactId, myId,8888888888888)
+
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     await Message.update(
@@ -107,7 +107,28 @@ export const getMessages = async (req, res) => {
             { senderId: contactId, receiverId: myId, deletedByReceiver: false }
           ]
         },
-        attributes: ['id', 'senderId', 'receiverId', 'text', 'isRead', 'sharedPostId', 'createdAt'],
+        attributes: ['id', 'senderId', 'receiverId', 'text', 'isRead', 'sharedPostId', 'sharedRoomId', 'createdAt'],
+
+        include: [
+          {
+            model: Post,
+            as: 'sharedPost',
+            attributes: ['id', 'mediaUrl', 'mediaType', 'caption', 'location']
+          },
+          {
+            model: Room,
+            as: 'sharedRoom',
+            attributes: ['id', 'name', 'roomType', 'size', 'bed_type', 'max_guests'],
+            include: [
+              {
+                model: HotelPhotos,
+                as: 'images',
+                attributes: ['id', 'path'],
+                limit: 1
+              }
+            ]
+          }
+        ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit, 10),
         offset: parseInt(offset, 10)

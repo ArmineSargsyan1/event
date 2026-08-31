@@ -3,8 +3,10 @@ import sequelize from "../clients/db.sequelize.mysql.js";
 import Hotels from "./Hotels.js";
 import ReviewLiked from "./ReviewLiked.js";
 import ReviewReplies from "./ReviewReplies.js";
+import Notification from "./Notification.js";
 import User from "./User.js";
 import Room from "./Room.js";
+import Socket from "../services/Socket.js";
 
 class Reviews extends Model {
   static associate() {
@@ -138,10 +140,32 @@ const recalcHotelRating = async (hotelId, transaction = null) => {
 
 
 Reviews.afterCreate(async (review, options) => {
-  await recalcHotelRating(
-    review.hotel_id,
-    options.transaction || null
-  );
+  const transaction = options.transaction || null;
+
+  await recalcHotelRating(review.hotel_id, transaction);
+
+  if (parseFloat(review.score) < 5.0) {
+    try {
+      const hotel = await Hotels.findByPk(review.hotel_id, { transaction });
+      const hotelName = hotel ? hotel.name : "Hotel";
+
+      const adminId = 9;
+
+      // Գրանցում ենք բազայում
+      const newNoti = await Notification.create({
+        userId: adminId,
+        type: 'alert',
+        message: `⚠️ Critical Alert: Low score review (${review.score}★) posted for "${hotelName}"`,
+        link: '/admin/reviews',
+        isRead: false
+      }, { transaction });
+
+      await Socket.emit(`user_${adminId}`, newNoti, 'new_notification');
+
+    } catch (err) {
+      console.error("Failed to push real-time socket notification:", err);
+    }
+  }
 });
 
 Reviews.afterDestroy(async (review, options) => {

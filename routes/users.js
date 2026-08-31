@@ -9,6 +9,9 @@ const router = Router();
 
 const uploadUser = upload('users');
 
+router.get('/search', authorize, controller.searchUsers);
+
+
 router.post(
   '/registration',
   // uploadUser.single('profilePicture'),
@@ -29,6 +32,13 @@ router.post(
   controller.uploadProfilePicture
 );
 
+router.put(
+  '/update-profile',
+  authorize,
+  uploadUser.single('profilePicture'),
+  controller.updateProfile
+);
+
 router.get(
   '/activate',
   controller.activate);
@@ -44,12 +54,13 @@ router.post(
 
 router.put('/change-password', authorize, controller.changePassword);
 
-// Liana
+
 router.get(
   '/profile',
   authorize,
   controller.profile
 );
+
 
 router.get('/profile/:userId',
   authorize,

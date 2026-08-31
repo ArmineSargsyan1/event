@@ -150,4 +150,36 @@ export default {
 
   },
 
+
+  // =========================
+  // CREATE RESTAURANT REVIEW
+  // =========================
+  // =========================
+  // CREATE RESTAURANT REVIEW
+  // =========================
+  createRestaurantReview: {
+    body: Joi.object({
+      // 💡 ՈՒՂՂՎԱԾ Է. Թույլ ենք տալիս string-ով եկած թիվը, որ FormData-ն չկոտրի վալիդացիան
+      rating: Joi.alternatives().try(
+        Joi.number().integer().min(1).max(5),
+        Joi.string().valid("1", "2", "3", "4", "5")
+      ).required().messages({
+        'any.required': 'Rating is required.'
+      }),
+
+      comment: Joi.string().min(10).max(1000).required().messages({
+        'string.empty': 'Write at least a few words about the restaurant.',
+        'string.min': 'Review is too short (minimum 10 characters).'
+      }),
+
+      // 💡 ՈՒՂՂՎԱԾ Է. Թույլ ենք տալիս string կամ դատարկ, քանի որ FormData-ն դատարկ դաշտերը ուղարկում է որպես string
+      bookingId: Joi.alternatives().try(
+        Joi.number().integer().positive(),
+        Joi.string().allow('', null)
+      ).optional()
+    })
+  }
+
+
+
 };

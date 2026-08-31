@@ -85,12 +85,12 @@ RoomOption.init(
     },
 
     discount_start: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: true,
     },
 
     discount_end: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: true,
     },
 
@@ -116,6 +116,7 @@ RoomOption.init(
     modelName: "RoomOption",
     tableName: "room_options",
     underscored: true,
+    timestamps: true,
   }
 );
 

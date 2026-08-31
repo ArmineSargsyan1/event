@@ -26,7 +26,8 @@ export const getNotifications = async (req, res, next) => {
             {
               model: HotelPhotos,
               as: 'images',
-              attributes: ['url', 'image_url'],
+              separate: true,
+              attributes: ['path', 'is_main'],
               limit: 1,
               required: false
             }
@@ -45,6 +46,7 @@ export const getNotifications = async (req, res, next) => {
 
     res.status(200).json({ success: true, data: notifications });
   } catch (err) {
+    console.log(err)
     next(err);
   }
 };

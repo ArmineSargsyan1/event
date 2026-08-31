@@ -82,7 +82,7 @@
 // export default Socket;
 
 
-import dotenv from 'dotenv'; // 🔥 Ավելացնել սա
+import dotenv from 'dotenv';
 dotenv.config();
 import _ from 'lodash';
 import { Server as SocketServer } from 'socket.io';
@@ -107,33 +107,6 @@ class Socket {
     this.io.on('connection', this.handleConnect);
   };
 
-
-
-  // static handleConnect = async (client) => {
-  //   try {
-  //     const authorization =
-  //       _.get(client, 'handshake.headers.authorization', null)
-  //       || _.get(client, 'handshake.query.authorization', null)
-  //       || _.get(client, 'handshake.query.token', null);
-  //
-  //     if (!authorization) {
-  //       client.emit('error', { message: 'Authorization token is required!' });
-  //       return;
-  //     }
-  //
-  //     // const { valid, id } = Socket.tokenChecker(`${authorization}`.replace('Bearer', '').trim());
-  //     const { valid, id } = Socket.tokenChecker(`${authorization}`.replace(/bearer/gi, '').trim());
-  //     console.log(valid, id,777777777)
-  //     if (!valid) {
-  //       client.emit('error', { message: 'Invalid Token' });
-  //       return;
-  //     }
-  //
-  //     if (id) {
-  //       console.log(`JOINED to -> user_${id}`);
-  //       client.join(`user_${id}`);
-  //       console.log(`USER WITH ID: ${id} connected`);
-  //     }
   static handleConnect = async (client) => {
     try {
       let authorization =
@@ -148,17 +121,14 @@ class Socket {
 
       console.log(authorization,222222)
 
-      // 🔥 ԲԵՔԵՆԴԻ ՃԿՈՒՆ ՄԱՔՐՈՒՄ (Case-Insensitive)
-      // Փոխում ենք տեքստը string-ի և ջնջում ենք 'Bearer ' կամ 'bearer ' բառերը
+
       let pureToken = `${authorization}`.trim();
       if (pureToken.toLowerCase().startsWith('bearer ')) {
         pureToken = pureToken.slice(7).trim();
       }
 
-      // Փոխանցում ենք լրիվ մաքուր տոկենը ստուգման
       const { valid, id } = Socket.tokenChecker(pureToken);
 
-      console.log(valid, id, "777777777"); // Ձեր թեստային լոգը
 
       if (!valid) {
         client.emit('error', { message: 'Invalid Token' });
@@ -262,21 +232,6 @@ class Socket {
     }
   };
 
-  // static tokenChecker = (token) => {
-  //   let decoded = {};
-  //   try {
-  //     decoded = jwt.verify(token, AUTH_SECRET);
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  //
-  //   if (!decoded || !decoded.userId) {
-  //     return { valid: false, id: null };
-  //   }
-  //
-  //   return { valid: true, id: +decoded.userId };
-  // };
-
   static tokenChecker = (token) => {
     let decoded = {};
     try {
@@ -288,7 +243,7 @@ class Socket {
       console.log("❌ JWT ՍԽԱԼ ՍՈԿԵՏՈՒՄ:", err.message); // <--- ՍԱ ԱՄԵՆԱԿԱՐԵՎՈՐ ԼՈԳՆ Է
     }
 
-    if (!decoded || !decoded.id) { // ⚠️ ՈՒՇԱԴՐՈՒԹՅՈՒՆ: Ձեր Login-ում գրված է {id: user.id}, իսկ հին կոդում ստուգում էիք decoded.userId: Փոխեք սա decoded.id!
+    if (!decoded || !decoded.id) {
       return { valid: false, id: null };
     }
 

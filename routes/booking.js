@@ -7,7 +7,7 @@ import {
   createDraftBooking,
   getBookingConfirmation,
   getSuccessToken,
-  getBookingDetails,
+  getBookingDetails, sendSmsVerification, verifySmsCode,
 } from "../controllers/booking.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/booking.schema.js";
@@ -29,6 +29,8 @@ router.get("/my",
   getMyBookings
 );
 
+router.post('/send-sms-otp', sendSmsVerification);
+router.post('/verify-sms-otp', verifySmsCode);
 
 router.post("/",
   authorize,

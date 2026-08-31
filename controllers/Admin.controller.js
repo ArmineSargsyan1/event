@@ -165,244 +165,6 @@ export const getAllAmenitiesAdmin = async (req, res) => {
   }
 };
 
-
-// export const getAllAmenitiesAdmin = async (req, res) => {
-//   try {
-//     const view = req.query.view || "grouped";
-//     const scope = req.query.scope; // room | hotel | both
-//
-//     const where = {};
-//
-//     // scope filter logic
-//     if (scope) {
-//       if (scope === "both") {
-//         where.scope = {
-//           [Op.in]: ["room", "hotel", "both"],
-//         };
-//       } else {
-//         where.scope = {
-//           [Op.in]: [scope, "both"], // shared amenities included
-//         };
-//       }
-//     }
-//
-//     const amenities = await Amenity.findAll({
-//       where,
-//       attributes: ["id", "key", "name", "category", "scope"],
-//       order: [
-//         ["category", "ASC"],
-//         ["name", "ASC"],
-//       ],
-//     });
-//
-//     // FLAT
-//     if (view === "flat") {
-//       return res.json({
-//         success: true,
-//         data: amenities,
-//       });
-//     }
-//
-//     // GROUPED
-//     const grouped = amenities.reduce((acc, item) => {
-//       if (!acc[item.category]) {
-//         acc[item.category] = {
-//           room: [],
-//           hotel: [],
-//           both: [],
-//         };
-//       }
-//
-//       acc[item.category][item.scope].push(item);
-//
-//       return acc;
-//     }, {});
-//
-//     return res.json({
-//       success: true,
-//       data: grouped,
-//     });
-//
-//   } catch (e) {
-//     return res.status(500).json({
-//       success: false,
-//       message: "Admin fetch failed",
-//       error: e.message,
-//     });
-//   }
-// };
-
-
-// export const getAllAmenitiesAdmin = async (req, res) => {
-//   console.log(req,666)
-//   try {
-//     const view = req.query.view || "grouped";
-//
-//     const amenities = await Amenity.findAll({
-//       attributes: ["id", "key", "name", "category"],
-//       order: [["category", "ASC"], ["name", "ASC"]],
-//     });
-//
-//     if (view === "flat") {
-//       return res.json({
-//         success: true,
-//         data: amenities,
-//       });
-//     }
-//
-//     const grouped = amenities.reduce((acc, item) => {
-//       if (!acc[item.category]) acc[item.category] = [];
-//       acc[item.category].push(item);
-//       return acc;
-//     }, {});
-//
-//     res.json({
-//       success: true,
-//       data: grouped,
-//     });
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Admin fetch failed",
-//     });
-//   }
-// };
-
-
-// export const getAllAmenitiesAdmin = async (req, res) => {
-//   try {
-//     const view = req.query.view || "grouped";
-//     const scope = req.query.scope;
-//
-//     const where = {};
-//
-//     if (scope) {
-//       where.scope = {
-//         [Op.in]: scope === "both"
-//           ? ["room", "hotel", "both"]
-//           : [scope, "both"],
-//       };
-//     }
-//
-//     const amenities = await Amenity.findAll({
-//       where,
-//       attributes: ["id", "key", "name", "category", "scope"],
-//       order: [["category", "ASC"], ["name", "ASC"]],
-//     });
-//
-//     if (view === "flat") {
-//       return res.json({ success: true, data: amenities });
-//     }
-//
-//     const grouped = amenities.reduce((acc, item) => {
-//       if (!acc[item.category]) {
-//         acc[item.category] = {
-//           room: [],
-//           hotel: [],
-//           both: [],
-//         };
-//       }
-//
-//       acc[item.category][item.scope].push(item);
-//
-//       return acc;
-//     }, {});
-//
-//     res.json({
-//       success: true,
-//       data: grouped,
-//     });
-//
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Admin fetch failed",
-//     });
-//   }
-// };
-
-
-
-// export const getAllAmenitiesAdmin = async (req, res) => {
-//   try {
-//     const view = req.query.view || "grouped";
-//     const scope = req.query.scope;
-//
-//     const where = {};
-//
-//     if (scope) {
-//       where.scope = scope;
-//     }
-//
-//     const amenities = await Amenity.findAll({
-//       where,
-//       attributes: ["id", "key", "name", "category", "scope"],
-//       order: [["category", "ASC"], ["name", "ASC"]],
-//     });
-//
-//     if (view === "flat") {
-//       return res.json({
-//         success: true,
-//         data: amenities,
-//       });
-//     }
-//
-//     const grouped = amenities.reduce((acc, item) => {
-//       if (!acc[item.category]) acc[item.category] = [];
-//       acc[item.category].push(item);
-//       return acc;
-//     }, {});
-//
-//     res.json({
-//       success: true,
-//       data: grouped,
-//     });
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Admin fetch failed",
-//     });
-//   }
-// };
-
-
-
-
-// POST /admin/amenities
-// export const createAmenity = async (req, res) => {
-//   try {
-//     const { key, name, category } = req.body;
-//
-//     if (!key || !name) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "key and name required",
-//       });
-//     }
-//
-//     const exists = await Amenity.findOne({ where: { key } });
-//
-//     if (exists) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Amenity already exists",
-//       });
-//     }
-//
-//     const amenity = await Amenity.create({ key, name, category });
-//
-//     res.json({
-//       success: true,
-//       data: amenity,
-//     });
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Create failed",
-//     });
-//   }
-// };
-
 export const createAmenity = async (req, res) => {
   try {
     const { key, name, category, scope = "room" } = req.body;
@@ -415,7 +177,6 @@ export const createAmenity = async (req, res) => {
       });
     }
 
-    // normalize key (optional but PRO)
     const normalizedKey = key.trim().toLowerCase();
 
     const exists = await Amenity.findOne({
@@ -449,34 +210,6 @@ export const createAmenity = async (req, res) => {
 };
 
 
-// PUT /admin/amenities/:id
-// export const updateAmenity = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//
-//     const amenity = await Amenity.findByPk(id);
-//
-//     if (!amenity) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Not found",
-//       });
-//     }
-//
-//     await amenity.update(req.body);
-//
-//     res.json({
-//       success: true,
-//       data: amenity,
-//     });
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Update failed",
-//     });
-//   }
-// };
-
 export const updateAmenity = async (req, res) => {
   try {
     const { id } = req.params;
@@ -491,7 +224,6 @@ export const updateAmenity = async (req, res) => {
       });
     }
 
-    // 🔥 check duplicate key (if updating key)
     if (key && key !== amenity.key) {
       const exists = await Amenity.findOne({
         where: { key: key.trim().toLowerCase() },
@@ -505,7 +237,6 @@ export const updateAmenity = async (req, res) => {
       }
     }
 
-    // normalize key
     const updateData = {
       ...(key && { key: key.trim().toLowerCase() }),
       ...(name && { name }),
@@ -567,30 +298,3 @@ export const deleteAmenity = async (req, res) => {
   }
 };
 
-
-// export const deleteAmenity = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//
-//     const amenity = await Amenity.findByPk(id);
-//
-//     if (!amenity) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Not found",
-//       });
-//     }
-//
-//     await amenity.destroy();
-//
-//     res.json({
-//       success: true,
-//       message: "Deleted successfully",
-//     });
-//   } catch (e) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Delete failed",
-//     });
-//   }
-// };

@@ -11,6 +11,8 @@ import FileHelper from "../services/Utils.js";
 import {Follower} from "../models/index.js";
 import Story from "../models/Story.js";
 import sequelize from "../clients/db.sequelize.mysql.js";
+import PostLike from "../models/PostLike.js";
+import PostComment from "../models/PostComment.js";
 
 const {AUTH_SECRET, JWT_EXPIRES_IN, USER_SECRET} = process.env;
 
@@ -23,7 +25,6 @@ const cleanFile = (file) => {
 export default {
 
   async registration(req, res, next) {
-    console.log(req.body, 89)
     try {
       const {fullName, email, phoneNumber, password} = req.body;
 
@@ -48,7 +49,6 @@ export default {
       });
 
 
-      // const activationLink = `http://localhost:5000/users/activate?token=${user.activationToken}`;
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -81,57 +81,6 @@ export default {
   },
 
 
-  // async registration(req, res, next) {
-  //   console.log(req.body, 89)
-  //   try {
-  //     const {fullName, email, phoneNumber, password} = req.body;
-  //
-  //     const existingUser = await User.findOne({where: {email}});
-  //     if (existingUser) {
-  //       cleanFile(req.file);
-  //       return res.status(409).json({success: false, error: 'Email already registered'});
-  //     }
-  //
-  //     const hashedPassword = hashPassword(password);
-  //
-  //     const user = await User.create({
-  //       userName: fullName,
-  //       email,
-  //       password: hashedPassword,
-  //       phoneNumber,
-  //       lastStoryTimestamp: new Date(),
-  //     });
-  //
-  //     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  //     const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
-  //
-  //     console.log(`\n🚀 [TESTING]  USER ID ${user.id} for:`);
-  //     console.log(`${activationLink}\n`);
-  //
-  //     sendMail({
-  //       to: email,
-  //       subject: 'Activate Your Account',
-  //       template: 'activate',
-  //       templateData: {
-  //         userName: fullName,
-  //         activationLink
-  //       }
-  //     }).catch(err => console.error("⚠️ Nodemailer blocked by Render, link printed above:", err.message));
-  //
-  //     const newUser = await User.findByPk(user.id, {
-  //       attributes: {exclude: ['password']}
-  //     });
-  //
-  //     return res.status(201).json({
-  //       success: true,
-  //       message: 'User registered successfully. Check email to activate account.',
-  //       user: newUser
-  //     });
-  //
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // },
 
 
   async activate(req, res, next) {
@@ -214,9 +163,38 @@ export default {
         isAccessible: true
       });
     } catch (err) {
+      console.log(err)
       next(err);
     }
   },
+
+
+   async searchUsers(req, res, next) {
+    try {
+      const { query } = req.query;
+
+      if (!query || !query.trim()) {
+        return res.status(200).json([]);
+      }
+
+      const users = await User.findAll({
+        where: {
+          user_name: {
+            [Op.like]: `%${query}%`
+          }
+        },
+        attributes: ['id', 'user_name', 'profile_picture'],
+        limit: 7
+      });
+
+      return res.status(200).json(users);
+    } catch (error) {
+      console.error("SQL Search Crash Error Summary:", error.message);
+      next(error);
+    }
+  },
+
+
 
   async getFullProfile(req, res, next) {
     try {
@@ -259,9 +237,10 @@ export default {
   },
 
 
+
   async searchExplore(req, res, next) {
     try {
-      const {query} = req.query;
+      const { query } = req.query;
       const myId = req.userId;
 
       const page = parseInt(req.query.page, 10) || 1;
@@ -278,10 +257,25 @@ export default {
           offset: offset
         });
 
+        const formattedPosts = await Promise.all(
+          explorePosts.map(async (post) => {
+            const postJson = post.toJSON();
+
+            const likesCount = await PostLike.count({ where: { postId: post.id } });
+            const commentsCount = await PostComment.count({ where: { postId: post.id } });
+
+            return {
+              ...postJson,
+              likesCount,
+              commentsCount
+            };
+          })
+        );
+
         return res.status(200).json({
           success: true,
           type: 'explore',
-          data: explorePosts,
+          data: formattedPosts,
           pagination: {
             currentPage: page,
             limit: limit,
@@ -294,8 +288,8 @@ export default {
 
       const users = await User.findAll({
         where: {
-          id: {[Op.ne]: myId},
-          userName: {[Op.like]: `%${query.trim()}%`}
+          id: { [Op.ne]: myId },
+          userName: { [Op.like]: `%${query.trim()}%` }
         },
         attributes: ['id', 'userName', 'profilePicture'],
         limit: limit,
@@ -311,6 +305,8 @@ export default {
       next(error);
     }
   },
+
+
 
 
   async forgotPassword(req, res, next) {
@@ -355,7 +351,6 @@ export default {
 
 
   async resetPassword(req, res, next) {
-    console.log(req.body, 98);
     try {
       const {newPassword} = req.body;
 
@@ -369,7 +364,6 @@ export default {
 
       let decoded;
       try {
-        // decoded = jwt.verify(token, AUTH_SECRET);
         decoded = jwt.verify(token, AUTH_SECRET, {ignoreExpiration: true});
       } catch (err) {
         if (err.name === 'TokenExpiredError') {
@@ -421,6 +415,52 @@ export default {
       next(error);
     }
   },
+
+  async updateProfile  (req, res, next) {
+    try {
+      const { userName, email, bio, oldPassword, newPassword } = req.body;
+      const userId = req.userId;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      if (newPassword && newPassword.trim() !== "") {
+        if (user.password !== hashPassword(oldPassword)) {
+          return res.status(400).json({ success: false, message: "The old password is incorrect" });
+        }
+        user.password = hashPassword(newPassword);
+      }
+
+      if (userName) user.userName = userName;
+      if (email) user.email = email;
+      if (bio !== undefined) user.bio = bio;
+
+      if (req.file) {
+        user.profilePicture = req.file.path;
+      }
+
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Profile updated successfully.",
+        data: {
+          id: user.id,
+          userName: user.userName,
+          email: user.email,
+          bio: user.bio,
+          profilePicture: user.profilePicture
+        }
+      });
+
+    } catch (error) {
+      console.log(error)
+      next(error);
+    }
+  },
+
 
   async uploadProfilePicture(req, res, next) {
     try {

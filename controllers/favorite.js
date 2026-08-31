@@ -2,235 +2,119 @@ import Favorite from "../models/Favorites.js";
 import {Hotels} from "../models/index.js";
 import HotelPhotos from "../models/HotelPhotos.js";
 import Amenity from "../models/Amenity.js";
+import Restaurant from "../models/Restaurant.js";
+import RestaurantReview from "../models/RestaurantReview.js";
+import RestaurantFavorite from "../models/RestaurantFavorite.js";
+import {Op} from "sequelize";
 
 
-export const createFavorite = async (req, res) => {
+export const createFavorite = async (req, res, next) => {
   try {
+    const hotelId = req.params.id;
     const userId = req.userId;
 
-    const { hotelId } = req.body;
-
-    const exists =
-      await Favorite.findOne({
-        where: {
-          user_id: userId,
-          hotel_id: hotelId,
-        },
-      });
-
-    if (exists) {
-
-      return res.status(400).json({
-        success: false,
-        message: "Already favorite",
-      });
-
+    if (!hotelId) {
+      return res.status(400).json({ success: false, message: "Hotel ID is required" });
     }
 
-    const favorite =
-      await Favorite.create({
+    const [fav, created] = await Favorite.findOrCreate({
+      where: {
         user_id: userId,
-        hotel_id: hotelId,
-      });
-
-    return res.status(201).json({
-      success: true,
-      favorite,
+        hotel_id: hotelId
+      }
     });
 
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
-  }
-
-};
-
-export const getFavorites = async (
-  req,
-  res
-) => {
-
-  try {
-
-    const userId = 1
-      // req.user.id;
-
-    const favorites =
-      await Favorite.findAll({
-
-        where: {
-          user_id: userId,
-        },
-
-        include: [
-          {
-            model: Hotels,
-            as: "hotel",
-
-            include: [
-              {
-                model: HotelPhotos,
-                as: "images",
-                attributes: [
-                  "id",
-                  "path",
-                  "is_main",
-                  "sort_order",
-                ],
-              },
-
-              {
-                model: Amenity,
-                as: "Amenities",
-                through: {
-                  attributes: [],
-                },
-              },
-            ],
-          },
-        ],
-
-        order: [
-          ["createdAt", "DESC"],
-        ],
-      });
-
-    const data =
-      favorites.map(
-        ({ hotel }) => ({
-
-          id:
-          hotel.id,
-
-          name:
-          hotel.name,
-
-          city:
-          hotel.city,
-
-          country:
-          hotel.country,
-
-          description:
-          hotel.description,
-
-          rating:
-          hotel.rating,
-
-          reviewCount:
-            Number(
-              hotel.review_count
-            ),
-
-          stars:
-          hotel.stars,
-
-          price:
-          hotel.price_from,
-
-          property_class:
-          hotel.property_class,
-
-          favorite:
-            true,
-
-          amenities:
-            hotel.Amenities || [],
-
-          images:
-            hotel.images?.length
-              ? hotel.images
-              : [
-                {
-                  url:
-                    "https://images.unsplash.com/photo-1566073771259-6a8506099945",
-                },
-              ],
-
-        })
-      );
-
-    return res.status(200).json({
-
-      success: true,
-
-      data,
-
-    });
-
-  } catch (error) {
-
-    console.error(error);
-
-    return res.status(500).json({
-
-      success: false,
-
-      message:
-      error.message,
-
-    });
-
+    return res.status(201).json({ success: true, created, fav });
+  } catch (err) {
+    console.error("Error in createFavorite (Hotel):", err);
+    next(err);
   }
 };
 
-
-
-export const deleteFavorite = async (req, res) => {
-
+export const deleteFavorite = async (req, res, next) => {
   try {
+    const hotelId = req.params.id;
+    const userId = req.userId;
 
-    const userId = 1
-      // req.user.id;
+    await Favorite.destroy({
+      where: {
+        user_id: userId,
+        hotel_id: hotelId
+      }
+    });
 
-    const { hotelId } = req.params;
+    return res.status(200).json({ success: true, message: "Successfully removed from hotel favorites" });
+  } catch (err) {
+    console.error("Error in deleteFavorite (Hotel):", err);
+    next(err);
+  }
+};
 
-    const favorite =
-      await Favorite.findOne({
-        where: {
-          user_id: userId,
-          hotel_id: hotelId,
-        },
-      });
+export const getFavorites = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 6;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+    const sort = req.query.sort || '';
 
-    if (!favorite) {
-
-      return res.status(404).json({
-        success: false,
-        message: "Favorite not found",
-      });
-
+    const hotelWhere = {};
+    if (search) {
+      hotelWhere.name = { [Op.like]: `%${search}%` };
     }
 
-    await favorite.destroy();
+    let orderClause = [['id', 'DESC']];
+    if (sort === 'low') orderClause = [[{ model: Hotels, as: 'hotel' }, 'price_from', 'ASC']];
+    if (sort === 'high') orderClause = [[{ model: Hotels, as: 'hotel' }, 'price_from', 'DESC']];
+
+    const { count, rows: favorites } = await Favorite.findAndCountAll({
+      where: { user_id: userId },
+      include: [{
+        model: Hotels,
+        as: 'hotel',
+        where: hotelWhere
+      }],
+      order: orderClause,
+      limit,
+      offset,
+      raw: true,
+      nest: true
+    });
+
+    const formattedHotels = favorites.map(f => {
+      if (!f.hotel) return null;
+
+      return {
+        ...f.hotel,
+        favorite: true,
+        price: f.hotel.price_from,
+        hotelCategory: f.hotel.hotel_category,
+        stars: f.hotel.rating
+      };
+    }).filter(Boolean);
 
     return res.status(200).json({
       success: true,
-      message: "Favorite removed",
+      favorites: formattedHotels,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
     });
-
-  } catch (error) {
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-
+  } catch (err) {
+    console.error("Error in getFavorites:", err);
+    next(err);
   }
-
 };
 
-export const clearAllFavorites =
-  async (req, res) => {
 
+
+
+
+export const clearAllFavorites = async (req, res) => {
+  console.log(req.userId,888)
     try {
 
-      const userId = 1
-        // req.user.id;
+      const userId = req.userId;
 
       await Favorite.destroy({
         where: {
@@ -243,7 +127,7 @@ export const clearAllFavorites =
       });
 
     } catch (error) {
-
+      console.log(error)
       return res.status(500).json({
         success: false,
         message:
@@ -252,3 +136,134 @@ export const clearAllFavorites =
 
     }
   };
+
+
+export const addRestaurantFavorite = async (req, res, next) => {
+  try {
+    const restaurantId = req.params.id;
+    const userId = req.userId;
+
+    const [fav, created] = await RestaurantFavorite.findOrCreate({
+      where: {
+        user_id: userId,
+        restaurant_id: restaurantId
+      }
+    });
+
+    return res.status(201).json({
+      success: true,
+      created,
+      fav
+    });
+  } catch (err) {
+    console.error("Error in addRestaurantFavorite:", err);
+    next(err);
+  }
+};
+
+export const removeRestaurantFavorite = async (req, res, next) => {
+  try {
+    const restaurantId = req.params.id;
+    const userId = req.userId;
+
+    await RestaurantFavorite.destroy({
+      where: {
+        user_id: userId,
+        restaurant_id: restaurantId
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully removed from favorites"
+    });
+  } catch (err) {
+    console.error("Error in removeRestaurantFavorite:", err);
+    next(err);
+  }
+};
+
+export const getRestaurantFavorites = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 6;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+
+    const restaurantWhere = {};
+    if (search) {
+      restaurantWhere.name = { [Op.like]: `%${search}%` };
+    }
+
+    const { count, rows: favorites } = await RestaurantFavorite.findAndCountAll({
+      where: { user_id: userId },
+      include: [{
+        model: Restaurant,
+        as: 'restaurant',
+        where: restaurantWhere
+      }],
+      order: [['id', 'DESC']],
+      limit,
+      offset,
+      raw: true,
+      nest: true
+    });
+
+    const reviews = await RestaurantReview.findAll({
+      attributes: ['restaurant_id', 'rating'],
+      raw: true
+    });
+
+    const reviewStats = {};
+    reviews.forEach(r => {
+      const restId = r.restaurantId || r.restaurant_id;
+      if (!restId) return;
+      if (!reviewStats[restId]) {
+        reviewStats[restId] = { total: 0, count: 0 };
+      }
+      reviewStats[restId].total += Number(r.rating || 0);
+      reviewStats[restId].count += 1;
+    });
+
+    const formattedRestaurants = favorites.map(f => {
+      if (!f.restaurant) return null;
+      const r = f.restaurant;
+      const stats = reviewStats[r.id] || { total: 0, count: 0 };
+
+      r.isFavorite = true;
+      r.avgRating = stats.count > 0 ? (stats.total / stats.count).toFixed(1) : "0.0";
+      r.reviewCount = stats.count;
+      return r;
+    }).filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      restaurants: formattedRestaurants,
+      currentPage: page,
+      totalPages: Math.ceil(count / limit)
+    });
+  } catch (err) {
+    console.error("Error in getRestaurantFavorites:", err);
+    next(err);
+  }
+};
+
+export const clearAllRestaurantFavorites = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+
+    await RestaurantFavorite.destroy({
+      where: { user_id: userId }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully cleared all restaurant favorites"
+    });
+  } catch (err) {
+    console.error("Error in clearAllRestaurantFavorites:", err);
+    next(err);
+  }
+};
+

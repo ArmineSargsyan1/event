@@ -38,7 +38,7 @@ HotelPhotos.init(
     },
 
     path: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(1000),
       allowNull: false,
     },
 
@@ -58,8 +58,9 @@ HotelPhotos.init(
       field: "category"
     },
 
+
     public_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(1000),
       allowNull: true,
     },
 

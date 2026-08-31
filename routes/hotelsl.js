@@ -2,6 +2,7 @@ import express from "express";
 import * as Controller from "../controllers/hotel.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/hotel.schema.js";
+import authorize from "../middlewares/authMiddlewere.js";
 
 
 import auth from "../middlewares/authMiddlewere.js";
@@ -10,29 +11,45 @@ import auth from "../middlewares/authMiddlewere.js";
 const router = express.Router();
 
 router.get("/",
+  authorize,
   validation(schema.getHotels),
   Controller.getHotels);
 
 
 router.get(
-  "/sponsored",
-  Controller.getSponsoredHotels
+  "/landing",
+  Controller.getLandingHotels
 );
 
 router.get(
-  "/popular",
-  Controller.getPopularHotels
-);
+  "/:hotelId/nearby-restaurants",
+  Controller.getNearbyRestaurants);
 
-router.get(
-  "/top-rated",
-  Controller.getTopRatedHotels
-);
+
+router.get("/recommended-bundle", Controller.getRecommendedContextualHotels);
+
+
+//
+// router.get(
+//   "/sponsored",
+//   Controller.getSponsoredHotels
+// );
+//
+// router.get(
+//   "/popular",
+//   Controller.getPopularHotels
+// );
+
+// router.get(
+//   "/top-rated",
+//   Controller.getTopRatedHotels
+// );
 
 
 /* ---------------- SINGLE HOTEL ---------------- */
 router.get("/:hotelId",
-  validation(schema.getSingleHotel),
+  // validation(schema.getSingleHotel),
+  authorize,
   Controller.getHotelById);
 
 

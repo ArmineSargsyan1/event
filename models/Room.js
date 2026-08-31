@@ -7,6 +7,7 @@ import RoomOption from "./RoomOption.js";
 import RoomExtra from "./RoomExtra.js";
 import HotelPhotos from "./HotelPhotos.js";
 import Reviews from "./Reviews.js";
+import Booking from "./Booking.js";
 
 class Room extends Model {
   static associate() {
@@ -41,6 +42,11 @@ class Room extends Model {
     });
 
     Room.hasMany(Reviews, { foreignKey: 'room_id' });
+
+    Room.hasMany(Booking, {
+      foreignKey: "room_id",
+      as: "Bookings"
+    });
 
   }
 }

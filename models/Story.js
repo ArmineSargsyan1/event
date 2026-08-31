@@ -6,8 +6,6 @@ import StoryComment from "./StoryComment.js";
 import StoryLike from "./StoryLike.js";
 import StoryView from "./StoryView.js";
 
-
-
 class Story extends Model {
   static associate(models) {
     Story.belongsTo(User, { foreignKey: 'userId', as: 'author' });
@@ -61,9 +59,14 @@ Story.init({
     type: DataTypes.STRING,
     allowNull: true
   },
-  musicTrack: {
-    type: DataTypes.JSON,
+  musicTrackId: {
+    type: DataTypes.STRING,
     allowNull: true
+  },
+
+  mediaPublicId: {
+    type: DataTypes.STRING,
+    allowNull: false
   }
 }, {
   sequelize,

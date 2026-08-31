@@ -158,9 +158,7 @@ export default {
   // CREATE HOTEL
   // =========================
   createHotel: {
-
     body: Joi.object({
-
       name: Joi.string()
         .min(2)
         .max(255)
@@ -171,23 +169,11 @@ export default {
         .optional(),
 
       property_class: Joi.string()
-        .valid(
-          "hotel",
-          "apartment",
-          "villa",
-          "hostel",
-          "resort"
-        )
+        .valid("hotel", "apartment", "villa", "hostel", "resort")
         .required(),
 
       hotel_category: Joi.string()
-        .valid(
-          "luxury",
-          "wellness",
-          "family",
-          "business",
-          "romantic"
-        )
+        .valid("luxury", "wellness", "family", "business", "romantic")
         .required(),
 
       address: Joi.string()
@@ -205,6 +191,7 @@ export default {
         .max(100)
         .required(),
 
+      // 🚀 ՊԱՀՊԱՆՎԱԾ Է ՈՐՊԵՍ REQUIRED. Քանի որ ռեստորանը բազայում առանց կոորդինատի չի ստեղծվում
       lat: Joi.number()
         .min(-90)
         .max(90)
@@ -223,9 +210,106 @@ export default {
         .max(10)
         .optional(),
 
-    }),
+      // 🚀 ԱՎԵԼԱՑՎԱԾ Է: Թույլ է տալիս հարմարությունների ID-ների զանգվածի ապահով անցումը
+      amenities: Joi.array()
+        .items(Joi.number())
+        .optional(),
 
+      // 🚀 ԱՎԵԼԱՑՎԱԾ Է: Թույլ է տալիս մոտակա վայրերի (Location Points) օբյեկտների զանգվածի անցումը
+      location_points: Joi.array()
+        .items(
+          Joi.object({
+            name: Joi.string().min(1).required(),
+            distance: Joi.string().min(1).required(),
+          })
+        )
+        .optional(),
+
+      // 🚀 ԱՎԵԼԱՑՎԱԾ Է: Ռեստորանի դինամիկ դաշտերի վավերացումը Joi-ում
+      hasRestaurant: Joi.boolean()
+        .optional()
+        .allow(null, ""),
+
+      restaurantName: Joi.string()
+        .optional()
+        .allow(null, ""),
+
+      restaurantDescription: Joi.string()
+        .optional()
+        .allow(null, ""),
+    }),
   },
+
+
+  // createHotel: {
+  //
+  //   body: Joi.object({
+  //
+  //     name: Joi.string()
+  //       .min(2)
+  //       .max(255)
+  //       .required(),
+  //
+  //     description: Joi.string()
+  //       .allow("")
+  //       .optional(),
+  //
+  //     property_class: Joi.string()
+  //       .valid(
+  //         "hotel",
+  //         "apartment",
+  //         "villa",
+  //         "hostel",
+  //         "resort"
+  //       )
+  //       .required(),
+  //
+  //     hotel_category: Joi.string()
+  //       .valid(
+  //         "luxury",
+  //         "wellness",
+  //         "family",
+  //         "business",
+  //         "romantic"
+  //       )
+  //       .required(),
+  //
+  //     address: Joi.string()
+  //       .min(2)
+  //       .max(255)
+  //       .required(),
+  //
+  //     city: Joi.string()
+  //       .min(2)
+  //       .max(100)
+  //       .required(),
+  //
+  //     country: Joi.string()
+  //       .min(2)
+  //       .max(100)
+  //       .required(),
+  //
+  //     lat: Joi.number()
+  //       .min(-90)
+  //       .max(90)
+  //       .required(),
+  //
+  //     lon: Joi.number()
+  //       .min(-180)
+  //       .max(180)
+  //       .required(),
+  //
+  //     price_from: Joi.number()
+  //       .min(1)
+  //       .required(),
+  //
+  //     currency: Joi.string()
+  //       .max(10)
+  //       .optional(),
+  //
+  //   }),
+  //
+  // },
 
 
 

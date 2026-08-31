@@ -16,6 +16,9 @@ class Post extends Model {
 
     Post.hasMany(models.Message, { foreignKey: 'sharedPostId', as: 'shares' });
     Post.hasMany(models.Message, { foreignKey: 'postId' });
+
+    Post.belongsTo(models.Hotels, { as: 'hotel', foreignKey: 'hotelId', onDelete: 'SET NULL' });
+    Post.belongsTo(models.Restaurant, { as: 'restaurant', foreignKey: 'restaurantId', onDelete: 'SET NULL' });
   }
 }
 
@@ -30,6 +33,20 @@ Post.init({
     allowNull: false,
     references: { model: 'users', key: 'id' }
   },
+
+  hotelId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'hotel_id',
+    references: { model: 'hotels', key: 'id' }
+  },
+  restaurantId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'restaurant_id',
+    references: { model: 'restaurants', key: 'id' }
+  },
+
   mediaUrl: { type: DataTypes.STRING, allowNull: false },
   mediaType: { type: DataTypes.ENUM('image', 'video'), defaultValue: 'image' },
   caption: { type: DataTypes.TEXT, allowNull: true },

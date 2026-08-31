@@ -6,6 +6,9 @@ import ReviewReplies from "./ReviewReplies.js";
 import Favorite from "./Favorites.js";
 import Hotels from "./Hotels.js";
 import Reviews from "./Reviews.js";
+import SupportMessage from "./SupportMessage.js";
+import Reservation from "./Reservation.js";
+import Restaurant from "./Restaurant.js";
 
 class User extends Model {
   static associate(models) {
@@ -51,14 +54,34 @@ class User extends Model {
     User.belongsToMany(models.User, { through: models.Follower, as: 'followers', foreignKey: 'followingId', otherKey: 'followerId' });
     User.belongsToMany(models.User, { through: models.Follower, as: 'following', foreignKey: 'followerId', otherKey: 'followingId' });
 
-    // // User <-> Story
-    // User.hasMany(models.Story, { foreignKey: 'userId', as: 'stories' });
-    //
+    // User <-> Story
+    User.hasMany(models.Story, { foreignKey: 'userId', as: 'stories' });
+
     User.hasMany(models.Notification, { foreignKey: 'userId', as: 'notifications' });
     User.hasMany(models.Notification, { foreignKey: 'senderId', as: 'sentNotifications' });
 
     User.hasMany(models.Message, { foreignKey: 'senderId', as: 'sentMessages' });
     User.hasMany(models.Message, { foreignKey: 'receiverId', as: 'receivedMessages' });
+
+    User.hasMany(SupportMessage, {
+      foreignKey: "sender_id",
+      as: "supportMessages",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(Reservation, {
+      foreignKey: "user_id",
+      as: "reservations",
+      onDelete: "CASCADE",
+    });
+
+    User.hasMany(Restaurant, {
+      foreignKey: "owner_id",
+      as: "managedRestaurants",
+      onDelete: "RESTRICT"
+    });
+
+
   }
 }
 

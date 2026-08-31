@@ -256,6 +256,7 @@ export default class FileHelper {
       'caption',
       'location',
       'createdAt',
+      'musicTrack',
       'updatedAt',
       [
         Sequelize.literal(`(
@@ -287,12 +288,53 @@ static getMessageAttributes () {
     'id',
     'senderId',
     'receiverId',
-    'text',          // քո `Message.create`-ում `text` էր դաշտի անունը
+    'text',
     'isRead',
     'createdAt'
-    // Այստեղ կարող ես ավելացնել mediaUrl կամ այլ դաշտեր, եթե ունես
   ];
 };
+
+
+
+ static async getStoryAttributes (currentUserId) {
+    console.log("DEBUG: currentUserId in Attributes is ->", currentUserId);
+
+    const userId = currentUserId ? parseInt(currentUserId, 10) : null;
+
+    return [
+      'id',
+      'userId',
+      'mediaUrl',
+      'mediaType',
+      'caption',
+      'locationName',
+      'musicTrack',
+      'createdAt',
+      'updatedAt',
+
+      [
+        Sequelize.literal(`(SELECT COUNT(*) FROM story_view WHERE story_view.storyId = Story.id)`),
+        'viewCount'
+      ],
+
+      [
+        Sequelize.literal(`(SELECT COUNT(*) FROM story_like WHERE story_like.storyId = Story.id)`),
+        'likesCount'
+      ],
+
+      [
+        Sequelize.literal(`EXISTS (
+        SELECT 1 FROM story_view 
+        WHERE story_view.storyId = Story.id 
+        AND story_view.userId = ${userId ? userId : 'NULL'}
+      )`),
+        'isSeen'
+      ]
+    ];
+  };
+
+
+
 
 static async markMessagesAsRead (contactId, myId)  {
   return await Message.update({isRead: true},

@@ -11,6 +11,7 @@ import HotelPhotos from "../models/HotelPhotos.js";
 import Stripe from "stripe";
 import BookingExtra from "../models/BookingExtra.js";
 import Socket from "../services/Socket.js";
+import Restaurant from "../models/Restaurant.js";
 
 
 
@@ -80,7 +81,6 @@ export const calculateBookingPrice = (
 
 
 export const createDraftBooking = async (req, res) => {
-  console.log(req.body,8888)
   try {
     const {
       room_id,
@@ -92,8 +92,7 @@ export const createDraftBooking = async (req, res) => {
     } = req.body;
 
     const booking = await Booking.create({
-      user_id: 1,
-      // req.user.id,
+      user_id: req.userId,
       room_id,
       rate_plan_id,
       check_in,
@@ -243,140 +242,49 @@ export const getBookingDetails = async (req, res) => {
   }
 };
 
+export const sendSmsVerification = async (req, res, next) => {
+  try {
+    const { bookingId } = req.body;
+    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-// export const getBookingDetails = async (req, res) => {
-//   try {
-//     const bookingId = req.params.id;
-//     const userId = req.userId || 1; // req.user.id
-//
-//     const booking = await Booking.findOne({
-//       where: {
-//         id: bookingId,
-//         user_id: userId,
-//       },
-//       include: [
-//         {
-//           model: Room,
-//           as: "room",
-//           include: [
-//             { model: Hotels, as: "hotel" }
-//           ]
-//         },
-//         {
-//           model: RoomOption,
-//           as: "option"
-//         },
-//       ],
-//     });
-//
-//     // ❌ Եթե ամրագրումը չկա
-//     if (!booking) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Booking not found",
-//       });
-//     }
-//
-//     // ⏳ Չեղարկման վերջնաժամկետի (Deadline) դինամիկ հաշվարկ
-//     let cancellationDeadline = null;
-//
-//     if (booking.option && booking.option.cancellation_type === "free") {
-//       const cancelDays = booking.option.free_cancel_days || 0;
-//       const cancelTime = booking.option.cancel_time || "23:59";
-//       const [hours, minutes] = cancelTime.split(":");
-//
-//       cancellationDeadline = dayjs(booking.check_in)
-//         .subtract(cancelDays, "day")
-//         .hour(parseInt(hours))
-//         .minute(parseInt(minutes))
-//         .second(0)
-//         .format("YYYY-MM-DD HH:mm:ss");
-//     }
-//
-//     // ✨ ՄԱՔՐՈՒՄ ԵՎ ՓՈԽԱԿԵՐՊՈՒՄ CAMELCASE-Ի (Ուղղված տարբերակ)
-//     const cleanBooking = {
-//       id: booking.id,
-//       createdAt: booking.createdAt,
-//       checkIn: booking.check_in,
-//       checkOut: booking.check_out,
-//       guests: booking.guests,
-//       totalPrice: booking.total_price,
-//       status: booking.status,
-//       paymentStatus: booking.payment_status,
-//       paidAt: booking.paid_at,
-//       customerName: booking.customer_name,
-//       customerPhone: booking.customer_phone,
-//       cancellationDeadline: cancellationDeadline,
-//
-//       // 🛏️ Սենյակի և հյուրանոցի տվյալները
-//       room: booking.room ? {
-//         id: booking.room.id,
-//         name: booking.room.name,
-//         roomType: booking.room.roomType,
-//         bedType: booking.room.bedType,
-//         size: booking.room.size,
-//         images: booking.room.images || ["https://unsplash.com"],
-//
-//         // 🏨 Հյուրանոցի տվյալները
-//         hotel: booking.room.hotel ? {
-//           name: booking.room.hotel.name,
-//           address: booking.room.hotel.address,
-//           phone: booking.room.hotel.phone,
-//           email: booking.room.hotel.email,
-//         } : null
-//       } : null,
-//
-//       // 🏷️ Տարիֆի (Plan) տվյալները՝ ՏԵՂԱՓՈԽՎԱԾ Է ՃԻՇՏ ՏԵՂԸ (Room-ից դուրս)
-//       option: booking.option ? {
-//         id: booking.option.id,
-//         name: booking.option.name,
-//         mealPlan: booking.option.meal_plan,
-//         cancellationType: booking.option.cancellation_type,
-//       } : null
-//     }; // 👈 Կարևոր. Այս փակագիծը բացակայում էր
-//
-//     // 🎯 Վերադարձնում ենք ճիշտ պատասխանը
-//     return res.json({
-//       success: true,
-//       data: cleanBooking
-//     });
-//
-//   } catch (error) {
-//     console.error("⛔ Fetch booking details error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Server error",
-//     });
-//   }
-// };
+    const booking = await Booking.findByPk(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
+    booking.smsVerificationCode = generatedCode;
+    await booking.save();
 
+    console.log(`SMS Sent to phone. Security Code: ${generatedCode}`);
 
-// export const getBooking = async (req, res) => {
-//   try {
-//     const booking = await Booking.findOne({
-//       where: {
-//         id: req.params.id,
-//         user_id: 1
-//         // req.user.id,
-//       },
-//     });
-//
-//     if (!booking) {
-//       return res.status(404).json({
-//         message: "Booking not found",
-//       });
-//     }
-//
-//     return res.json(booking);
-//
-//   } catch (error) {
-//     console.log(error);
-//     return res.status(500).json({
-//       message: "Server error",
-//     });
-//   }
-// };
+    return res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifySmsCode = async (req, res, next) => {
+  try {
+    const { bookingId, code } = req.body;
+
+    const booking = await Booking.findByPk(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (booking.smsVerificationCode !== code) {
+      return res.status(400).json({ success: false, message: "Invalid verification code" });
+    }
+
+    booking.smsVerificationCode = null;
+    booking.isPhoneVerified = true;
+    await booking.save();
+
+    return res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 export const createBooking = async (req, res) => {
@@ -460,13 +368,6 @@ export const createBooking = async (req, res) => {
       return res.status(409).json({ message: "Room already booked for these dates" });
     }
 
-
-    if (conflict) {
-      await transaction.rollback();
-      return res.status(409).json({ message: "Room already booked" });
-    }
-
-    console.log("RATE PLAN ID =", rate_plan_id);
     const ratePlan = await RoomOption.findOne({
       where: {
         id: rate_plan_id,
@@ -475,8 +376,6 @@ export const createBooking = async (req, res) => {
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
-
-    console.log("RATE PLAN =", ratePlan);
 
     if (!ratePlan) {
       await transaction.rollback();
@@ -554,7 +453,6 @@ export const createBooking = async (req, res) => {
 
   } catch (error) {
     await transaction.rollback();
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Booking creation failed",
@@ -598,7 +496,11 @@ export const getBookingConfirmation = async (req, res) => {
     const { id } = req.params;
     const { token } = req.query;
 
-    const booking = await Booking.findByPk(id);
+
+    const booking = await Booking.findByPk(id, {
+      include: [{ model: Room, as: 'room' }]
+    });
+
 
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
@@ -612,6 +514,17 @@ export const getBookingConfirmation = async (req, res) => {
       return res.status(403).json({ message: "Invalid or expired token" });
     }
 
+    const hotelId = booking.room ? booking.room.hotel_id : null;
+
+    if (!hotelId) {
+      return res.status(400).json({ message: "Hotel ID could not be found for this booking's room" });
+    }
+
+    const restaurant = await Restaurant.findOne({
+      where: { hotel_id: hotelId }
+    });
+
+
     return res.json({
       id: booking.id,
       checkIn: booking.check_in,
@@ -620,6 +533,8 @@ export const getBookingConfirmation = async (req, res) => {
       totalPrice: booking.total_price,
       status: booking.status,
       paymentStatus: booking.payment_status,
+      snapshotMealPlan: booking.snapshot_meal_plan || 'none',
+      restaurantId: restaurant.id
     });
   } catch (error) {
     console.log(error);
@@ -696,17 +611,16 @@ export const cancelBooking = async (req, res) => {
           {
             bookingId: booking.id,
             status: booking.status,
-            refundAmount: refundAmount,
             message: `Your booking #${booking.id} has been successfully cancelled.`
           },
           'booking_cancelled'
         );
-        console.log(`📡 Real-time cancellation socket event sent to User: ${booking.user_id}`);
+        console.log(` Real-time cancellation socket event sent to User: ${booking.user_id}`);
       } else {
-        console.warn("⚠️ Socket class or Socket.io is not initialized yet.");
+        console.warn(" Socket class or Socket.io is not initialized yet.");
       }
     } catch (socketErr) {
-      console.error("⚠️ Socket emit failed, but DB changes are safe:", socketErr.message);
+      console.error("Socket emit failed, but DB changes are safe:", socketErr.message);
     }
 
     return res.json({
@@ -725,88 +639,6 @@ export const cancelBooking = async (req, res) => {
     });
   }
 };
-
-
-// export const cancelBooking = async (req, res) => {
-//   try {
-//     const { bookingId } = req.params;
-//
-//     const booking = await Booking.findByPk(bookingId, {
-//       include: [{ model: RoomOption, as: "option" }],
-//     });
-//
-//     if (!booking) {
-//       return res.status(404).json({ success: false, message: "Booking not found" });
-//     }
-//
-//     if (booking.user_id !== req.userId) {
-//       return res.status(403).json({ success: false, message: "Forbidden" });
-//     }
-//     if (booking.status === "cancelled") {
-//       return res.status(400).json({ success: false, message: "Booking already cancelled" });
-//     }
-//     if (booking.status === "expired") {
-//       return res.status(400).json({ success: false, message: "Expired booking cannot be cancelled" });
-//     }
-//
-//
-//     const optionSnapshotForRefund = {
-//       cancellation_type: booking.snapshot_cancellation_policy,
-//       free_cancel_days: booking.snapshot_free_cancel_days,
-//       cancel_time: booking.snapshot_cancel_time,
-//     };
-//
-//     const refund = FileHelper.calculateRefund(optionSnapshotForRefund, booking.check_in, new Date());
-//     const refundPercent = refund?.refundPercent ?? 0;
-//     const refundAmount = (booking.total_price * refundPercent) / 100;
-//
-//     if (booking.payment_status === "paid" && refundAmount > 0) {
-//
-//       const paymentIntentId = booking.stripe_session_id;
-//
-//       if (!paymentIntentId || !paymentIntentId.startsWith('pi_')) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Cannot automate refund: A valid Stripe Payment Intent ID (pi_...) was not found in the record."
-//         });
-//       }
-//
-//       await stripe.refunds.create({
-//         payment_intent: paymentIntentId,
-//         amount: Math.round(refundAmount * 100),
-//         reason: 'requested_by_customer'
-//       });
-//     }
-//
-//     let paymentStatus = booking.payment_status;
-//     if (booking.payment_status === "paid") {
-//       paymentStatus = refundAmount > 0 ? "refunded" : "paid";
-//     }
-//
-//     booking.status = "cancelled";
-//     booking.cancelled_at = new Date();
-//     booking.refund_amount = refundAmount;
-//     booking.payment_status = paymentStatus;
-//
-//     await booking.save();
-//
-//     return res.json({
-//       success: true,
-//       message: "Booking cancelled and refund processed successfully",
-//       refund,
-//       refundAmount,
-//       booking,
-//     });
-//
-//   } catch (e) {
-//     console.error("Stripe/DB Refund Error:", e);
-//     return res.status(500).json({
-//       success: false,
-//       message: e.message || "Automatic cancellation failed",
-//     });
-//   }
-// };
-
 
 
 export const getBookingById = async (req, res) => {
@@ -833,7 +665,7 @@ export const getBookingById = async (req, res) => {
       });
     }
 
-    if (booking.user_id !== 1) {
+    if (booking.user_id !== req.userId) {
       return res.status(403).json({
         success: false,
         message: "Forbidden",
@@ -883,7 +715,7 @@ export const getBookingById = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("⛔ Fetch booking by id error:", error);
+    console.error(" Fetch booking by id error:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch booking",
@@ -892,13 +724,9 @@ export const getBookingById = async (req, res) => {
 };
 
 
-
-
-
-
 export const getMyBookings = async (req, res) => {
   try {
-    const userId = req.userId || 1;
+    const userId = req.userId;
 
     const {
       page = 1,
@@ -964,6 +792,14 @@ export const getMyBookings = async (req, res) => {
       order: [["check_in", "DESC"]],
     });
 
+    const hotelIds = [...new Set(rows.map(b => b.room?.hotel_id).filter(Boolean))];
+
+    const restaurants = await Restaurant.findAll({
+      where: { hotel_id: { [Op.in]: hotelIds } }
+    });
+
+    const restaurantMap = new Map(restaurants.map(r => [r.hotel_id, r.id]));
+
     const cleanRows = rows.map((booking) => {
       let cancellationDeadline = null;
 
@@ -980,12 +816,15 @@ export const getMyBookings = async (req, res) => {
           .format("YYYY-MM-DD HH:mm:ss");
       }
 
+
       return {
         id: booking.id,
         hotelId: booking.room?.hotel_id || null,
+        restaurantId: restaurantMap.get(booking.room?.hotel_id),
         checkIn: booking.check_in,
         checkOut: booking.check_out,
         guests: booking.guests,
+        snapshotMealPlan: booking.snapshot_meal_plan || 'none',
         totalPrice: booking.total_price,
         status: booking.status,
         paymentStatus: booking.payment_status,

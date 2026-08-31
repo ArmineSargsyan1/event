@@ -11,6 +11,8 @@ class Message extends Model {
     Message.belongsTo(Post, { foreignKey: 'postId', as: 'postContext' });
     Message.belongsTo(Post, { foreignKey: 'sharedPostId', as: 'sharedPost' });
 
+    Message.belongsTo(models.Room || Room, { foreignKey: 'sharedRoomId', as: 'sharedRoom' });
+
     Message.belongsTo(models.Story, { foreignKey: 'storyId', as: 'sharedStory' });
 
     Message.hasMany(Message, { foreignKey: 'parentId', as: 'replies', onDelete: 'CASCADE' });
@@ -71,7 +73,17 @@ Message.init({
       model: 'posts',
       key: 'id'
     }
+  },
+
+  sharedRoomId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'rooms',
+      key: 'id'
+    }
   }
+
 }, {
   sequelize,
   modelName: 'Message',

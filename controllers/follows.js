@@ -87,7 +87,6 @@ export const toggleFollow = async (req, res) => {
         );
       } catch (err) {}
 
-      // Ջնջում ենք հին follow ծանուցումը բազայից
       await Notification.destroy({
         where: {userId: followingId, senderId: followerId, type: 'follow'}
       });

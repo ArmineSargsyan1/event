@@ -5,7 +5,6 @@ export { default as BookingExtra } from './BookingExtra.js';
 export { default as Hotels} from './Hotels.js';
 export { default as HotelPhotos} from './HotelPhotos.js';
 export { default as HotelAmenity} from './HotelAmenity.js';
-
 export { default as Room } from './Room.js';
 export { default as RoomOption } from './RoomOption.js';
 export { default as Amenity } from './Amenity.js';
@@ -26,7 +25,6 @@ export { default as Photos } from './Photo.js';
 
 
 
-///Liana
 export { default as Follower } from "./Follower.js";
 export { default as Notification } from "./Notification.js";
 export { default as Message } from "./Message.js";
@@ -45,6 +43,16 @@ export { default as StoryLike } from "./StoryLike.js";
 export { default as StoryView } from "./StoryView.js";
 
 
+export { default as Restaurant } from "./Restaurant.js";
+export { default as Reservation } from "./Reservation.js";
+export { default as RestaurantImage  } from "./RestaurantImage.js";
+export { default as RestaurantFavorite} from "./RestaurantFavorite.js";
+export { default as RestaurantReview} from "./RestaurantReview.js";
+export { default as SupportMessage} from "./SupportMessage.js";
+export { default as Dish } from "./Dish.js";
+export { default as MenuItem  } from "./MenuItem.js";
+export { default as Order} from "./Order.js";
+export { default as OrderItem  } from "./OrderItem.js";
 
 
 

@@ -8,6 +8,8 @@ import HotelPhotos from "./HotelPhotos.js";
 import HotelAmenities from "./HotelAmenity.js";
 import Favorite from "./Favorites.js";
 import User from "./User.js";
+import Restaurant from "./Restaurant.js";
+import {SupportMessage} from "./index.js";
 
 class Hotels extends Model {
   static associate(models) {
@@ -62,6 +64,25 @@ class Hotels extends Model {
         onDelete: "CASCADE"
       });
     }
+
+    Hotels.hasMany(Restaurant, {
+      foreignKey: "hotel_id",
+      as: "restaurants",
+      onDelete: "CASCADE",
+    });
+
+    Hotels.hasMany(SupportMessage, {
+      foreignKey: "hotel_id",
+      as: "supportMessages",
+      onDelete: "CASCADE",
+    });
+
+
+    Hotels.hasMany(models.Post, {
+      foreignKey: "hotel_id",
+      as: "visitorPosts",
+      onDelete: "CASCADE",
+    });
 
   }
 }
@@ -137,6 +158,13 @@ Hotels.init(
       allowNull: true,
     },
 
+    price_range: {
+      type: DataTypes.ENUM("$", "$$", "$$$", "$$$$"),
+      allowNull: true,
+      field: 'price_range',
+      defaultValue: "$$"
+    },
+
     address: DataTypes.STRING,
     city: DataTypes.STRING,
     country: DataTypes.STRING,
@@ -176,6 +204,7 @@ Hotels.init(
       { fields: ["property_class"] },
       { fields: ["lat", "lon"] },
       { fields: ["hotel_category"] },
+      { fields: ["price_range"] },
       { fields: ["name"], unique: true },
     ],
 

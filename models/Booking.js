@@ -4,6 +4,7 @@ import Room from "./Room.js";
 import RoomOption from "./RoomOption.js";
 import User from "./User.js";
 import BookingExtra from "./BookingExtra.js";
+import Reservation from "./Reservation.js";
 
 class Booking extends Model {
   static associate() {
@@ -28,6 +29,11 @@ class Booking extends Model {
       as: "bookedExtras",
     });
 
+    Booking.hasMany(Reservation, {
+      foreignKey: "booking_id",
+      as: "restaurantReservations",
+      onDelete: "SET NULL"
+    });
   }
 }
 
@@ -153,6 +159,18 @@ Booking.init(
     success_token_expires: {
       type: DataTypes.DATE,
     },
+
+    smsVerificationCode: {
+      type: DataTypes.STRING(6),
+      allowNull: true,
+      field: 'sms_verification_code'
+    },
+    isPhoneVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_phone_verified'
+    }
   },
   {
     sequelize,

@@ -16,17 +16,18 @@ import posts from "./posts.js";
 import notification from "./notification.js";
 import  follows from "./follows.js";
 import messages from "./messages.js";
-// import owner from "./owner.js";
+import restaurant from "./restaurant.js";
+import reservation from "./reservation.js";
+import story from "./story.js";
+import owner from "./owner.js";
 
 
 
 const router = Router();
 
 router.use('/users', users);
-
 router.use('/room', room);
 router.use('/amenity', amenity);
-
 router.use('/hotels', hotels);
 router.use('/newsletter', newsletter);
 router.use('/reviews', reviews);
@@ -35,12 +36,16 @@ router.use('/bookings', booking);
 router.use('/favorites', favorites);
 router.use('/payments', payment);
 router.use('/nearby', nearby);
-// router.use('/owner', owner);
+router.use('/owner', owner);
 
 //social
 router.use('/posts', posts);
 router.use('/notifications',notification);
 router.use('/followers', follows);
 router.use('/messages', messages);
+router.use('/stories', story);
+
+router.use('/restaurants', restaurant);
+router.use('/reservations', reservation);
 
 export default router;

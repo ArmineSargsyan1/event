@@ -8,6 +8,10 @@ import Room from "../models/Room.js";
 import Booking from "../models/Booking.js";
 import dayjs from "dayjs";
 import sequelize from "../clients/db.sequelize.mysql.js";
+import Restaurant from "../models/Restaurant.js";
+import Socket from "../services/Socket.js";
+import RestaurantReview from "../models/RestaurantReview.js";
+import Notification from "../models/Notification.js";
 
 export const createReview = async (req, res) => {
 
@@ -72,15 +76,51 @@ export const createReview = async (req, res) => {
         verified: true,
         user_id: userId,
         hotel_id: hotelId,
-
         room_id: room_id ? Number(room_id) : null,
-
         liked_features: Array.isArray(liked_features)
           ? liked_features.map((f) => ({feature: f}))
           : [],
       },
       {include: [{model: ReviewLiked, as: "liked_features"}]}
     );
+
+
+//sa avelacrac chstugac
+    try {
+      const hotel = await Hotels.findByPk(hotelId);
+      if (hotel && hotel.user_id) {
+        const ownerId = hotel.user_id;
+
+        const ownerNotification = await Notification.create({
+          userId: ownerId,
+          type: "message",
+          message: `New Guest Feedback: A user rated your property "${hotel.name}" with a score of ${score}/10.`,
+          link: "/owner/reviews",
+          isRead: false
+        });
+
+        await Socket.emit(`user_${ownerId}`, ownerNotification, "new_notification");
+      }
+
+      if (Number(score) < 5) {
+        const adminId = 9;
+        const hotelName = hotel ? hotel.name : "Hotel";
+
+        const adminNotification = await Notification.create({
+          userId: adminId,
+          type: "alert",
+          message: ` Critical Alert: Low score review (${score}★) posted for "${hotelName}"`,
+          link: "/admin/reviews",
+          isRead: false
+        });
+
+        await Socket.emit(`user_${adminId}`, adminNotification, "new_notification");
+      }
+    } catch (notiErr) {
+      console.error("Failed to push client feedback real-time notification:", notiErr);
+    }
+
+
 
     return res.status(201).json({
       success: true,
@@ -486,6 +526,69 @@ export const getRatingBreakdown = async (req, res) => {
 
 
 
+//restaurant
+
+export const createRestaurantReview = async (req, res, next) => {
+  try {
+    const { rating, comment, bookingId } = req.body;
+    const restaurantId = req.params.id;
+    const userId =  req.userId;
+    // const userId =  7;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (bookingId) {
+      const existingReview = await RestaurantReview.findOne({
+        where: { reservation_id: bookingId }
+      });
+      if (existingReview) {
+        return res.status(400).json({ success: false, message: "You have already left a review for this reservation." });
+      }
+    }
+
+    const imageUrl = req.file ? req.file.path : null;
+    const imageId = req.file ? req.file.filename : null;
+    const sentimentValue = req.body.sentiment || (rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral');
+
+    const newReview = await RestaurantReview.create({
+      rating: parseInt(rating),
+      comment,
+      image: imageUrl,
+      cloudinary_id: imageId,
+      userId: userId,
+      restaurantId: restaurantId,
+      reservationId: bookingId,
+      sentiment: sentimentValue
+    });
+
+
+    const restaurant = await Restaurant.findByPk(restaurantId);
+    if (restaurant && restaurant.ownerId) {
+      const ownerId = restaurant.ownerId;
+      const message = `New review (${rating}) in "${restaurant.name}". Tone: ${sentimentValue}`;
+
+      const notification = await Notification.create({
+        userId: ownerId,
+        message,
+        type: "review"
+      });
+
+      await Socket.emit(`user_${ownerId}`, { message, notification }, 'new_notification');
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Review successfully created.",
+      data: newReview
+    });
+
+  } catch (err) {
+    console.error("Error saving review:", err);
+    next(err);
+  }
+};
 
 
 

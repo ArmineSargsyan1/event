@@ -6,6 +6,9 @@ import Users from '../models/User.js';
 
 
 export default async function (req, res, next) {
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
   let token = req.headers?.authorization;
   console.log(token,999)
 
@@ -36,3 +39,5 @@ export default async function (req, res, next) {
   req.role = user.role
   next();
 }
+
+

@@ -13,6 +13,7 @@ class Notification extends Model {
     Notification.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
     Notification.belongsTo(PostComment, { foreignKey: 'commentId', as: 'comment' });
     Notification.belongsTo(Hotels, { foreignKey: 'hotelId', as: 'hotel' });
+    Notification.belongsTo(models.Restaurant, { foreignKey: 'restaurantId', as: 'restaurant' });
   }
 }
 
@@ -43,6 +44,14 @@ Notification.init({
   },
   commentId: {
     type: DataTypes.UUID,
+    allowNull: true
+  },
+  hotelId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  restaurantId: {
+    type: DataTypes.INTEGER,
     allowNull: true
   },
   isRead: {

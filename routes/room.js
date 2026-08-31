@@ -9,13 +9,11 @@ const upload = createCloudinaryUpload('rooms');
 
 const router = express.Router();
 
-/* =========================================================
-   CREATE ROOM
-========================================================= */
-router.post("/",
-  upload.array("photos"),
 
-  Controller.createRoom);
+// router.post("/",
+//   upload.array("photos"),
+//
+//   Controller.createRoom);
 
 /* =========================================================
    GET ROOMS (FILTER + GEO + PAGINATION)
@@ -37,32 +35,32 @@ router.get(
 /* =========================================================
    UPDATE ROOM (PARTIAL UPDATE)
 ========================================================= */
-router.patch("/:id", Controller.updateRoom);
+// router.patch("/:id", Controller.updateRoom);
 
 /* =========================================================
    DELETE ROOM (SOFT DELETE)
 ========================================================= */
-router.delete("/:id", Controller.deleteRoom);
+// router.delete("/:id", Controller.deleteRoom);
 
 /* =========================================================
    RESTORE ROOM
 ========================================================= */
-router.patch("/:id/restore", Controller.restoreRoom);
+// router.patch("/:id/restore", Controller.restoreRoom);
 
 /* =========================================================
    BULK ARCHIVE ROOMS
 ========================================================= */
-router.patch("/archive/bulk", Controller.bulkArchiveRooms);
+// router.patch("/archive/bulk", Controller.bulkArchiveRooms);
 
 /* =========================================================
    UPLOAD ROOM IMAGES
 ========================================================= */
 
-router.post(
-  "/:id/images",
-  upload.array("photos"),
-  authorize,
-  Controller.uploadRoomImages);
+// router.post(
+//   "/:id/images",
+//   upload.array("photos"),
+//   authorize,
+//   Controller.uploadRoomImages);
 
 
 /* =========================================================
