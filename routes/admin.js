@@ -1,14 +1,6 @@
 import express from "express";
 import createCloudinaryUpload from "../middlewares/upload.js";
 import * as Controller from "../controllers/admin.js";
-import {
-  createAmenity,
-  deleteAmenity,
-  getAllAmenitiesAdmin,
-  seedAmenities,
-  updateAmenity
-} from "../controllers/Admin.controller.js";
-
 import auth from "../middlewares/authMiddlewere.js";
 import validation from "../middlewares/validation.js";
 import schema from "../schemas/hotel.schema.js";
@@ -23,8 +15,6 @@ const router = express.Router();
 const uploadHotelPhoto = createCloudinaryUpload('hotels');
 const uploadRestaurantPhoto = createCloudinaryUpload('restaurants');
 
-
-router.get("/amenities", getAllAmenitiesAdmin);
 const isAdmin = (req, res, next) => {
   if (req.role === 'admin' || req.role === 'SUPER ADMIN') {
     return next();
@@ -125,7 +115,6 @@ router.get("/revenue/dashboard", Controller.getRevenueDashboardData);
 //settings
 router.get("/settings", Controller.getPlatformSettings);
 
-// 2. PUT: Թարմացնել և սինքրոնացնել կարգավորումները (Ձեր ուզած տողը)
 router.put("/settings", Controller.updatePlatformSettings);
 
 router.get("/restaurants", Controller.getAdminRestaurants);
@@ -156,6 +145,8 @@ router.get('/dishes', Controller.getDishes);
 router.get("/reviews/all", Controller.getAdminAllReviews);
 router.delete("/reviews/:id", Controller.deleteReview);
 
+router.get("/rooms/calendar", Controller.getCalendarData);
+
 router.get("/notifications/all", Controller.getAdminNotifications);
 
 
@@ -164,13 +155,15 @@ export default router;
 /* ==========================================================================
    AMENITIES ROUTES
    ========================================================================== */
-router.get("/amenities", getAllAmenitiesAdmin);
-router.post("/amenities", createAmenity);
-router.put("/amenities/:id", updateAmenity);
-router.delete("/amenities/:id", deleteAmenity);
-router.post("/amenities/seed", seedAmenities);
 
+router.get("/amenities/categories-list", Controller.getUniqueAmenityCategories);
+router.get("/categories-overview", Controller.getCategoriesOverviewData);
+router.post("/amenities", Controller.createAmenity);
+router.put("/amenities/:id", Controller.updateAmenity);
+router.delete("/amenities/:id", Controller.deleteAmenity);
 
+router.get("/amenities", Controller.getAllAmenitiesAdmin);
+router.post("/amenities/seed", Controller.seedAmenities);
 
 // router.post("/create/review", createReview);
 // router.get("/reviews/dashboard", Controller.getAdminReviewsDashboard);

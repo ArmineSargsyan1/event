@@ -26,19 +26,17 @@ export default {
 
   async registration(req, res, next) {
     try {
-      const {fullName, email, phoneNumber, password} = req.body;
+      const { fullName, email, phoneNumber, password, role, status } = req.body;
 
-      const existingUser = await User.findOne({where: {email}});
+      const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
         cleanFile(req.file);
-        return res.status(409).json({success: false, error: 'Email already registered'});
+        return res.status(409).json({ success: false, error: 'Email already registered' });
       }
 
-      // const profilePicture = req.file
-      //   ? path.normalize(req.file.path).replace(/\\/g, '/')
-      //   : null;
-
       const hashedPassword = hashPassword(password);
+
+      const isCreatorAdmin =  req.role === 'admin';
 
       const user = await User.create({
         userName: fullName,
@@ -46,12 +44,24 @@ export default {
         password: hashedPassword,
         phoneNumber,
         lastStoryTimestamp: new Date(),
+        role: isCreatorAdmin && role ? role : 'user',
+        isActivated: isCreatorAdmin,
+        status: isCreatorAdmin && status ? status : 'pending'
       });
 
+      if (isCreatorAdmin) {
+        const newUser = await User.findByPk(user.id, {
+          attributes: { exclude: ['password'] }
+        });
 
+        return res.status(201).json({
+          success: true,
+          message: 'User created successfully by Administrator.',
+          user: newUser
+        });
+      }
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-
       const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
 
       await sendMail({
@@ -65,7 +75,7 @@ export default {
       });
 
       const newUser = await User.findByPk(user.id, {
-        attributes: {exclude: ['password']}
+        attributes: { exclude: ['password'] }
       });
 
       return res.status(201).json({
@@ -79,6 +89,63 @@ export default {
       next(error);
     }
   },
+
+
+  // async registration(req, res, next) {
+  //   try {
+  //     const {fullName, email, phoneNumber, password} = req.body;
+  //
+  //     const existingUser = await User.findOne({where: {email}});
+  //     if (existingUser) {
+  //       cleanFile(req.file);
+  //       return res.status(409).json({success: false, error: 'Email already registered'});
+  //     }
+  //
+  //     // const profilePicture = req.file
+  //     //   ? path.normalize(req.file.path).replace(/\\/g, '/')
+  //     //   : null;
+  //
+  //     const hashedPassword = hashPassword(password);
+  //
+  //     const user = await User.create({
+  //       userName: fullName,
+  //       email,
+  //       password: hashedPassword,
+  //       phoneNumber,
+  //       lastStoryTimestamp: new Date(),
+  //     });
+  //
+  //
+  //
+  //     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  //
+  //     const activationLink = `${frontendUrl}/activate?token=${user.activationToken}`;
+  //
+  //     await sendMail({
+  //       to: email,
+  //       subject: 'Activate Your Account',
+  //       template: 'activate',
+  //       templateData: {
+  //         userName: fullName,
+  //         activationLink
+  //       }
+  //     });
+  //
+  //     const newUser = await User.findByPk(user.id, {
+  //       attributes: {exclude: ['password']}
+  //     });
+  //
+  //     return res.status(201).json({
+  //       success: true,
+  //       message: 'User registered successfully. Check email to activate account.',
+  //       user: newUser
+  //     });
+  //
+  //   } catch (error) {
+  //     // cleanFile(req.file);
+  //     next(error);
+  //   }
+  // },
 
 
 

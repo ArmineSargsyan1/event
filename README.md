@@ -93,49 +93,49 @@ A highly automated administration workspace tailored for property managers and b
 All requests targeting Owner or Admin contexts must include a valid JSON Web Token (JWT) in the HTTP Authorization header as a Bearer token.
 
 ### 1. Authentication and Identity Modules
-* `POST /api/users/register` - Registers a new user account (with password cryptographic salt pipelines).
-* `POST /api/users/login` - Authenticates user credentials and returns a secure session JWT.
-* `GET /api/users/profile` - Fetches authenticated user account profile metadata.
-* `PUT /api/users/profile` - Updates account settings and async updates profile images via Cloudinary.
+* `POST /users/register` - Registers a new user account (with password cryptographic salt pipelines).
+* `POST /users/login` - Authenticates user credentials and returns a secure session JWT.
+* `GET /users/profile` - Fetches authenticated user account profile metadata.
+* `PUT /users/profile` - Updates account settings and async updates profile images via Cloudinary.
 
 ### 2. Administrator Operations Module (Admin Only)
-* `GET /api/admin/dashboard/stats` - Fetches total revenue with Month-over-Month (MoM) calculations.
-* `GET /api/admin/dashboard/booking-chart` - Aggregates time-series charts formatted for weekly tracking.
-* `GET /api/admin/dashboard/recent-transactions` - Merges recent checkout models sorted chronologically.
-* `GET /api/admin/hotels` - Fetches paginated properties incorporating deep conditional criteria.
-* `POST /api/admin/amenities/seed` - Triggers automated systemic database categories seeding hooks.
+* `GET /admin/dashboard/stats` - Fetches total revenue with Month-over-Month (MoM) calculations.
+* `GET /admin/dashboard/booking-chart` - Aggregates time-series charts formatted for weekly tracking.
+* `GET /admin/dashboard/recent-transactions` - Merges recent checkout models sorted chronologically.
+* `GET /admin/hotels` - Fetches paginated properties incorporating deep conditional criteria.
+* `POST /admin/amenities/seed` - Triggers automated systemic database categories seeding hooks.
 
 ### 3. Business Workspace Module (Owners Only)
-* `GET /api/owner/properties` - Pulls real-time property configurations linked to the verified manager token.
-* `POST /api/owner/rooms` - Instantiates new inventory allocations embedded under transaction safeguards.
-* `PUT /api/owner/rooms/:id` - Synchronizes active rate plans while sweeping obsolete relation configurations.
-* `GET /api/owner/analytics/services-chart` - Compiles adaptive donut metrics representing dynamic stay variables.
+* `GET /owner/properties` - Pulls real-time property configurations linked to the verified manager token.
+* `POST /owner/rooms` - Instantiates new inventory allocations embedded under transaction safeguards.
+* `PUT /owner/rooms/:id` - Synchronizes active rate plans while sweeping obsolete relation configurations.
+* `GET /owner/analytics/services-chart` - Compiles adaptive donut metrics representing dynamic stay variables.
 
 ### 4. Geographical and Landmark Discovery Modules
-* `GET /api/hotels` - Advanced tourist property query search filter supporting having count metrics.
-* `GET /api/hotels/:id` - Loads hotel instance aggregates matching customized review scopes.
-* `GET /api/restaurants` - Queries operational dining models based on cuisine facets and city contexts.
-* `GET /api/nearby` - Invokes local discovery range pipelines utilizing custom coordinate queries.
-* `GET /api/hotel/:id/nearby-restaurants` - Calculates Earth curvature indexes via database-level Haversine operations.
+* `GET /hotels` - Advanced tourist property query search filter supporting having count metrics.
+* `GET /hotels/:id` - Loads hotel instance aggregates matching customized review scopes.
+* `GET /restaurants` - Queries operational dining models based on cuisine facets and city contexts.
+* `GET /nearby` - Invokes local discovery range pipelines utilizing custom coordinate queries.
+* `GET /hotel/:id/nearby-restaurants` - Calculates Earth curvature indexes via database-level Haversine operations.
 
 ### 5. Transactional Booking and Payments Modules
-* `POST /api/booking/create` - Initiates room allocations wrapped inside rows validation layers.
-* `POST /api/booking/checkout-session` - Binds payment intents deploying pessimistic locks to bar concurrent race collisions.
-* `POST /api/booking/cancel/:id` - Triggers the automated Stripe integration refund calculator algorithms.
-* `POST /api/payment/booking/webhook` - Cryptographically signed listener decoding verified payment succeeded vectors.
-* `POST /api/payment/restaurant/webhook` - Confirms prepaid room service executions bypasses standard gateways.
+* `POST /booking/create` - Initiates room allocations wrapped inside rows validation layers.
+* `POST /booking/checkout-session` - Binds payment intents deploying pessimistic locks to bar concurrent race collisions.
+* `POST /booking/cancel/:id` - Triggers the automated Stripe integration refund calculator algorithms.
+* `POST /payment/booking/webhook` - Cryptographically signed listener decoding verified payment succeeded vectors.
+* `POST /payment/restaurant/webhook` - Confirms prepaid room service executions bypasses standard gateways.
 
 ### 6. Social Graphs and Instant Messages Systems
-* `POST /api/follows/toggle` - Atomic toggling function evaluating self-follow guards and socket dispatches.
-* `GET /api/follows/followers` - Resolves incoming connection mappings utilizing O(1) memory lookup setups.
-* `GET /api/posts/feed` - Compiles contextual timeline events drawn from target following lists.
-* `POST /api/messages/send` - Fires bidirectional multi-channel events utilizing Promise.all performance structures.
-* `GET /api/messages/conversation/:userId` - Fetches message strings returning deep-linked rooms sharing states.
+* `POST /follows/toggle` - Atomic toggling function evaluating self-follow guards and socket dispatches.
+* `GET /follows/followers` - Resolves incoming connection mappings utilizing O(1) memory lookup setups.
+* `GET /posts/feed` - Compiles contextual timeline events drawn from target following lists.
+* `POST /messages/send` - Fires bidirectional multi-channel events utilizing Promise.all performance structures.
+* `GET /messages/conversation/:userId` - Fetches message strings returning deep-linked rooms sharing states.
 
 ### 7. Core Configuration Utilities (Amenities and Notifications)
-* `GET /api/amenities` - Fetches systemic tokens returning categorized grouped outputs or flat rows arrays.
-* `GET /api/notifications` - Loads polymorphic metadata feeds showing structural event origins.
-* `PUT /api/notifications/mark-read` - Triggers optimized database mass modifications processing bulk rows updates.
+* `GET /amenities` - Fetches systemic tokens returning categorized grouped outputs or flat rows arrays.
+* `GET /notifications` - Loads polymorphic metadata feeds showing structural event origins.
+* `PUT /notifications/mark-read` - Triggers optimized database mass modifications processing bulk rows updates.
 
 ---
 
@@ -193,7 +193,8 @@ For real-time chat feeds, follow updates, and instant push notifications, the fr
 
 1. **Clone and Navigate to the Repository:**
    ```bash
-   git clone https://github.com
+   git clone https://github.com/ArmineSargsyan1
+   
    cd event
    ```
 
